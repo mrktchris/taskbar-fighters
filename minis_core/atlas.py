@@ -326,6 +326,9 @@ def available(root=None) -> list:
 def resolve(character, root=None) -> str:
     """The character that will really be drawn: itself if built, else `generic`, else `claude`."""
     have = available(root)
+    if root is None and isinstance(character, str) and character.startswith('pack-'):
+        from . import packs                                  # growth: an installed skin pack (packs.py, data only)
+        have = have + packs.character_ids()
     for c in (character, 'generic', 'claude'):
         if c and c in have:
             return c
@@ -351,7 +354,13 @@ class Library:
                 a = self._cache[c]
                 break
             try:
-                if self.hd and root_is_default(self.root):
+                pdir = None
+                if c.startswith('pack-') and root_is_default(self.root):
+                    from . import packs                      # growth: skin packs load from <data dir>/packs/<name>/64|128
+                    pdir = packs.char_dir(c, self.hd)
+                if pdir is not None:
+                    a = Atlas(c, pdir, hd=self.hd)
+                elif self.hd and root_is_default(self.root):
                     a = Atlas(c, hd=True)                   # assets_hd/<c> when built, else assets/<c> scaled 2x
                 else:
                     a = Atlas(c, self.root / c, hd=self.hd)

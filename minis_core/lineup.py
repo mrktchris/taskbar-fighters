@@ -35,6 +35,12 @@ def characters(root=None) -> list:
             continue                                       # unreadable: it could not be drawn either
         disp = meta.get('display') if isinstance(meta, dict) else None
         out.append({'id': p.name, 'display': str(disp or p.name.capitalize())})
+    if root is None:                                       # growth: installed skin packs (pack-<name>), validated data only
+        try:
+            from . import packs
+            out += [c for c in packs.characters() if c['id'] not in {o['id'] for o in out}]
+        except Exception:
+            pass
     return sorted(out, key=lambda c: (c['id'] == GENERIC, c['display'].lower(), c['id']))
 
 
@@ -132,6 +138,7 @@ def look_of(source_id, lu, assign=None) -> str:
 QUIT_ALL, HIDE_1H, PLATES, PAUSE, BOUT, MATCH, WIN_DECIDED, ARENA, RIVAL, HIDE, SELECT, WIN_RANDOM, FLASH = range(1, 14)
 HUD_DOCK, HUD_MENUBAR = 14, 15                     # macOS only: the Plates position submenu
 FORGE = 16                                         # V8: Desktop weapons (arena forging) on / off
+CARD = 17                                          # growth: Share my stats card...
 PICK_AUTO, PICK_BASE = 100, 101
 LOOK_DEFAULT, LOOK_BASE = 300, 301
 SIZE_BASE = 400                                    # SIZE_BASE + px: the Fighter size submenu (464 / 496 / 528)
@@ -185,6 +192,7 @@ def fighter_menu(slot, assign, lu, flags, chars):
               (BOUT, 'Start a bout now'), (MATCH, 'Start a match now (best of 3)'),
               (ARENA, 'Arena mode', {'checked': bool(flags.get('arena'))}),
               (FORGE, 'Desktop weapons (arena grabs the screen into RAM)', {'checked': bool(flags.get('forge', True))}),
+              (CARD, 'Share my stats card…'),
               None,
               (HIDE, f'Hide this fighter ({name})'), (HIDE_1H, 'Hide for 1 hour'), (QUIT_ALL, 'Quit Taskbar Fighters (stops everything)')]
     if flags.get('hud_pos') in ('dock', 'menubar'):
