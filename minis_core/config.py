@@ -295,10 +295,10 @@ def pick_gap(gaps, min_w=0):
     return None
 
 
-def zone_from_span(a, b, sc, lo_edge, hi_edge, cap=None):
+def zone_from_span(a, b, sc, lo_edge, hi_edge, cap=None, min_w=2 * PLATE_W):
     """Logical zone for the physical x span [a, b): ZONE_EDGE_MARGIN from a monitor edge, ZONE_MARGIN (plus the scoreboard's
     36 px tail at the right) from a taskbar element, element-bounded ends snapped to ZONE_GRID.  `cap` limits the width
-    (strips).  None when nothing usable is left."""
+    (strips).  None when less than `min_w` is left."""
     import math
     sc = max(1, int(sc))
     if lo_edge:
@@ -312,7 +312,7 @@ def zone_from_span(a, b, sc, lo_edge, hi_edge, cap=None):
         z1 = int(math.floor((b / sc - tail) / ZONE_GRID)) * ZONE_GRID
     if cap:
         z1 = min(z1, z0 + int(cap))
-    if z1 - z0 < 2 * PLATE_W:
+    if z1 - z0 < min_w:
         return None
     return (z0, z1)
 
@@ -361,10 +361,15 @@ def stage(info, cfg=None) -> dict:
             out['spans'] = spans                           # what `doctor` prints: the occupied x ranges (for bug reports)
             gap = pick_gap(free_gaps(l, r, spans), ZONE_MIN_W * sc) or pick_gap(free_gaps(l, r, spans))
             if gap:
-                z = zone_from_span(gap[0], gap[1], sc, gap[0] <= mon[0], gap[1] >= mon[2])
+                ends = (gap[0], gap[1], sc, gap[0] <= mon[0], gap[1] >= mon[2])
+                z = zone_from_span(*ends)
                 if z:
                     out.update(zone=z, zone_src='auto')
-        if out['zone'] is None:                            # no elements, or no gap wide enough: the default zone, kept on this bar
+                else:                                      # a full / small taskbar (1024 px, 200% on 1080p): a narrow zone in
+                    z = zone_from_span(*ends, min_w=ZONE_GRID)     # the gap - the HUD is crowded, but nobody walks on an icon
+                    if z:
+                        out.update(zone=z, zone_src='auto (cramped)')
+        if out['zone'] is None:                            # no elements, or no gap at all: the default zone, kept on this bar
             import math
             d0, d1 = DEFAULTS['zone']
             base = int(math.ceil(l / sc))                  # measured from the bar's left end (a taskbar on another monitor)

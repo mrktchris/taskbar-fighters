@@ -121,13 +121,22 @@ class StagePure(unittest.TestCase):
         self.assertFalse(cfgmod.apply_stage(cfg, st))
         self.assertEqual(cfg['zone'], [40, 900])
 
-    def test_no_room_keeps_the_default_zone_on_the_bar(self):
-        """1920x1080 at 200% is 960 logical px: a centred cluster leaves no gap that holds plates + scoreboard.  The default
-        zone is used, cut to the bar (it never reaches past the screen's right end)."""
-        info, _, _ = info_for(1920, 1080, 2.0)
+    def test_no_room_gives_a_cramped_zone_that_still_keeps_off_the_icons(self):
+        """1920x1080 at 200% is 960 logical px, and a 1024 px taskbar (the GitHub Windows runner: occupied 287-732 and
+        790-1024, read from its real doctor output) leaves 287 px: no gap holds plates + scoreboard.  A narrow zone in the gap
+        is used (the HUD is crowded) instead of the default zone, which would walk over the icons."""
+        info, (c0, _), _ = info_for(1920, 1080, 2.0)
         st = cfgmod.stage(info, CFG)
-        self.assertEqual(st['zone_src'], 'default')
-        self.assertLessEqual((st['zone'][1] + 36) * 2, 1920)
+        self.assertEqual(st['zone_src'], 'auto (cramped)')
+        self.assertLessEqual((st['zone'][1] + 36 + cfgmod.ZONE_MARGIN) * 2, c0)
+        t, b = 720, 768
+        runner = dict(rect=(0, t, 1024, b), edge=3, monitor=(0, 0, 1024, 768), work=(0, 0, 1024, t), dpi=1.0,
+                      parts=[(0, t, 1024, b), (287, t, 732, b), (790, t, 1024, b)])
+        st = cfgmod.stage(runner, CFG)
+        self.assertEqual((st['zone'], st['zone_src']), ((40, 240), 'auto (cramped)'))
+        z0, z1 = cfgmod.fight_zone(dict(CFG, zone=list(st['zone'])))
+        self.assertLess(z0, z1)
+        self.assertLessEqual(z1 + cfgmod.SPRITE_REACH, 287)                     # no sprite reaches the first icon
         info['parts'] = None
         info['rect'] = (2560, 1032, 4480, 1080)              # a taskbar on a second monitor: measured from its own left end
         st = cfgmod.stage(info, CFG)
@@ -372,6 +381,18 @@ class Loops(Isolated):
         self.assertTrue(f.ov.visible)
         self.assertEqual(f.g['stage']['layout'], 'strip')
         self.assertEqual(f.g['bottom'], 1080)
+
+    def test_a_cramped_taskbar_runs_both_fighters_and_the_scoreboard(self):
+        t, b = 720, 768
+        sh = InfoShell(dict(rect=(0, t, 1024, b), edge=3, monitor=(0, 0, 1024, 768), work=(0, 0, 1024, t), dpi=1.0,
+                            parts=[(0, t, 1024, b), (287, t, 732, b), (790, t, 1024, b)], autohide=False, revealed=True))
+        fa, fb = self.fighter(sh, 'a'), self.fighter(sh, 'b')
+        board = minis.Scoreboard(dict(CFG), sh, wall=lambda: self.t['wall'], mono=lambda: self.t['mono'])
+        board.setup()
+        self.go([fa, fb, board], 3.0)
+        for f in (fa, fb):
+            self.assertTrue(f.ov.visible)
+            self.assertLessEqual(f.brain.x + cfgmod.SPRITE_REACH, 287)
 
     def test_status_reports_a_hidden_autohide_taskbar(self):
         from unittest import mock

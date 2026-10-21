@@ -586,7 +586,7 @@ HUD that never spills out of the taskbar beat matching the 100% size at 150%.
 | Win32 window-rect fallback (UIA off) | **verified for real**: the same zone [40, 912] from `Start` + `TrayNotifyWnd` + `MSTaskListWClass` rects |
 | per-monitor v2 DPI awareness; layout messages bump the epoch; `taskbar_info` is ints-only rects; UIA probe deadline | **verified for real** (`tests/test_shell.py` StrangersPCs, real windows; messages sent to our own window only) |
 | 125%, 150%, 175%, 200% DPI (1920x1080, 2560x1440, 3840x2160) | unit-tested only (`tests/test_stage.py`): integer scale, HUD inside the band, feet on the floor, zone clear of the icons, fighter windows at whole scaled px |
-| 1920x1080 at 200% (no room left of the icons) | unit-tested only: default zone cut to the screen (documented limit) |
+| a taskbar with no room: 1920x1080 at 200%, and the GitHub Windows runner's 1024x768 desktop | **seen for real on the CI runner** (its `doctor --headless`: 18 UIA element rects, occupied x 287-732 and 790-1024 - a centred cluster on a 1024 px bar; the first version fell back to the default zone, which covered those icons) -> fixed: a narrow `auto (cramped)` zone [40, 240] inside the 0-287 gap; unit-tested with those exact rects, both fighters and the scoreboard run, no sprite reaches x 287 |
 | taskbar at the top, left, right (each DPI) | unit-tested only: strip at the bottom of the work area, never under a side taskbar, fighters shown |
 | auto-hide bottom taskbar | unit-tested only: hidden while the bar is away, back within 0.25 s, scoreboard and plates too; `autohide_shown` from synthetic window rects |
 | left-aligned icons; widgets button at the far left; Windows 10 rect set (wide search box, task list spanning the free stretch) | unit-tested only |
@@ -600,7 +600,7 @@ HUD that never spills out of the taskbar beat matching the 100% size at 150%.
 
 | claim | evidence |
 | --- | --- |
-| suite | `python -m unittest discover -s tests`: 662 OK, 14 skipped (Windows 11, Python 3.14; was 633: +24 `test_stage`, +4 `test_shell` StrangersPCs, +1 `test_tray`) |
+| suite | `python -m unittest discover -s tests`: 663 OK, 14 skipped (Windows 11, Python 3.14; was 633: +25 `test_stage`, +4 `test_shell` StrangersPCs, +1 `test_tray`) |
 | doctor | `python minis.py doctor --headless`: PASS 5/5 with the `dpi`, `stage` and `zone` lines above |
 | privacy | only rects are read: `uia.py` reads BoundingRectangle and IsOffscreen; window class names of the shell's own windows pick the fallback rects; no text, name or title (a test greps both modules) |
 | owner's live copy | not stopped or started (`doctor` shows it running as `foreign`; the real-window check used a temp data folder) |
