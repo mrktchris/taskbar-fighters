@@ -288,13 +288,20 @@ def on_screen(now=None, taskbar=None):
         if left is not None:
             tail += ' (hidden)' if left == float('inf') else f' (hidden {int(left // 60) + 1}m)'
         parts.append(f"{s}: {a.get('program') or a.get('source')}{tail}")
+    st = None
     if taskbar is None:
         try:
             shell = plat.shell()
-            taskbar = (shell.taskbar_rect(), shell.taskbar_autohide())
+            if getattr(shell, 'taskbar_info', None) is not None:
+                st = taskbar_stage(shell, load_config())        # Windows: every edge and auto-hide is laid out (config.stage)
+            else:
+                taskbar = (shell.taskbar_rect(), shell.taskbar_autohide())
         except Exception:
             taskbar = None
-    if taskbar is not None:
+    if st is not None:
+        if not st['usable']:
+            why.append(f"{st['why']} (fighters hide)")
+    elif taskbar is not None:
         rect, autohide = taskbar
         if rect[4] != 3:
             why.append('the taskbar is not at the bottom (fighters hide)')
@@ -1275,6 +1282,29 @@ class Watchdog:
         return done
 
 
+def taskbar_stage(shell, cfg):
+    """config.stage() for this shell: the Windows backend describes the taskbar with rects (taskbar_info: edge, auto-hide,
+    DPI, monitor, the elements that mark the empty stretch); a shell without it (macOS, the tests' fakes) gives the old
+    rect + edge + autohide and is laid out exactly as before."""
+    fn = getattr(shell, 'taskbar_info', None)
+    if fn is not None:
+        return cfgmod.stage(fn(cfg.get('monitor')), cfg)
+    l, t, r, b, edge = shell.taskbar_rect()
+    info = dict(legacy=True, rect=(l, t, r, b), edge=edge, autohide=shell.taskbar_autohide())
+    if edge != 3:
+        info['screen'] = shell.screen_size()
+    return cfgmod.stage(info, cfg)
+
+
+def layout_epoch(shell):
+    """The backend's layout-change counter (display / DPI / work-area change, Explorer restart), or None without one."""
+    fn = getattr(shell, 'layout_epoch', None)
+    try:
+        return fn() if fn else None
+    except Exception:
+        return None
+
+
 def hud_density(shell):
     """How many times finer the HUD (plates, scoreboard) is drawn: macOS draws it at the screen's backing scale (2 on
     Retina, so the text is sharp); Windows and anything without the call: 1, i.e. unchanged."""
@@ -1324,19 +1354,18 @@ class Scoreboard:
         return x
 
     def geometry(self):
-        l, t, r, b, edge = self.shell.taskbar_rect()
-        ok = edge == 3 and not self.shell.taskbar_autohide()
-        if edge != 3:
-            _, sh = self.shell.screen_size()
-            b, t = sh, sh - 48
-        band = max(24, b - t)
-        sc = cfgmod.ui_scale(band)
+        st = taskbar_stage(self.shell, self.cfg)
+        cfgmod.apply_stage(self.cfg, st)                  # a detected zone moves the widget with it (left_x reads cfg['zone'])
+        top, b = st['band']
+        band = b - top
+        sc = st['scale']
         y = b - band + max(0, (band - self.SB.H * sc) // 2)
-        return dict(scale=sc, y=y, usable=ok)
+        return dict(scale=sc, y=y, usable=st['usable'], zone=tuple(self.cfg['zone']), autohide=st['autohide'], stage=st)
 
     def setup(self):
         from minis_core import control
         self.g = self.geometry()
+        self.last['epoch'] = layout_epoch(self.shell)
         self.hud_k = hud_density(self.shell)
         self.ov = self.shell.Overlay('minis-scoreboard', self.left() * self.g['scale'], self.g['y'], self.SB.W, self.SB.H,
                                      scale=self.g['scale'], on_event=self.on_event,
@@ -1404,7 +1433,11 @@ class Scoreboard:
                 centre = int(self.shell.screen_size()[0]) // 2
             except Exception:
                 pass
-        self.select = SelectWindow(self.shell, model, self.mono, self.select_done, scale=sc, centre_x=centre)
+        st = (self.g or {}).get('stage')
+        area = None
+        if st and getattr(self.shell, 'taskbar_info', None) is not None:     # Windows: above the fighters' band, on its monitor
+            area = (st['span'][0], st['span'][1], st['band'][0])
+        self.select = SelectWindow(self.shell, model, self.mono, self.select_done, scale=sc, centre_x=centre, area=area)
 
     def select_done(self, model):
         from minis_core import control
@@ -1443,10 +1476,13 @@ class Scoreboard:
             self.log.info('%s', msg)
         if self.pressed and now - self.press_t > 1.5:
             self.pressed = None
-        if now - self.last['tb'] >= 2.0:
+        ep = layout_epoch(self.shell)
+        if ep != self.last.get('epoch'):                  # display / DPI / taskbar change, Explorer restart: re-lay out now
+            self.last['epoch'], self.last['tb'] = ep, -1e9
+        if now - self.last['tb'] >= (0.25 if self.g.get('autohide') else 2.0):    # an auto-hide bar is followed closely
             self.last['tb'] = now
             g2 = self.geometry()
-            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y']:
+            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y'] or g2.get('zone') != self.g.get('zone'):
                 self.ov.set_scale(g2['scale'])
                 self.ov.move(self.left() * g2['scale'], g2['y'])
                 self.last['sig'] = None
@@ -1534,18 +1570,36 @@ class Fighter:
 
     # -------------------------------------------------- setup
     def geometry(self):
-        l, t, r, b, edge = self.shell.taskbar_rect()
-        ok = edge == 3 and not self.shell.taskbar_autohide()
-        if edge != 3:
-            _, sh = self.shell.screen_size()
-            b, t = sh, sh - 48
-        band = max(24, b - t)
-        sc = cfgmod.ui_scale(band)
+        """Where this side is drawn (config.stage via taskbar_stage): the integer sprite scale, the window's y, the plate's y,
+        whether it may show, and the zone (a detected one is put into cfg, so plates, fight zone and brain follow)."""
+        st = taskbar_stage(self.shell, self.cfg)
+        cfgmod.apply_stage(self.cfg, st)
+        t, b = st['band']
+        band = b - t
+        sc = st['scale']
         py = b - band + max(0, (band - cfgmod.PLATE_H * sc) // 2)          # plate: vertically centred in the taskbar band
         # the window's bottom stays at the taskbar bottom (feet on the same line at every size); a bigger fighter reaches higher.
         # V7.1: the window also reaches headroom_px above the cell, where an airborne fighter (the `air` lift) is drawn
         top = self.cell - cfgmod.feet_drop(self.size) + cfgmod.headroom_px(self.size)
-        return dict(scale=sc, y=b - top * sc, bottom=b, usable=ok, plate_y=py)
+        return dict(scale=sc, y=b - top * sc, bottom=b, usable=st['usable'], plate_y=py, zone=tuple(self.cfg['zone']),
+                    autohide=st['autohide'], stage=st)
+
+    def rezone(self, now):
+        """The zone moved (the icon cluster grew or shrank, the taskbar moved, another DPI): the brain gets the new fight zone
+        and homes - the same split Brain.__init__ makes - a bout in progress is called off (its plan was laid out in the old
+        zone), and a fighter now outside its home walks back.  The plates follow on their own (plate_xy reads cfg['zone'])."""
+        b = self.brain
+        if b is None:
+            return
+        z0, z1 = self.logic_zone() or cfgmod.fight_zone(self.cfg)
+        b.zone = (z0, z1)
+        mid, gap = (z0 + z1) / 2.0, self.cfg['gap_px']
+        b.home = (z0 + 12, mid - gap) if self.slot == 'a' else (mid + gap, z1 - 12)
+        b.home_x = max(b.home[0], min(b.home[1], b.home_x))
+        b.abort(now)                                       # (walks back to the new home_x)
+        if b.mode == 'home':
+            b.x = max(b.home[0], min(b.home[1], b.x))
+        self.log.info('layout: zone %s (%s)', list(self.cfg['zone']), self.g['stage'].get('zone_src') if self.g.get('stage') else '-')
 
     def plate_x(self):
         return cfgmod.plate_left(self.cfg, self.slot) * self.g['scale']
@@ -1598,7 +1652,8 @@ class Fighter:
         from minis_core.brain import Brain
         from minis_core.telemetry import Snapshot
         self.resolve_size()
-        self.g = self.geometry()
+        self.g = self.geometry()                           # before the brain: a detected zone is its zone from the start
+        self.last['epoch'] = layout_epoch(self.shell)
         now = self.mono()
         self._apply_assignment(self._read_assignment(), now, force=True)
         atlas = self.lib[self.assigned['character'] if self.assigned else 'claude']
@@ -1905,13 +1960,19 @@ class Fighter:
             self.snap.events = []                          # events are consumed by the first tick that sees them
             self._log_bout_notes()
         self._publish(wall)
-        if now - self.last['tb'] >= 2.0:
+        ep = layout_epoch(self.shell)
+        if ep != self.last.get('epoch'):                   # display / DPI / taskbar change, Explorer restart: re-lay out now
+            self.last['epoch'], self.last['tb'] = ep, -1e9
+        if now - self.last['tb'] >= (0.25 if self.g.get('autohide') else 2.0):   # an auto-hide bar is followed closely
             self.last['tb'] = now
             g2 = self.geometry()
-            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y'] or g2['plate_y'] != self.g['plate_y']:
+            rezoned = g2.get('zone') != self.g.get('zone')
+            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y'] or g2['plate_y'] != self.g['plate_y'] or rezoned:
                 ov.set_scale(g2['scale'])
                 ov.move(ov.x, g2['y'])
                 self.g = g2
+                if rezoned:
+                    self.rezone(now)
                 self.pov.set_scale(g2['scale'])
                 self.pov.move(*self.plate_xy())
                 self.last['sig'] = self.last['psig'] = None
@@ -2503,6 +2564,19 @@ def cmd_doctor(args=None, shell=None, probe=None, describe=None, out=print):
                 out(f"  dock: {d['dock']}; fighter strip {d['rect']} (fighters stand on y={d['rect'][3]})")
             else:
                 out(f'  taskbar: {(l, t, r, b)} edge={edge} autohide={shell.taskbar_autohide()}')
+            if getattr(shell, 'taskbar_info', None) is not None:
+                cfg = load_config()
+                st = taskbar_stage(shell, cfg)
+                cfgmod.apply_stage(cfg, st)
+                aware = shell.dpi_awareness() if hasattr(shell, 'dpi_awareness') else '?'
+                out(f"  dpi: {st['dpi'] * 100:g}% (awareness {aware}); sprite scale {st['scale']} (integer: crisp)")
+                where = ('taskbar band' if st['layout'] == 'taskbar' else 'strip at the bottom of the work area') + f" y {st['band']}"
+                out(f"  stage: edge={st['edge']}{' auto-hide' + (' (shown now)' if st['revealed'] else ' (hidden now)') if st['autohide'] else ''}; "
+                    f"{where}; {'shown' if st['usable'] else 'hidden: ' + st['why']}")
+                out(f"  zone: {list(cfg['zone'])} logical px ({st['zone_src']}"
+                    + (f", from {st['parts_src']} element rects" if st['zone_src'] == 'auto' and st['parts_src'] else '')
+                    + f"; screen x {int(cfg['zone'][0]) * st['scale']}-{int(cfg['zone'][1]) * st['scale']})")
+                b, t = st['band'][1], st['band'][0]
             check('screen geometry', sw > 0 and sh > 0 and b > t, f'band {b - t} high, sprite scale {cfgmod.ui_scale(max(24, b - t))}')
         except Exception as e:
             check('screen geometry', False, f'{type(e).__name__}: {str(e)[:200]}', soft=True)
