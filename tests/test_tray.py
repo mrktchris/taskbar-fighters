@@ -174,8 +174,10 @@ class TrayLogic(unittest.TestCase):
         from minis_core import lineup as L
         items = T.tray_menu(dict(paused=True, flash=False, plates=True, rival=False, arena=True))
         labels = L.labels_of(items)
-        self.assertEqual(labels, ['Select fighters\u2026', 'Pause animations', 'Flash effects', 'Desktop weapons', 'Plates', 'Rival mode',
-                                  'Exit arena', 'Bout now', 'Restart Taskbar Fighters', 'Quit Taskbar Fighters'])
+        self.assertEqual(labels, ['Select fighters\u2026', 'Settings\u2026', 'Move book\u2026', 'What am I looking at?',
+                                  'Pause animations', 'Flash effects', 'Desktop weapons', 'Plates', 'Rival mode',
+                                  'Exit arena', 'Bout now', 'Replay last K.O.', 'Save last fight as GIF',
+                                  'Restart Taskbar Fighters', 'Quit Taskbar Fighters'])
         opts = {it[0]: (it[2] if len(it) > 2 else {}) for it in items if it}
         self.assertTrue(opts[T.PAUSE]['checked'])
         self.assertFalse(opts[T.FLASH]['checked'])
