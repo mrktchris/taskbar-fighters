@@ -86,6 +86,9 @@ only; ESC ends it). Tell them the arena forges weapons from ONE picture of that 
 - **Tray icon** (no action needed): while it runs, an icon sits in the notification area. Left-click opens fighter select;
   right-click has Pause, Flash effects, Desktop weapons, Plates, Rival mode, arena, Bout now, Restart and Quit. `"tray_icon": false` in `minis.json`
   turns it off.
+- **Streamer mode, stats card, skin packs** (only when the user asks): `python minis.py stream on` opens a window for OBS
+  (docs/STREAMING.md); `python minis.py card` writes a PNG of their record; `python minis.py packs install <zip>` installs a
+  pack file the user gives you - never download one for them (docs/SKIN-PACKS.md).
 - **Restart:** `python minis.py restart` stops everything and starts it again (use it after editing `minis.json`).
 - **Settings:** a `minis.json` next to `minis.py` overrides defaults (see README "Configuration"), e.g. `zone` if the fighters
   overlap the user's taskbar icons, `ignore_sources` to keep a program off the stage.

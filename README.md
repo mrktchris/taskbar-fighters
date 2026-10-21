@@ -122,6 +122,12 @@ network.
   test suite runs in CI on every push.
 - **Tray icon and Start-menu shortcut.** Left-click the tray icon for fighter select, right-click for the menu (Restart, Quit);
   `python minis.py shortcut` adds Taskbar Fighters to Start so you can pin it.
+- **Streamer mode.** `python minis.py stream on` opens a normal window with the live fight on a chroma-key background for
+  OBS, built from the fighters' own frames ([Streamer mode](#streamer-mode)).
+- **Stats card, careers and achievements.** `python minis.py card` renders a shareable 1200 x 675 picture of your agents'
+  record; lifetime careers, head-to-head records and local ranks; 22 achievements with open criteria and a small toast on
+  the scoreboard ([Stats card and achievements](#stats-card-and-achievements)).
+- **Skin packs.** Install community looks from a zip; strict validation, data only ([Skin packs](#skin-packs)).
 - **Controls.** Pause, hide plates, flash effects on/off (no white flashes or impact frames for anyone who dislikes strobing),
   fighter size, hide a fighter, drag, double-click for a victory pose, Shift-drag to throw.
 
@@ -137,13 +143,42 @@ network.
 | Cursor | Cursor | spear | ground_pound / tab_bolt / autocomplete / grapple_strike |
 | Ollama | Ollama | staff | ground_pound / pull_shot / serve / gale_rend |
 | LM Studio | LM Studio | energy katana | spin_kick / load_wave / hot_swap / awakening |
-| Agent | aider, opencode, Windsurf, Copilot CLI, Qwen Code, Perplexity, Grok, the sparring bot | bow and dagger | spin_kick / energy_bolt / overclock / star_core |
+| Agent | aider, opencode, Windsurf, Copilot CLI, Qwen Code, Perplexity, Grok, ChatGPT, Amazon Q, the sparring bot | bow and dagger | spin_kick / energy_bolt / overclock / star_core |
 | Barbarian | selectable extra | axe | axe_spin / axe_toss / berserk / earthsplitter |
 | Knight | selectable extra | greatsword | crusher / sword_wave / valor / holy_crescent |
 | Kunoichi | selectable extra | twin fans | fan_whirl / petal_shot / vanish / petal_dance |
 | Monk | selectable extra | twin tonfa | palm_crash / chi_bolt / meditate / chi_sphere |
 | Nomad | selectable extra | twin chakrams | ring_spin / chakram_throw / mirage / ring_storm |
 | Oni | selectable extra | kanabo club | club_slam / oni_fire / rampage / oni_roar |
+
+Programs detected since the growth release wear the extras by default: Zed as the Knight, Junie as the Kunoichi, Cline as
+the Barbarian, Continue as the Monk, Goose as the Nomad, Crush as the Oni, Jan as LM Studio, the Claude desktop app as
+Claude. Any program can wear any look (`python minis.py skin <program> <character>`).
+
+### Detected programs
+
+`python minis.py detect` lists every row and whether it is running now. Process names and command lines are compared and
+then discarded; nothing about them is stored or shown beyond the executable's file name.
+
+| program | Windows | macOS | notes |
+| --- | --- | --- | --- |
+| Claude Code | session transcripts (`claude.exe` / the npm CLI only claimed) | same (`claude`) | numbers from the transcript |
+| Codex | session transcripts (`codex.exe`, the npm CLI, the Codex desktop app's `ChatGPT.exe` under `OpenAI.Codex_*`) | same (`codex`, `Codex.app`) | numbers from the transcript |
+| Claude desktop | `claude.exe` under `AnthropicClaude\` or the `Claude_*` app package | `Claude.app` | process CPU only; seen on a real PC |
+| ChatGPT desktop | `ChatGPT.exe` (anywhere but the Codex package) | `ChatGPT.app` | |
+| Cursor, Windsurf, Zed | `cursor.exe`, `windsurf.exe`, `zed.exe` | `Cursor.app`, `Windsurf.app`, `Zed.app` | editors: shown while open |
+| Gemini CLI, Qwen Code, Copilot CLI | `node` + `@google/gemini-cli`, `@qwen-code/qwen-code`, `@github/copilot` | same | npm CLIs, by package path |
+| Junie | `junie.exe`, `@jetbrains/junie` | `junie` | the CLI; JetBrains AI Assistant inside an IDE is not separable from the IDE and is not detected |
+| Cline, Continue | `node` + `cline`, `@continuedev/cli` | same | the CLIs only. The VS Code extensions run inside VS Code's extension host, which cannot be told apart from plain VS Code, so they are not detected (and plain VS Code never shows as Cline or Continue) |
+| Roo Code | - | - | a VS Code extension only: not detected, for the same reason |
+| Amazon Q Developer CLI | - (Windows runs it in WSL) | `q`, `qchat`, `Amazon Q.app` | |
+| aider, opencode, Crush, Goose | `aider.exe` / `python -m aider`, `opencode.exe`, `crush.exe` / `@charmland/crush`, `goose.exe` | `aider`, `opencode`, `crush`, `goose`, `Goose.app` | `goose` is also the name of an unrelated database tool, which would show as Goose while it runs |
+| Ollama, LM Studio, Jan | `ollama.exe`, `lm studio.exe`, `jan.exe` | `Ollama.app`, `LM Studio.app`, `Jan.app` | |
+| Perplexity, Grok | `perplexity.exe`, `grok bot.exe` | `Perplexity.app`, `Grok.app` | |
+
+The names added in this release come from each vendor's install documentation; apart from the Claude desktop app, none
+has been seen on a real machine yet. A program that is missing or misnamed is a one-line fix in `RULES`
+(`minis_core/sources.py`).
 
 ### Moves
 
@@ -275,6 +310,46 @@ forged from window shapes instead.
 
 Every option, effect and number: [docs/ARENA.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/ARENA.md).
 
+## Streamer mode
+
+![The stream window: both fighters, the HUD plates and the scoreboard on a green chroma-key background](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/stream.png)
+
+`python minis.py stream on` opens **Taskbar Fighters — Stream**, a normal window (not topmost, not click-through,
+resizable) showing the live fight strip on `#00FF00`, always at a whole-number scale. In OBS add it as a **Window Capture**
+and put a **Chroma Key** filter on it. `stream off` closes it; the tray menu has *Streamer mode (OBS window)*.
+`--chroma #FF00FF` changes the key colour, `--no-plates` leaves the context numbers out, `--transparent` tries an alpha
+background (experimental). The picture is made from the fighters' own window images (the same self-dump `own_capture`
+uses), never a screen capture, and desktop weapons are switched off while you stream. Setup and options:
+[docs/STREAMING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/STREAMING.md).
+
+## Stats card and achievements
+
+![A stats card: four program cards with fighter sprites, rank, W-L, win %, streak, favourite move and head-to-head, and 22 achievement badges](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/stats-card.png)
+
+<sub>DEMO numbers (`python tools/card_preview.py`).</sub>
+
+- `python minis.py card` writes a 1200 x 675 PNG of your agents' record (to the data folder, or `--out path`; `--share`
+  saves it to Pictures and opens the folder, as does the menu's *Share my stats card…*), then prints each program's career
+  and the head-to-head records ("Claude vs Codex 34-29 (last 10: 6-4)").
+- **Careers**: lifetime W-L, win %, current and best streak, KOs, flawless rounds, comebacks, ultimates, favourite move.
+  **Ranks** (Bronze, Silver, Gold, Master, Legend) follow lifetime wins, so they only ever climb.
+- **Achievements**: `python minis.py achievements` lists all 22 with what each takes and how far you are; none is secret.
+  Fight (First KO, Flawless, Comeback, Perfect, Unstoppable ...), Discovery (Cinema, Director's Cut, Blacksmith,
+  Squad ...) and Partnership (Job Done, Teamwork, Old Rivals). None rewards token use, hours, context or time of day, and
+  nothing is taken away for being away. A new one shows as a small 3-second toast on the scoreboard.
+- Everything comes from `record.json` (since this release it also keeps a log of the last 500 matches with the facts above
+  and each match's seed and lineup, so a match can be rebuilt for a replay) and `achievements.json`: program ids, move
+  names and numbers only.
+
+## Skin packs
+
+Community looks any program can wear: `python minis.py packs install shadow-ronin.zip`, then pick it in fighter select or
+`python minis.py skin claude "Shadow Ronin"`. A pack is a `pack.json` (name, author, licence) plus the same sprite sheets
+the built-in fighters use, at 64 px and optionally 128 px. Packs are data only and strictly checked (file names, sizes,
+sheet geometry, a 64-colour cap, every move the engine plays, zip paths); nothing in a pack is ever run.
+`python tools/make_example_pack.py` builds a valid example from a built-in fighter. Format and rules:
+[docs/SKIN-PACKS.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/SKIN-PACKS.md).
+
 ## Install and run
 
 **Requirements:** Windows 11 (tested; Windows 10 should work but is untested) with the taskbar at the bottom, Python 3.12 or
@@ -368,7 +443,8 @@ By hand: `python3.12 -m venv .venv`, `.venv/bin/python -m pip install --upgrade 
   `python minis.py shortcut remove` deletes the shortcuts it made, only if they still run this `minis.py`.
 - While it runs, its icon sits in the notification area (tray). Hover: who is fighting ("Taskbar Fighters — Claude vs Grok").
   **Left-click**: fighter select. **Right-click**: Select fighters..., Pause animations, Flash effects, Desktop weapons, Plates, Rival mode,
-  Start/Exit arena, Bout now, Restart Taskbar Fighters, Quit Taskbar Fighters.
+  Start/Exit arena, Bout now, Share my stats card…, Streamer mode (OBS window), Restart Taskbar Fighters, Quit Taskbar
+  Fighters.
 - `python minis.py restart` stops everything and starts it again.
 - No tray icon: set `"tray_icon": false` in `minis.json`.
 - Rebuild the icon: `python art/build_icon.py [--preview qa/local/icon-preview.png]`.
@@ -405,6 +481,10 @@ Every command below was checked against `python minis.py --help` and each subcom
 | `python minis.py print-startup` | print (never run) the commands to start at logon (macOS: the LaunchAgent plist) |
 | `python minis.py autostart on\|off\|status` | macOS only: start at login with a LaunchAgent (written only when you run `on`) |
 | `python minis.py size 64\|96\|128` | fighter height in px (default 128, HD art); running fighters restart to apply it |
+| `python minis.py stream on\|off\|status` / `stream snapshot <png>` | streamer mode: an OBS-friendly window with the live fight ([docs/STREAMING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/STREAMING.md)) |
+| `python minis.py card [--out path] [--share]` | the 1200 x 675 stats card, then careers and head-to-head records |
+| `python minis.py achievements` | every achievement, what it takes and how far you are |
+| `python minis.py packs list\|install <zip\|folder>\|remove <name>\|check <folder>` | community skin packs ([docs/SKIN-PACKS.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/SKIN-PACKS.md)) |
 | `python minis.py doctor [--headless]` | a report to paste to your AI agent or an issue; `--headless` skips the test window (CI) |
 | `python minis.py director` / `run a\|b` | run the director or one slot in the foreground (debugging) |
 | `python minis.py selftest-gui [--keep]` | real-desktop check: both windows draw over the taskbar and survive a taskbar raise (macOS: frames, no capture) |
@@ -478,7 +558,9 @@ Fighters hide while a fullscreen app is up, while the taskbar is not at the bott
 - **Arena never touches real windows.** It reads window rectangles (`EnumWindows` / `GetWindowRect`), never titles, never sends
   input; cracks and shatters are paint on its own overlay.
 - **Files written:** `%LOCALAPPDATA%\minis\` on Windows, `~/Library/Application Support/minis/` on macOS (bus files,
-  `assign.json`, `control.json`, `record.json`, `history.json`, `seen.json`, pid and lock files, small rotating logs).
+  `assign.json`, `control.json`, `record.json`, `history.json`, `seen.json`, `achievements.json`, `stream.json`, pid and
+  lock files, small rotating logs, and `packs/` for skin packs you install). The stats card goes where you ask
+  (default: the data folder; `--share`: Pictures).
 
 ## How it works
 
@@ -527,7 +609,10 @@ minis_platform/   picks minis_win or minis_mac at run time (nothing imports a de
   itself to 20 fps; platforms are only the top edges of windows.
 - Process sources have no numbers, and "working" is a CPU heuristic (the 15% threshold is a first guess).
 - The art is generated by a rig, not hand-drawn; a hand-polish hook exists (`art/hand/<character>/<move>_<frame>.png`).
-- Ideas not built yet: importing Codex pet packs, achievements from `record.json`, landing on title bars in the arena.
+- Ideas not built yet: landing on title bars in the arena; importing Codex pets (their format is not documented offline:
+  [docs/SKIN-PACKS.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/SKIN-PACKS.md#codex-pets)); instant replay from the stored match seeds.
+- Streamer mode's `--transparent` has not been checked in OBS (the chroma key is the dependable path), and the new
+  programs' process names are from vendor docs, not yet seen running (except the Claude desktop app).
 
 Build logs with what was verified and how: [RESULT.md](https://github.com/mrktchris/taskbar-fighters/blob/master/RESULT.md). Version history: [CHANGELOG.md](https://github.com/mrktchris/taskbar-fighters/blob/master/CHANGELOG.md).
 
