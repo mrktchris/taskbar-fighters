@@ -338,7 +338,7 @@ def stage(info, cfg=None) -> dict:
     autohide = bool(info.get('autohide'))
     l, t, r, b = info['rect']
     out = dict(edge=name, autohide=autohide, revealed=bool(info.get('revealed', True)), dpi=float(info.get('dpi') or 1.0),
-               parts_src=info.get('parts_src'), zone=None, zone_src='default', why='')
+               parts_src=info.get('parts_src'), parts_n=len(info.get('parts') or ()), zone=None, zone_src='default', why='')
     if info.get('legacy'):
         ok = edge == 3 and not autohide
         if edge != 3:
@@ -358,6 +358,7 @@ def stage(info, cfg=None) -> dict:
                    why='' if usable else 'the taskbar auto-hides and is hidden right now')
         if info.get('parts'):
             spans = occupied_spans(info['parts'], l, r, (b - band, b))
+            out['spans'] = spans                           # what `doctor` prints: the occupied x ranges (for bug reports)
             gap = pick_gap(free_gaps(l, r, spans), ZONE_MIN_W * sc) or pick_gap(free_gaps(l, r, spans))
             if gap:
                 z = zone_from_span(gap[0], gap[1], sc, gap[0] <= mon[0], gap[1] >= mon[2])

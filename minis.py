@@ -2574,8 +2574,10 @@ def cmd_doctor(args=None, shell=None, probe=None, describe=None, out=print):
                 out(f"  stage: edge={st['edge']}{' auto-hide' + (' (shown now)' if st['revealed'] else ' (hidden now)') if st['autohide'] else ''}; "
                     f"{where}; {'shown' if st['usable'] else 'hidden: ' + st['why']}")
                 out(f"  zone: {list(cfg['zone'])} logical px ({st['zone_src']}"
-                    + (f", from {st['parts_src']} element rects" if st['zone_src'] == 'auto' and st['parts_src'] else '')
+                    + f"; {st.get('parts_n', 0)} taskbar element rects from {st['parts_src'] or 'nowhere'}"
                     + f"; screen x {int(cfg['zone'][0]) * st['scale']}-{int(cfg['zone'][1]) * st['scale']})")
+                if st.get('spans'):
+                    out('  taskbar occupied x: ' + ', '.join(f'{a}-{b}' for a, b in st['spans']))
                 b, t = st['band'][1], st['band'][0]
             check('screen geometry', sw > 0 and sh > 0 and b > t, f'band {b - t} high, sprite scale {cfgmod.ui_scale(max(24, b - t))}')
         except Exception as e:
