@@ -206,6 +206,73 @@ all check out. Process-detected programs have no numbers (`ctx -`).
 - Arrows + Enter, Backspace to go back, Esc or a click elsewhere cancels; mouse clicks and the wheel work too. It is the only
   window that takes keyboard focus, and only while open.
 
+## Getting around
+
+Everything below lives in the tray icon's menu (on a Mac, the menu-bar icon) and has a command too. All of it is drawn in
+the app's own windows from its own data: no screen capture, nothing over the network, and nothing takes the keyboard except
+Settings and the move book, while you have them open. Previews: `python tools/ux_previews.py` (offline, DEMO data).
+
+**First start.** Three short cards point at the real fighters, plates and scoreboard, once. Next / Skip, or ignore them and
+they move on by themselves. Tray > **What am I looking at?** (`minis.py guide`) brings back a 10-second legend any time.
+
+![The first-run card pointing at a fighter on the taskbar strip](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-guide.png)
+
+![The legend: every label at once, with the key line fight = working, handoff = task finished, K.O. = context limit, amber = needs you](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-legend.png)
+
+**Settings** (tray > *Settings...*, `minis.py settings`). Fighter size, plates, flash effects, desktop weapons, rival mode,
+who wins, the results strip, hover cards, event signals, **Start with Windows** (one `Taskbar Fighters.lnk` in your Startup
+folder; an existing one for this copy is reused, never duplicated) / **Open at login** on a Mac (the LaunchAgent), and the
+**fight zone**. Arrows and Enter work, Esc closes. `minis.py settings list` prints every row with its value and its command.
+Desktop weapons stay on by default (real pixels, held in RAM, never saved); while the row is on its line says so in amber.
+
+![The Settings window](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-settings.png)
+
+**Fight zone.** *Edit...* lays a bar over your taskbar showing where the plates, the fighters and the scoreboard go. Drag
+either end (or the whole bar), then **Save**; **Reset to auto** goes back to the default. It is saved as `zone` in
+`minis.json` and the fighters restart. Without the window: `minis.py zone 40 900`, `minis.py zone auto`.
+
+![The zone editor over a mock taskbar](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-zone.png)
+
+**Hover cards.** Rest the mouse on a fighter or its plate: the program, what it is doing in plain words ("working · 3 min",
+"waiting for you · 1 min 37 s", "usage limit, resets in 1h"), its context, its record and how it stands against the fighter
+it is facing. Never a prompt, a title or a file name. `minis.py cards off` turns them off.
+
+![Three hover cards: working, waiting for you, asleep with a rival countdown](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-cards.png)
+
+**Real events get real marks.** A finished task raises a small flag over the fighter until your mouse passes over it.
+*Needs you* (`waiting?`) is the loudest thing on screen: an amber halo pulsing round the fighter, the bouncing "!", the amber
+plate and a wave now and then (no popup, no sound). A context compaction (85%+ down to under 40% in one session) is a
+**SECOND WIND** with the plate's meter refilling. Near the limit "DANGER" shows once, and "FINISH!" lands with the K.O.
+Paused, quiet / calm mode and Flash effects off all keep them still. `minis.py signals off` turns them off.
+
+![The four signals on 128 px fighters: done flag, needs-you halo, second wind, danger, finish](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-signals.png)
+
+**Quiet periods explained.** While one side sleeps, its plate counts down to the next rival match ("rival match in ~6 min").
+
+![A sleeping plate before and with the rival countdown](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-rival.png)
+
+**Results.** For 4 seconds after a match a strip over the scoreboard reads "CODEX WINS 2-1 · 21 hits · best combo 5", the
+winner poses and the loser bows (on the taskbar too). `minis.py results off` turns it off.
+
+![The results strip over the scoreboard](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-results.png)
+
+**Instant replay, GIFs and fight codes.** Tray > **Replay last K.O.** plays the deciding exchange again above the taskbar,
+the K.O. in slow motion; **Save last fight as GIF** writes the whole match to `Pictures\Taskbar Fighters`. Both are made by
+the planner from the match's seed and plan on a plain backdrop, never from the screen. Every match has a **fight code**
+(`minis.py replay code`); anyone with the app can paste it: `minis.py replay TF1-claude-codex-...` (or
+`replay CODE --gif out.gif`). A code holds the seed, the two characters, positions and the odds, never a context number.
+
+![A replay frame: names, HP bars, the REPLAY tag and the fight code](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-replay.gif)
+
+**Move book** (tray > *Move book...*, `minis.py book`). Every fighter's moves, set pieces and finishers; the ones you have
+seen in a fight play with their name and type, the rest are silhouettes. Arrows, Tab and PgUp/PgDn; `minis.py book list`
+prints the counts. It records move ids only (`collection.json`).
+
+![The move book: Claude's attacks, seen ones animated, unseen ones as silhouettes](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-book.png)
+
+Why these and not others (streaks, chat integration, meeting detection, popups were left out on purpose):
+[docs/RESEARCH-UX.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/RESEARCH-UX.md).
+
 ## Arena mode
 
 ![Arena mode on a synthetic desktop: a set piece's ink-wash cut, a beam clash, a crater on the taskbar line, the winner on the highest window](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/arena.png)
@@ -294,8 +361,9 @@ Or `pip install "taskbar-fighters @ https://github.com/mrktchris/taskbar-fighter
 `start` launches three windowless processes (a director and fighter slots `a` and `b`) and after about 3 s prints what is on
 screen, for example `a: Claude Code, b: Sparring bot asleep`.
 
-**Start at logon (optional).** `python minis.py print-startup` prints - never runs - a `schtasks` command and a shortcut target
-you can use; it also prints the command to remove the task again.
+**Start at logon (optional).** Tick **Start with Windows** in Settings, or `python minis.py startup on` (one
+`Taskbar Fighters.lnk` in your Startup folder; `startup off` removes it). `python minis.py print-startup` prints - never runs -
+a `schtasks` command and a shortcut target you can use instead; it also prints the command to remove the task again.
 
 **Stop and uninstall.** `python minis.py stop` ends only the processes it started (it checks each one's exact command line).
 `python minis.py shortcut remove` deletes the shortcuts it made. Delete the `taskbar-fighters` folder (or run
@@ -367,8 +435,9 @@ By hand: `python3.12 -m venv .venv`, `.venv/bin/python -m pip install --upgrade 
   right-click Taskbar Fighters in Start > **Pin to taskbar** (Windows only lets you pin a program; it never pins itself).
   `python minis.py shortcut remove` deletes the shortcuts it made, only if they still run this `minis.py`.
 - While it runs, its icon sits in the notification area (tray). Hover: who is fighting ("Taskbar Fighters — Claude vs Grok").
-  **Left-click**: fighter select. **Right-click**: Select fighters..., Pause animations, Flash effects, Desktop weapons, Plates, Rival mode,
-  Start/Exit arena, Bout now, Restart Taskbar Fighters, Quit Taskbar Fighters.
+  **Left-click**: fighter select. **Right-click**: Select fighters..., Settings..., Move book..., What am I looking at?, Pause
+  animations, Flash effects, Desktop weapons, Plates, Rival mode, Start/Exit arena, Bout now, Replay last K.O., Save last fight
+  as GIF, Restart Taskbar Fighters, Quit Taskbar Fighters ([Getting around](#getting-around)).
 - `python minis.py restart` stops everything and starts it again.
 - No tray icon: set `"tray_icon": false` in `minis.json`.
 - Rebuild the icon: `python art/build_icon.py [--preview qa/local/icon-preview.png]`.
@@ -405,6 +474,13 @@ Every command below was checked against `python minis.py --help` and each subcom
 | `python minis.py print-startup` | print (never run) the commands to start at logon (macOS: the LaunchAgent plist) |
 | `python minis.py autostart on\|off\|status` | macOS only: start at login with a LaunchAgent (written only when you run `on`) |
 | `python minis.py size 64\|96\|128` | fighter height in px (default 128, HD art); running fighters restart to apply it |
+| `python minis.py settings [open\|list]` / `settings set <row> <value>` | the Settings window / every setting with its value and command / change one |
+| `python minis.py startup on\|off\|status` | start at sign-in: Windows, one `Taskbar Fighters.lnk` in shell:startup (reused, never duplicated); macOS, the LaunchAgent |
+| `python minis.py zone [show\|edit\|auto\|<left> <right>]` | the fight zone on the taskbar (`zone` in `minis.json`); `edit` opens the drag-to-set editor |
+| `python minis.py results\|cards\|signals on\|off` | the results strip after a match / hover cards / event signals |
+| `python minis.py guide [--first\|--reset]` | the 10-second legend (`--first`: the three first-run cards; `--reset`: show them at the next start) |
+| `python minis.py replay [CODE] [--gif [PATH]] [--final]` / `replay code` | replay the last K.O. (or a fight code) above the taskbar, or render a GIF offline / print the last fight code |
+| `python minis.py book [list] [--fighter NAME]` | the move book / its seen counts |
 | `python minis.py doctor [--headless]` | a report to paste to your AI agent or an issue; `--headless` skips the test window (CI) |
 | `python minis.py director` / `run a\|b` | run the director or one slot in the foreground (debugging) |
 | `python minis.py selftest-gui [--keep]` | real-desktop check: both windows draw over the taskbar and survive a taskbar raise (macOS: frames, no capture) |
@@ -478,7 +554,9 @@ Fighters hide while a fullscreen app is up, while the taskbar is not at the bott
 - **Arena never touches real windows.** It reads window rectangles (`EnumWindows` / `GetWindowRect`), never titles, never sends
   input; cracks and shatters are paint on its own overlay.
 - **Files written:** `%LOCALAPPDATA%\minis\` on Windows, `~/Library/Application Support/minis/` on macOS (bus files,
-  `assign.json`, `control.json`, `record.json`, `history.json`, `seen.json`, pid and lock files, small rotating logs).
+  `assign.json`, `control.json`, `record.json`, `history.json`, `seen.json`, `ux.json`, `replay.json` (the last 12 matches'
+  plans: seeds, character ids, positions, numbers), `collection.json` (move ids seen), pid and lock files, small rotating logs).
+  A GIF goes to your Pictures folder only when you ask for one; `startup on` writes one shortcut (or a LaunchAgent) only then.
 
 ## How it works
 
@@ -528,6 +606,9 @@ minis_platform/   picks minis_win or minis_mac at run time (nothing imports a de
 - Process sources have no numbers, and "working" is a CPU heuristic (the 15% threshold is a first guess).
 - The art is generated by a rig, not hand-drawn; a hand-polish hook exists (`art/hand/<character>/<move>_<frame>.png`).
 - Ideas not built yet: importing Codex pet packs, achievements from `record.json`, landing on title bars in the arena.
+- The replay window and GIFs replay taskbar matches only (not the arena). A fight code made by an older engine version says
+  so when it would play differently. Settings, the move book and the zone editor are tested on Windows; on macOS they run
+  through the same code and are listed for a real-Mac check in docs/MAC-HANDOFF.md (MAC-30 to MAC-37).
 
 Build logs with what was verified and how: [RESULT.md](https://github.com/mrktchris/taskbar-fighters/blob/master/RESULT.md). Version history: [CHANGELOG.md](https://github.com/mrktchris/taskbar-fighters/blob/master/CHANGELOG.md).
 

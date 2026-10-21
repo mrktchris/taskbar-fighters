@@ -2,6 +2,42 @@
 
 Taskbar Fighters (internal short name: minis). Summarised from the git history and the build logs in [RESULT.md](RESULT.md).
 
+## Unreleased
+
+### UX layer - getting around
+
+Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.md](docs/RESEARCH-UX.md)), keeping to its
+"do not do" list: no popups that take focus, no network, no new capture, no guilt or streak pressure.
+
+- **Settings window** (tray > *Settings...*, `minis.py settings`): a pixel-art window of its own with fighter size, plates,
+  flash effects, desktop weapons (default unchanged: real pixels; its help line is amber while on), rival mode, who wins,
+  the results strip, hover cards, event signals, **Start with Windows** (one `Taskbar Fighters.lnk` in shell:startup,
+  an existing one for this copy reused, one for another copy left alone) / **Open at login** (the macOS LaunchAgent), and a
+  **drag-to-set fight zone** over the taskbar (Save / Reset to auto; written to `minis.json`, the fighters restart). Every
+  row is a command too: `settings list|set`, `startup`, `zone`, `results|cards|signals on|off`. A pip install keeps its
+  `minis.json` in the data folder.
+- **First-run guide + legend**: three cards pointing at the real fighter, plates and scoreboard, once (ux.json); tray >
+  *What am I looking at?* / `minis.py guide` shows a 10-second legend.
+- **Hover cards**: rest the mouse on a fighter or plate for the program, its state in words with how long, context, plan,
+  record and head-to-head against the current opponent. Click-through, no focus, no content.
+- **Event signals**: done flag until hovered; needs-you amber halo pulse and a wave; SECOND WIND on a context compaction with
+  the plate meter refilling; DANGER near the limit and FINISH! with the K.O.  Paused / quiet / flash-off keep them still.
+- **Results moment**: a 4-second strip over the scoreboard ("CODEX WINS 2-1 · 21 hits · best combo 5 · ultimate landed"),
+  the winner poses and the loser bows on the taskbar.
+- **Rival countdown** on a sleeping plate ("rival match in ~6 min") and in its hover card.
+- **Instant replay, GIF export and fight codes**: tray > *Replay last K.O.* plays the deciding exchange (K.O. in slow motion)
+  in a window above the taskbar; *Save last fight as GIF* writes the whole match to `Pictures\Taskbar Fighters`; both are
+  offline renders from the stored plan (`replay.json`, numbers and ids only). `minis.py replay code` prints a short code
+  (`TF1-claude-codex-...`: seed, characters, positions, odds as a ratio, outcome check) that `minis.py replay CODE` plays.
+- **Move book** (tray > *Move book...*, `minis.py book`): every move, set piece and finisher per fighter, seen ones animated,
+  unseen as silhouettes; seen move ids in `collection.json`.
+- Tray menu gains Settings..., Move book..., What am I looking at?, Replay last K.O., Save last fight as GIF.
+- New modules: `minis_core/{ux,ux_runtime,ux_cli,settings_ui,guide,hovercard,signals,results,replay,collection}.py`,
+  `minis_win/{ux_window,settings_window,book_window,guide_window,replay_window,startup}.py`, `minis_mac/startup.py`;
+  `tools/ux_previews.py` renders every new window offline; `tests/test_ux.py`.
+- macOS: the same windows through the NSPanel overlay; PgUp/PgDn/Home keys mapped for the book; real-Mac checks are
+  MAC-30 to MAC-37 in docs/MAC-HANDOFF.md.
+
 ## v1.0.0 - 2026-10-16 (V6 -> V8)
 
 The first tagged release: a one-click Windows zip, a wheel on PyPI (`pip install taskbar-fighters`) and an experimental,
