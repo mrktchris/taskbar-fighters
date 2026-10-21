@@ -261,6 +261,10 @@ class InfoShell:
 class Loops(Isolated):
     def setUp(self):
         super().setUp()
+        from unittest import mock
+        p = mock.patch.object(minis.plat, 'is_mac', return_value=False)      # these shells stand in for Windows: on the
+        p.start()                                                            # macOS CI runner the Mac-only placements
+        self.addCleanup(p.stop)                                              # (scoreboard at the screen's right) stay off
         self.t = {'mono': 100.0, 'wall': 1_800_000_000.0}
         director.write_assign({'a': {'source': 'claude', 'character': 'claude', 'program': 'Claude Code'},
                                'b': {'source': 'codex', 'character': 'codex', 'program': 'Codex'}, 'ts': self.t['wall']})
