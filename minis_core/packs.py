@@ -36,7 +36,10 @@ MAX_PNG_BYTES = 4 * 1024 * 1024
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_TEXT_BYTES = 256 * 1024
 MAX_COLORS = 64                                   # per sheet (RGBA): pixel art; the built-in sheets use 24-42
-MAX_COLS, MAX_ROWS = 16, 128
+MAX_COLS, MAX_ROWS = 12, 80                       # built-ins: 8 columns, 68-69 rows
+MAX_SHEET_PIXELS = MAX_COLS * 128 * MAX_ROWS * 128  # one sheet at 128 px: at most 1536 x 10240 (60 MiB decoded as RGBA)
+MAX_DECODED_BYTES = 256 * 1024 * 1024             # every PNG in a pack, decoded as RGBA (a built-in-sized pack: ~180 MiB)
+MAX_PREVIEW = (1200, 1200)
 MAX_RATIO = 200                                   # zip: uncompressed / compressed per entry (a zip bomb is refused)
 TEXT_MAX = {'name': 32, 'display': 24, 'author': 64, 'license': 64, 'version': 16, 'description': 200}
 
@@ -111,21 +114,49 @@ def read_manifest(d) -> dict:
     return m
 
 
-def _png(p, max_colors=MAX_COLORS):
-    """Open one PNG safely (size cap, decompression-bomb guard, real PNG) -> RGBA image."""
+def png_size(p):
+    """(width, height) from a PNG's IHDR chunk - read from the first 24 bytes, nothing decoded.  PackError when the file
+    is not a PNG."""
+    try:
+        with open(p, 'rb') as fh:
+            head = fh.read(24)
+    except OSError as e:
+        raise PackError(f'{Path(p).name}: unreadable ({type(e).__name__})')
+    if len(head) < 24 or head[:8] != b'\x89PNG\r\n\x1a\n' or head[12:16] != b'IHDR':
+        raise PackError(f'{Path(p).name}: not a PNG')
+    return int.from_bytes(head[16:20], 'big'), int.from_bytes(head[20:24], 'big')
+
+
+def check_decoded_budget(d):
+    """Before any PNG of the pack is decoded: every PNG's header size within its cap, and all of them together within
+    MAX_DECODED_BYTES as RGBA.  -> the total decoded bytes."""
+    total = 0
+    for f in sorted(Path(d).rglob('*.png')):
+        w, h = png_size(f)
+        cap = (MAX_PREVIEW[0] * MAX_PREVIEW[1]) if f.name == 'preview.png' else MAX_SHEET_PIXELS
+        if w <= 0 or h <= 0 or w * h > cap or w > MAX_COLS * 128 or h > MAX_ROWS * 128:
+            raise PackError(f'{f.relative_to(d).as_posix()}: {w}x{h} is larger than a pack sheet may be')
+        total += w * h * 4
+    if total > MAX_DECODED_BYTES:
+        raise PackError(f'the pack would take {total // 2 ** 20} MiB of memory decoded (limit {MAX_DECODED_BYTES // 2 ** 20} MiB)')
+    return total
+
+
+def _png(p, max_colors=MAX_COLORS, want=None):
+    """Open one PNG safely -> RGBA image.  The size comes from the header first (`want`: the exact size the anim.json
+    grid demands); only a file that passes is decoded."""
     from PIL import Image
     if p.stat().st_size > MAX_PNG_BYTES:
         raise PackError(f'{p.name}: over {MAX_PNG_BYTES // (1024 * 1024)} MB')
-    with open(p, 'rb') as fh:
-        if fh.read(8) != b'\x89PNG\r\n\x1a\n':
-            raise PackError(f'{p.name}: not a PNG')
+    w, h = png_size(p)
+    if want is not None and (w, h) != tuple(want):
+        raise PackError(f'{p.name}: is {w}x{h}, must be {want[0]}x{want[1]}')
+    if w <= 0 or h <= 0 or w * h > MAX_SHEET_PIXELS or w > MAX_COLS * 128 or h > MAX_ROWS * 128:
+        raise PackError(f'{p.name}: {w}x{h} is outside the allowed size')
     try:
         with Image.open(p) as im:
-            if im.format != 'PNG':
+            if im.format != 'PNG' or im.size != (w, h):
                 raise PackError(f'{p.name}: not a PNG')
-            w, h = im.size
-            if w <= 0 or h <= 0 or w > MAX_COLS * 128 or h > MAX_ROWS * 128:
-                raise PackError(f'{p.name}: {w}x{h} is outside the allowed size')
             im.verify()
         with Image.open(p) as im:
             rgba = im.convert('RGBA')
@@ -153,6 +184,17 @@ def validate_size(d, size) -> dict:
         raise PackError(f'{size}/anim.json is not valid JSON ({type(e).__name__})')
     if not isinstance(meta, dict):
         raise PackError(f'{size}/anim.json must be an object')
+    anims = meta.get('anims')
+    if not isinstance(anims, dict) or not anims:
+        raise PackError(f'{size}/anim.json: "anims" must be an object of moves')
+    for n, a in anims.items():
+        if not isinstance(a, dict):
+            raise PackError(f'{size}/anim.json: move {str(n)[:40]!r} must be an object')
+        if not isinstance(a.get('frames'), list) or not all(isinstance(f, dict) for f in a['frames']):
+            raise PackError(f'{size}/anim.json: move {str(n)[:40]!r} needs a "frames" list of objects')
+    for key in ('signature', 'projectile', 'anchor', 'sheets', 'sheets_unarmed'):
+        if key in meta and meta[key] is not None and not isinstance(meta[key], dict):
+            raise PackError(f'{size}/anim.json: "{key}" must be an object')
     try:
         atlas.validate(meta)
     except atlas.AtlasError as e:
@@ -197,15 +239,15 @@ def validate_size(d, size) -> dict:
     for f in ('sheet.png', 'sheet_l.png'):
         if not (d / f).is_file():
             raise PackError(f'{size}/{f} missing')
-        if _png(d / f).size != want:
-            raise PackError(f'{size}/{f}: must be {want[0]}x{want[1]} ({cols} columns x {rows} rows of {cell} px)')
+        _png(d / f, want=want)                                     # exact grid size from the header, then decoded
     su = meta.get('sheets_unarmed')
     if su is not None:
         if su != {'R': 'sheet_unarmed.png', 'L': 'sheet_unarmed_l.png'}:
             raise PackError(f'{size}/anim.json: "sheets_unarmed" must name sheet_unarmed.png / sheet_unarmed_l.png')
         for f in su.values():
-            if not (d / f).is_file() or _png(d / f).size != want:
-                raise PackError(f'{size}/{f}: missing or not {want[0]}x{want[1]}')
+            if not (d / f).is_file():
+                raise PackError(f'{size}/{f}: missing')
+            _png(d / f, want=want)
     pj = meta.get('projectile')
     if pj:
         if pj.get('file') not in (None, 'proj.png'):
@@ -214,8 +256,9 @@ def validate_size(d, size) -> dict:
             pw, ph, nf = pj.get('w'), pj.get('h'), pj.get('frames', 3)
             if not all(isinstance(v, int) and 0 < v <= 4 * cell for v in (pw, ph)) or not isinstance(nf, int) or not 1 <= nf <= 16:
                 raise PackError(f'{size}/anim.json: projectile w / h / frames out of range')
-            if not (d / 'proj.png').is_file() or _png(d / 'proj.png', 32).size != (pw * nf, ph):
-                raise PackError(f'{size}/proj.png: missing or not {pw * nf}x{ph}')
+            if not (d / 'proj.png').is_file():
+                raise PackError(f'{size}/proj.png: missing')
+            _png(d / 'proj.png', 32, want=(pw * nf, ph))
     if 'fx' in meta:
         raise PackError(f'{size}/anim.json: per-pack effect sheets ("fx") are not supported; remove the key')
     return meta
@@ -252,12 +295,22 @@ def _listing(d):
 
 def validate(d) -> dict:
     """Validate an unpacked pack folder -> {'name', 'id', 'display', 'author', 'license', 'sizes', 'bytes', 'manifest'}.
-    Raises PackError with one plain reason."""
+    Raises PackError with one plain reason - for anything malformed too, never another exception."""
+    try:
+        return _validate(d)
+    except PackError:
+        raise
+    except Exception as e:                                          # a shape nobody anticipated: still a plain refusal
+        raise PackError(f'malformed pack ({type(e).__name__})')
+
+
+def _validate(d) -> dict:
     d = Path(d)
     if not d.is_dir() or d.is_symlink():
         raise PackError('not a folder')
     total = _listing(d)
     m = read_manifest(d)
+    check_decoded_budget(d)
     if not (d / '64').is_dir():
         raise PackError('64/ is required (the 128/ set is optional)')
     sizes = []
@@ -269,7 +322,7 @@ def validate(d) -> dict:
     if '128' in metas and set(metas['128']['anims']) != set(metas['64']['anims']):
         raise PackError('64/ and 128/ must have the same moves')
     if (d / 'preview.png').is_file():
-        _png(d / 'preview.png', 0)
+        _png(d / 'preview.png', 0)                                 # its header was capped by check_decoded_budget
     return dict(name=m['name'], id=char_id(m['name']), display=m['display'].strip(), author=m['author'].strip(),
                 license=m['license'].strip(), version=str(m.get('version') or ''), sizes=sizes, bytes=total, manifest=m)
 
@@ -493,6 +546,9 @@ def cmd(args, out=print):
             return 2
     except PackError as e:
         out(f'refused: {e}')
+        return 1
+    except Exception as e:                                          # never a traceback: say what failed and stop
+        out(f'refused: {type(e).__name__}: {e}')
         return 1
     out('packs: list | install <zip|folder> [--replace] | remove <name> | check <folder> | import-codex <path>')
     return 2

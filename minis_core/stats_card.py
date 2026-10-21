@@ -4,10 +4,11 @@ record" - each program's fighter sprite, W-L, win %, streak, favourite move, bou
 Inputs are record.json, history.json and achievements.json only (achievements.stats).  What reaches the picture: program
 display names (short labels such as "Claude", "Codex"), character sprites drawn from our own sheets, move names from our
 own move list, numbers and dates.  Never a prompt, a window title, a path or a file name.  Nothing is uploaded: the PNG
-is written where you say (default: the data folder; --share: your Pictures folder, which is then opened).
+is written to <data dir>/exports/ (or an existing folder / .png path you type with --out; minis_core/exports.py), and
+--share opens that folder with the card selected.
 """
 from __future__ import annotations
-import datetime, os, subprocess, sys, time
+import datetime, os, time
 from pathlib import Path
 from PIL import Image, ImageDraw
 
@@ -292,53 +293,38 @@ def render(rec, hist=None, ach_path=None, lib=None, label=None, look=None, now=N
     return im.convert('RGB')
 
 
-def pictures_dir() -> Path:
-    p = Path.home() / 'Pictures'
-    return p if p.is_dir() else Path.home()
-
-
 def default_name(now=None) -> str:
     return 'taskbar-fighters-stats-' + datetime.datetime.fromtimestamp(time.time() if now is None else now).strftime('%Y%m%d-%H%M%S') + '.png'
 
 
-def build(out=None, share=False, now=None, lib=None):
-    """Render from the live record and write it.  -> the written Path."""
-    from . import config as cfgmod, history, records
+def build(out=None, now=None, lib=None):
+    """Render from the live record and write it where exports.resolve says: <data dir>/exports/ by default, or the
+    existing folder / .png path the user typed.  -> the written Path (raises exports.ExportPathError for anything else)."""
+    from . import exports, history, records
     from . import control, director, lineup
+    target = exports.resolve(out, default_name(now))
     try:
         lu, data = control.lineup(), director.read_assign() or {}
         look = lambda sid: lineup.look_of(sid, lu, data)            # noqa: E731  (the look the owner picked, if any)
     except Exception:
         look = None
     img = render(records.read(), history.read(), lib=lib, look=look, now=now)
-    if out:
-        target = Path(out)
-    else:
-        target = (pictures_dir() if share else cfgmod.data_dir()) / default_name(now)
-    if target.suffix.lower() != '.png':
-        target = target.with_suffix('.png')
-    target.parent.mkdir(parents=True, exist_ok=True)
     img.save(target, optimize=True)
     return target
 
 
 def reveal(path):
-    """Open the folder holding `path` with the file selected (Explorer / Finder).  Never under tests."""
-    if os.environ.get('MINIS_TESTING'):
-        return False
-    p = str(Path(path).resolve())
-    if sys.platform == 'win32':
-        subprocess.Popen(['explorer', '/select,', p])
-    elif sys.platform == 'darwin':
-        subprocess.Popen(['open', '-R', p])
-    else:
-        return False
-    return True
+    from . import exports
+    return exports.reveal(path)
 
 
 def cmd(args, out=print):
-    from . import records
-    target = build(getattr(args, 'out', None), share=bool(getattr(args, 'share', False)))
+    from . import exports, records
+    try:
+        target = build(getattr(args, 'out', None))
+    except exports.ExportPathError as e:
+        out(f'stats card: refused: {e}')
+        return 2
     out(f'stats card: {target}')
     for ln in ACH.career_lines(records.read()):
         out(ln)
@@ -348,7 +334,8 @@ def cmd(args, out=print):
 
 
 def share_async(spawn, argv_fn):
-    """The menus' "Share my stats card…": render in a child process (`card --share`) so no window loop stalls."""
+    """The menus' "Share my stats card…": render in a child process (`card --share`: <data dir>/exports/, then that
+    folder opens with the card selected) so no window loop stalls."""
     if os.environ.get('MINIS_TESTING'):
         return False
     spawn(argv_fn('card', '--share'))

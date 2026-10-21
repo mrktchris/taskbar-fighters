@@ -185,6 +185,7 @@ class Card(Isolated):
     def test_build_writes_where_asked_and_badges_cover_every_icon(self):
         from minis_core import stats_card
         records.record('claude', 'codex', now=1.0, score=(2, 0))
+        (self.data / 'cards').mkdir()
         out = self.data / 'cards' / 'mine.png'
         self.assertEqual(stats_card.build(out), out)
         self.assertTrue(out.is_file())
@@ -515,6 +516,305 @@ class Menus(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm, mock.patch('sys.stdout'):
                 minis.main(argv)
             self.assertEqual(cm.exception.code, 0)
+
+
+# ---------------------------------------------------------------- review fixes (Codex review of `growth`, 2026-10-21)
+class Exports(Isolated):
+    """Item 2: pictures go to <data dir>/exports/ unless the user names an existing folder or a .png in one."""
+
+    def test_default_is_the_data_folders_exports_and_nothing_lands_in_pictures(self):
+        from minis_core import exports, stats_card
+        home = Path(tempfile.mkdtemp(prefix='fakehome-'))
+        self.addCleanup(shutil.rmtree, home, True)
+        (home / 'Pictures').mkdir()
+        records.record('claude', 'codex', now=1.0, score=(2, 0))
+        with mock.patch.object(Path, 'home', lambda: home):
+            p = stats_card.build()
+            out = []
+            self.assertEqual(stats_card.cmd(SimpleNamespace(out=None, share=True), out=out.append), 0)
+        self.assertEqual(p.parent, self.data / 'exports')
+        self.assertEqual(list((home / 'Pictures').iterdir()), [])
+        self.assertTrue(out[0].startswith('stats card: ' + str(self.data / 'exports')))
+
+    def test_explicit_paths_must_be_an_existing_folder_or_a_png_in_one(self):
+        from minis_core import exports, stats_card
+        records.record('claude', 'codex', now=1.0, score=(2, 0))
+        target = self.data / 'mine'
+        target.mkdir()
+        self.assertEqual(stats_card.build(target).parent, target)
+        self.assertEqual(stats_card.build(target / 'x.png'), target / 'x.png')
+        for bad in (self.data / 'nope' / 'x.png', self.data / 'mine' / 'x.txt', self.data / 'nope'):
+            with self.assertRaises(exports.ExportPathError, msg=str(bad)):
+                stats_card.build(bad)
+        self.assertFalse((self.data / 'nope').exists())                                # no folder is ever created
+        out = []
+        self.assertEqual(stats_card.cmd(SimpleNamespace(out=str(self.data / 'nope' / 'x.png'), share=False), out=out.append), 2)
+        self.assertIn('refused', out[0])
+
+    def test_stream_snapshot_uses_its_own_request_and_the_exports_folder(self):
+        from minis_core import dump, stream
+        from PIL import Image
+        dump.reset()
+        folder = dump.dump_root() / stream.SNAP_ID
+        folder.mkdir(parents=True)
+        for role, x in (('a', 10), ('b', 40)):
+            Image.new('RGBA', (8, 6), (255, 0, 0, 255)).save(folder / f'{role}-1.png')
+            (folder / f'{role}-1.json').write_text(json.dumps({'role': role, 'id': 'snapshot', 'wall': 1.0, 'x': x, 'y': 5, 'w': 8,
+                                                              'h': 6, 'visible': True, 'png': f'{role}-1.png'}))
+        clock = iter(range(100))
+        p = stream.snapshot(None, seconds=1.0, wall=lambda: float(next(clock)) * 0.5, sleep=lambda s: None)
+        self.assertEqual(p.parent, self.data / 'exports')
+        self.assertTrue(p.is_file())
+        self.assertFalse(dump.request_path().exists())                                 # its own request is dropped again
+        with self.assertRaises(Exception):
+            stream.snapshot(self.data / 'nowhere' / 's.png', seconds=0.0)
+
+
+class ExamplePackName(unittest.TestCase):
+    """Item 3: `--name ..` used to rmtree the --out folder's parent before validating the name."""
+
+    def test_bad_names_never_touch_the_filesystem(self):
+        sys.path.insert(0, str(ROOT / 'tools'))
+        import make_example_pack as M
+        sb = Path(tempfile.mkdtemp(prefix='minis-sandbox-'))
+        self.addCleanup(shutil.rmtree, sb, True)
+        (sb / 'out').mkdir()
+        (sb / 'canary.txt').write_text('keep')
+        for bad in ('..', '.', '../x', 'a/b', 'A', '', 'x' * 40, '..\\x'):
+            with self.assertRaises(SystemExit, msg=bad):
+                M.main(['--out', str(sb / 'out'), '--name', bad, '--no-hd'])
+        self.assertTrue((sb / 'canary.txt').is_file())
+        self.assertEqual(M.target_dir(sb / 'out', 'ok-name'), (sb / 'out' / 'ok-name').resolve())
+
+    def test_an_existing_non_pack_folder_is_not_replaced(self):
+        sys.path.insert(0, str(ROOT / 'tools'))
+        import make_example_pack as M
+        sb = Path(tempfile.mkdtemp(prefix='minis-sandbox-'))
+        self.addCleanup(shutil.rmtree, sb, True)
+        (sb / 'mine').mkdir()
+        (sb / 'mine' / 'photo.png').write_bytes(b'x')
+        with self.assertRaises(SystemExit):
+            M.main(['--out', str(sb), '--name', 'mine', '--no-hd'])
+        self.assertTrue((sb / 'mine' / 'photo.png').is_file())
+
+
+def _bomb_png(path, w, h):
+    """A valid, tiny-on-disk PNG of w x h (one colour): a decoded-size bomb."""
+    import struct, zlib
+    raw = zlib.compress(b''.join(b'\x00' + bytes(w * 4) for _ in range(h)), 9)
+
+    def chunk(t, data):
+        return struct.pack('>I', len(data)) + t + data + struct.pack('>I', zlib.crc32(t + data) & 0xffffffff)
+    path.write_bytes(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 6, 0, 0, 0)) + chunk(b'IDAT', raw)
+                     + chunk(b'IEND', b''))
+
+
+class PackHardening(Isolated):
+    """Items 4 and 6: decoded-size caps from the PNG header, and malformed metadata always a plain PackError."""
+
+    def setUp(self):
+        super().setUp()
+        from minis_core import packs
+        self.P = packs
+        self.src = Path(tempfile.mkdtemp(prefix='minis-pack-src-'))
+        self.addCleanup(shutil.rmtree, self.src, True)
+
+    def test_a_decoded_size_bomb_is_refused_from_its_header_without_decoding(self):
+        d = make_pack(self.src)
+        _bomb_png(d / 'preview.png', 2048, 16384)                                      # 128 MiB decoded, ~130 KB on disk
+        self.assertLess((d / 'preview.png').stat().st_size, 200_000)
+        with mock.patch('PIL.Image.open', side_effect=AssertionError('decoded')):
+            with self.assertRaises(self.P.PackError) as cm:
+                self.P.validate(d)
+        self.assertIn('larger than a pack sheet may be', str(cm.exception))
+
+    def test_sheet_must_match_the_grid_before_it_is_decoded(self):
+        d = make_pack(self.src)
+        _bomb_png(d / '64' / 'sheet_l.png', 512, 64)
+        with self.assertRaises(self.P.PackError) as cm:
+            self.P.validate(d)
+        self.assertIn('must be 512x', str(cm.exception))
+
+    def test_the_pack_total_is_capped(self):
+        with mock.patch.object(self.P, 'MAX_DECODED_BYTES', 10 * 2 ** 20):
+            with self.assertRaises(self.P.PackError) as cm:
+                self.P.validate(make_pack(self.src))
+        self.assertIn('MiB of memory decoded', str(cm.exception))
+
+    def test_malformed_metadata_is_a_plain_refusal_never_a_traceback(self):
+        def breaker(fn):
+            def m(meta, d):
+                fn(meta)
+            return m
+        cases = {
+            'idle null': lambda meta: meta['anims'].__setitem__('idle', None),
+            'frames not a list': lambda meta: meta['anims']['jab'].__setitem__('frames', 7),
+            'frame not an object': lambda meta: meta['anims']['jab'].__setitem__('frames', [3]),
+            'anims a list': lambda meta: meta.__setitem__('anims', []),
+            'signature a list': lambda meta: meta.__setitem__('signature', ['x']),
+            'projectile a string': lambda meta: meta.__setitem__('projectile', 'proj.png'),
+            'anchor null': lambda meta: meta.__setitem__('anchor', None),
+            'cols a string': lambda meta: meta.__setitem__('cols', '8'),
+        }
+        for why, fn in cases.items():
+            d = make_pack(self.src / why.replace(' ', '_'), mutate=breaker(fn))
+            with self.assertRaises(self.P.PackError, msg=why):
+                self.P.validate(d)
+            out = []
+            self.assertEqual(self.P.cmd(SimpleNamespace(action='check', path=str(d)), out=out.append), 1, why)
+            self.assertTrue(out[0].startswith('refused:'), (why, out))
+
+    def test_any_unexpected_error_inside_validation_becomes_a_pack_error(self):
+        d = make_pack(self.src)
+        with mock.patch.object(self.P, 'read_manifest', side_effect=KeyError('surprise')):
+            with self.assertRaises(self.P.PackError) as cm:
+                self.P.validate(d)
+        self.assertIn('malformed pack (KeyError)', str(cm.exception))
+
+
+class StreamLock(Isolated):
+    """Item 5: one stream at a time, decided by an O_EXCL lock file before anything is spawned."""
+
+    def setUp(self):
+        super().setUp()
+        from minis_core import stream
+        self.S = stream
+
+    def _args(self):
+        return SimpleNamespace(action='on', chroma=None, scale=None, fps=None, width=None, height=None, transparent=False, no_plates=False)
+
+    def test_two_quick_starts_spawn_one_stream(self):
+        spawned = []
+
+        def spawn(argv):
+            spawned.append(argv)
+            return SimpleNamespace(pid=900001 + len(spawned))                          # its heartbeat is not written yet
+        env = {k: v for k, v in os.environ.items() if k != 'MINIS_TESTING'}
+        with mock.patch.dict(os.environ, env, clear=True):
+            rcs = [self.S.cmd(self._args(), spawn=spawn, self_argv=lambda *t: list(t), alive=lambda pid: True, out=lambda s: None)
+                   for _ in range(2)]
+        self.assertEqual(rcs, [0, 1])
+        self.assertEqual(len(spawned), 1)
+        self.assertEqual(self.S.lock_owner(), 900002)                                  # handed to the child
+
+    def test_lock_ownership_stale_takeover_and_release(self):
+        S = self.S
+        self.assertTrue(S.acquire_lock(11, alive=lambda p: True))
+        self.assertFalse(S.acquire_lock(22, alive=lambda p: True))                     # a live owner keeps it
+        self.assertTrue(S.acquire_lock(22, alive=lambda p: p != 11))                   # a dead owner's lock is stale
+        self.assertFalse(S.release_lock(11))                                           # only the owner removes it
+        self.assertEqual(S.lock_owner(), 22)
+        self.assertTrue(S.hand_lock(22, 33))
+        self.assertFalse(S.hand_lock(22, 44))
+        self.assertTrue(S.claim_for_run(33, 22, alive=lambda p: True))
+        self.assertFalse(S.claim_for_run(55, 22, alive=lambda p: True))                # another live stream: refused
+        self.assertTrue(S.release_lock(33))
+        self.assertIsNone(S.lock_owner())
+
+    def test_a_second_run_never_touches_the_first_ones_state(self):
+        S = self.S
+        self.assertTrue(S.acquire_lock(424242, alive=lambda p: True))
+        from minis_core.bus import write_json_atomic
+        write_json_atomic(S.state_path(), {'pid': 424242, 'active': True, 'ts': 1e12})
+        made = []
+        rc = S.run({'alive': lambda p: True}, window_mod=SimpleNamespace(StreamWindow=lambda *a, **k: made.append(1)))
+        self.assertEqual(rc, 1)
+        self.assertEqual(made, [])                                                     # no window was even opened
+        self.assertEqual(S.read_state()['pid'], 424242)
+        self.assertEqual(S.lock_owner(), 424242)
+
+
+class StreamStop(Isolated):
+    """Item 9: a stop request that arrives while the loop runs ends it, and the state says why."""
+
+    def test_stop_request_mid_loop_ends_the_loop(self):
+        from minis_core import stream as S
+        frames = []
+        t = [1000.0]
+
+        def wall():
+            t[0] += 0.4
+            return t[0]
+
+        class FakeWin:
+            def __init__(self, *a, **k):
+                self.closed = False
+
+            def pump(self):
+                return True
+
+            def client_size(self):
+                return 64, 32
+
+            def present(self, img):
+                frames.append(img.size)
+                if len(frames) == 3:
+                    S.request_stop(now=t[0])                                         # `stream off` while it runs
+
+            def wait(self, s):
+                pass
+
+            def close(self):
+                self.closed = True
+        rc = S.run({'fps': 30}, window_mod=SimpleNamespace(StreamWindow=FakeWin), wall=wall, max_frames=500)
+        self.assertEqual(rc, 0)
+        self.assertLess(len(frames), 10)
+        self.assertEqual(S.read_state()['ended'], 'stop')
+        self.assertIsNone(S.lock_owner())
+
+
+@unittest.skipUnless(sys.platform == 'win32', 'Win32 only')
+class RealStreamWindow(Isolated):
+    """Item 1: the real Win32 stream window draws what it is given.  Read back from OUR window's own DC only."""
+
+    def test_present_paints_the_frame_and_the_pixels_read_back(self):
+        from minis_win import stream_window as W
+        from PIL import Image
+        win = W.StreamWindow('minis-test-stream', 240, 80, show_cmd=4)
+        try:
+            cw, ch = win.client_size()                                                 # Windows may widen a tiny window
+            for colour in ((0, 255, 0), (255, 0, 255)):
+                frame = Image.new('RGBA', (cw, ch), colour + (255,))
+                frame.paste(Image.new('RGBA', (20, 10), (200, 30, 40, 255)), (30, 20))
+                for _ in range(3):
+                    win.pump()
+                    self.assertTrue(win.present(frame))
+                px = win.client_pixels()
+                self.assertIsNotNone(px)
+                self.assertEqual(px.size, (cw, ch))
+                self.assertEqual(px.getpixel((2, 2)), colour)
+                self.assertEqual(px.getpixel((35, 24)), (200, 30, 40))
+        finally:
+            win.close()
+
+    def test_the_stream_loop_through_the_real_window(self):
+        from minis_core import dump, stream as S
+        from minis_win import stream_window as W
+        from PIL import Image
+        dump.reset()
+        folder = dump.dump_root() / S.REQ_ID
+        folder.mkdir(parents=True)
+        Image.new('RGBA', (8, 6), (200, 30, 40, 255)).save(folder / 'a-1.png')
+        (folder / 'a-1.json').write_text(json.dumps({'role': 'a', 'id': 'stream', 'wall': 1.0, 'x': 0, 'y': 0, 'w': 8, 'h': 6,
+                                                    'visible': True, 'png': 'a-1.png'}))
+        seen = []
+
+        class Win(W.StreamWindow):
+            def __init__(self, *a, **k):
+                super().__init__(*a, show_cmd=4, **k)
+
+            def present(self, img):
+                ok = super().present(img)
+                seen.append((ok, self.client_pixels(), img.convert('RGB')))
+                return ok
+        S.run({'fps': 30, 'width': 120, 'height': 60}, window_mod=SimpleNamespace(StreamWindow=Win), max_frames=4)
+        self.assertEqual(len(seen), 4)
+        for ok, px, want in seen:
+            self.assertTrue(ok)
+            self.assertEqual(px.size, want.size)
+            self.assertEqual(px.getpixel((0, 0)), (0, 255, 0))                           # the key colour
+            c = (want.width // 2, want.height // 2)
+            self.assertEqual(px.getpixel(c), want.getpixel(c))                         # the fighter's pixels, scaled
 
 
 if __name__ == '__main__':

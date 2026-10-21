@@ -143,13 +143,13 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
 
 - [ ] **MAC-24 (2026-10-21) Stats card, achievements toast, careers (branch `growth`).**
   - PC change: `python minis.py card [--share]` renders a 1200 x 675 PNG (Pillow; fonts via `render.font`, Arial on macOS);
-    `--share` saves to `~/Pictures` and runs `open -R <file>`; the fighter right-click menu and the menu-bar menu have
+    the card goes to `~/Library/Application Support/minis/exports/` and `--share` runs `open -R <file>`; the fighter right-click menu and the menu-bar menu have
     *Share my stats card…*. A new achievement shows as a 3 s toast in the scoreboard's second row (drawn at the HUD
     density, 2x on Retina).
   - Test: `python minis.py card --out /tmp/card.png` and open it; the menu item once; `python minis.py achievements`;
     `python minis.py demo match` until a toast appears (a first KO or a clean sweep on a fresh data folder).
   - Expected: card text fits its boxes with the macOS fonts (names, "HEAD TO HEAD" lines, badge names under the
-    medallions); Finder opens Pictures with the card selected; the toast's star and text are sharp at 2x.
+    medallions); Finder opens the exports folder with the card selected; the toast's star and text are sharp at 2x.
 
 - [ ] **MAC-25 (2026-10-21) Skin packs folder and the new process names (branch `growth`).**
   - PC change: packs install into `~/Library/Application Support/minis/packs/<name>/` and appear in fighter select as

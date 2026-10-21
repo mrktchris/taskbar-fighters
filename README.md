@@ -328,9 +328,10 @@ uses), never a screen capture, and desktop weapons are switched off while you st
 
 <sub>DEMO numbers (`python tools/card_preview.py`).</sub>
 
-- `python minis.py card` writes a 1200 x 675 PNG of your agents' record (to the data folder, or `--out path`; `--share`
-  saves it to Pictures and opens the folder, as does the menu's *Share my stats card…*), then prints each program's career
-  and the head-to-head records ("Claude vs Codex 34-29 (last 10: 6-4)").
+- `python minis.py card` writes a 1200 x 675 PNG of your agents' record into the data folder's `exports\` (or into an
+  existing folder / a `.png` path you name with `--out`), then prints each program's career and the head-to-head records
+  ("Claude vs Codex 34-29 (last 10: 6-4)"). `--share`, and the menu's *Share my stats card…*, then open that folder with
+  the card selected.
 - **Careers**: lifetime W-L, win %, current and best streak, KOs, flawless rounds, comebacks, ultimates, favourite move.
   **Ranks** (Bronze, Silver, Gold, Master, Legend) follow lifetime wins, so they only ever climb.
 - **Achievements**: `python minis.py achievements` lists all 22 with what each takes and how far you are; none is secret.
@@ -481,7 +482,7 @@ Every command below was checked against `python minis.py --help` and each subcom
 | `python minis.py print-startup` | print (never run) the commands to start at logon (macOS: the LaunchAgent plist) |
 | `python minis.py autostart on\|off\|status` | macOS only: start at login with a LaunchAgent (written only when you run `on`) |
 | `python minis.py size 64\|96\|128` | fighter height in px (default 128, HD art); running fighters restart to apply it |
-| `python minis.py stream on\|off\|status` / `stream snapshot <png>` | streamer mode: an OBS-friendly window with the live fight ([docs/STREAMING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/STREAMING.md)) |
+| `python minis.py stream on\|off\|status` / `stream snapshot [png\|folder]` | streamer mode: an OBS-friendly window with the live fight ([docs/STREAMING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/STREAMING.md)) |
 | `python minis.py card [--out path] [--share]` | the 1200 x 675 stats card, then careers and head-to-head records |
 | `python minis.py achievements` | every achievement, what it takes and how far you are |
 | `python minis.py packs list\|install <zip\|folder>\|remove <name>\|check <folder>` | community skin packs ([docs/SKIN-PACKS.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/SKIN-PACKS.md)) |
@@ -559,8 +560,12 @@ Fighters hide while a fullscreen app is up, while the taskbar is not at the bott
   input; cracks and shatters are paint on its own overlay.
 - **Files written:** `%LOCALAPPDATA%\minis\` on Windows, `~/Library/Application Support/minis/` on macOS (bus files,
   `assign.json`, `control.json`, `record.json`, `history.json`, `seen.json`, `achievements.json`, `stream.json`, pid and
-  lock files, small rotating logs, and `packs/` for skin packs you install). The stats card goes where you ask
-  (default: the data folder; `--share`: Pictures).
+  lock files, small rotating logs, `packs/` for skin packs you install, and `exports/` for the stats card and stream
+  snapshots).
+- **Exports stay in the data folder unless you name a place.** `card` and `stream snapshot` write to `exports/` inside the
+  data folder. With `--out` (card) or a path (snapshot) you can name an existing folder, or a `.png` file in an existing
+  folder; anything else is refused, no folder is created outside the data folder, and nothing is ever written to
+  Pictures, the Desktop or your home folder on its own. *Share my stats card…* writes to `exports/` and opens it.
 
 ## How it works
 

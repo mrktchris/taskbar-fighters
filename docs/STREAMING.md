@@ -16,7 +16,7 @@ path the stream window uses. It is not a screen capture.</sub>
 | `python minis.py stream on` | open the stream window (a background process; the fighters must be running) |
 | `python minis.py stream off` | close it (or close the window yourself) |
 | `python minis.py stream status` | is it running, which key colour |
-| `python minis.py stream snapshot out.png` | one frame of exactly what the window shows, written to a file |
+| `python minis.py stream snapshot [out.png \| folder]` | one frame of exactly what the window shows: to `<data folder>/exports/`, or to an existing folder / a `.png` in one that you name |
 
 Options for `stream on` (and `snapshot`):
 

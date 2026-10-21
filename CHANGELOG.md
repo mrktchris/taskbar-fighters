@@ -10,7 +10,8 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
   Built from the processes' own window images through the existing self-dump (`minis_core/dump.py`), never a screen
   capture; desktop weapons are switched off while streaming. `minis_core/stream.py`, `minis_win/stream_window.py`,
   `minis_mac/stream_window.py` (experimental), [docs/STREAMING.md](docs/STREAMING.md), `tools/stream_preview.py`.
-- **Stats card** (`python minis.py card [--out] [--share]`, menus *Share my stats card…*): a 1200 x 675 PNG with each
+- **Stats card** (`python minis.py card [--out] [--share]`, menus *Share my stats card…*; written to
+  `<data folder>/exports/` unless you name an existing folder or a `.png` in one): a 1200 x 675 PNG with each
   program's sprite, rank, W-L, win %, streak, favourite move and head-to-head, an identity line ("Your main: CLAUDE ·
   34-29 vs Codex"), and every achievement badge. `minis_core/stats_card.py`, `tools/card_preview.py`.
 - **Careers, head-to-head and ranks**: lifetime per-program totals and per-pair records in `record.json`
@@ -28,6 +29,13 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
   (`pack.json` + 64 / 128 px sheets), strict validation and safe zip install, shown in fighter select as `pack-<name>`;
   `tools/make_example_pack.py`. [docs/SKIN-PACKS.md](docs/SKIN-PACKS.md). Codex pet import is documented as future work
   (its format is not knowable offline).
+
+- **Review fixes (Codex review of `growth`).** Exports (card, stream snapshot) default to `<data folder>/exports/` and
+  only go elsewhere to an existing folder or `.png` path you name; `stream on` takes an O_EXCL `stream.lock` before it
+  spawns, so two quick starts open one stream, and a stream only ever closes out its own state; pack PNGs are capped by
+  their header size before decoding (per sheet and 256 MiB per pack); malformed pack metadata is always a plain refusal;
+  `tools/make_example_pack.py` validates `--name` before touching any folder; the Win32 stream window passes an owned
+  pixel buffer and is tested by reading back its own pixels.
 
 ## v1.0.0 - 2026-10-16 (V6 -> V8)
 

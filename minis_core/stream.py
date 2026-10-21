@@ -64,8 +64,9 @@ def parse_color(s):
 class Feed:
     """Owns the `stream` dump request and reads the newest record of every role.  root: the dump root (tests)."""
 
-    def __init__(self, root=None, every_ms=None, wall=time.time, roles=ROLES):
+    def __init__(self, root=None, every_ms=None, wall=time.time, roles=ROLES, req_id=REQ_ID):
         self.root = Path(root) if root else dump.dump_root()
+        self.req_id = req_id                                      # 'stream' for the window, 'snapshot' for a one-off frame
         self.every_ms = int(every_ms or 1000 / DEFAULT_FPS)
         self.wall = wall
         self.roles = tuple(roles)
@@ -83,25 +84,25 @@ class Feed:
         """Write / refresh our request unless another one (own_capture) is active.  -> the id whose folder to read."""
         now = self.wall() if now is None else now
         cur = dump.parse_request(self._read_req(), now)
-        if cur is not None and cur['id'] != REQ_ID:
+        if cur is not None and cur['id'] != self.req_id:
             self.foreign = cur['id']
             return cur['id']
         self.foreign = None
         if cur is None or cur['until'] - now < REQ_SPAN_S / 2:
             self.root.mkdir(parents=True, exist_ok=True)
-            write_json_atomic(dump.request_path(self.root), {'id': REQ_ID, 'until': now + REQ_SPAN_S, 'every_ms': self.every_ms})
+            write_json_atomic(dump.request_path(self.root), {'id': self.req_id, 'until': now + REQ_SPAN_S, 'every_ms': self.every_ms})
             self.req_until = now + REQ_SPAN_S
-        return REQ_ID
+        return self.req_id
 
     def release(self):
         """Drop our request (only ours) and our folder."""
         cur = self._read_req()
-        if isinstance(cur, dict) and cur.get('id') == REQ_ID:
+        if isinstance(cur, dict) and cur.get('id') == self.req_id:
             try:
                 dump.request_path(self.root).unlink()
             except OSError:
                 pass
-        d = dump.safe_dir(self.root, REQ_ID)
+        d = dump.safe_dir(self.root, self.req_id)
         if d is not None:
             shutil.rmtree(d, ignore_errors=True)
 
@@ -130,7 +131,7 @@ class Feed:
                 recs[r['role']] = r
             else:
                 olds.append(r)
-        if rid == REQ_ID:                                         # our folder: keep only what the newest records need
+        if rid == self.req_id:                                         # our folder: keep only what the newest records need
             keep = {r.get('png') for r in recs.values()}
             for r in olds:
                 for f in (r['_file'], d / str(r.get('png') or '')):
@@ -276,6 +277,92 @@ def stop_requested(since, path=None) -> bool:
         return False
 
 
+# ---------------------------------------------------------------- one stream at a time (stream.lock)
+def lock_path() -> Path:
+    return cfgmod.data_dir() / 'stream.lock'
+
+
+def lock_owner(path=None):
+    try:
+        return int(json.loads(Path(path or lock_path()).read_text(encoding='utf-8'))['pid'])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _default_alive(pid):
+    try:
+        import minis_platform as plat
+        return bool(plat.procs().alive(pid))
+    except Exception:
+        return True                                               # cannot tell: treat the lock as held (never steal it)
+
+
+def acquire_lock(pid, alive=None, path=None) -> bool:
+    """Create stream.lock atomically (O_CREAT | O_EXCL) holding `pid`.  A lock whose pid is no longer alive is stale and
+    is replaced once; a live owner keeps it.  -> True when `pid` now owns the lock."""
+    lp = Path(path or lock_path())
+    alive = alive or _default_alive
+    for _ in range(2):
+        try:
+            fd = os.open(str(lp), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            other = lock_owner(lp)
+            if other == pid:
+                return True
+            if other is not None and alive(other):
+                return False
+            try:
+                lp.unlink()                                       # stale: its owner is gone (or the file is unreadable)
+            except OSError:
+                return False
+            continue
+        with os.fdopen(fd, 'w', encoding='utf-8') as fh:
+            fh.write(json.dumps({'pid': int(pid)}))
+        return True
+    return False
+
+
+def hand_lock(from_pid, to_pid, path=None) -> bool:
+    """`stream on` acquires the lock, spawns `stream run`, then hands the lock to the child's pid."""
+    lp = Path(path or lock_path())
+    if lock_owner(lp) != from_pid:
+        return False
+    return write_json_atomic(lp, {'pid': int(to_pid)})
+
+
+def release_lock(pid, path=None) -> bool:
+    """Remove stream.lock only when `pid` owns it."""
+    lp = Path(path or lock_path())
+    if lock_owner(lp) != pid:
+        return False
+    try:
+        lp.unlink()
+        return True
+    except OSError:
+        return False
+
+
+def claim_for_run(pid, parent, alive=None, wait=time.sleep, tries=20):
+    """The `stream run` process: own the lock, or take it over from the parent `stream on` that is handing it over.
+    -> True when this process may run."""
+    alive = alive or _default_alive
+    for _ in range(tries):
+        owner = lock_owner()
+        if owner is None:
+            if acquire_lock(pid, alive):
+                return True
+        elif owner == pid:
+            return True
+        elif owner == parent:
+            wait(0.1)                                             # the parent writes our pid in a moment
+        elif not alive(owner):
+            if acquire_lock(pid, alive):
+                return True
+        else:
+            return False
+    return lock_owner() == pid or (lock_owner() == parent and hand_lock(parent, pid))
+
+
 # ---------------------------------------------------------------- the stream process
 def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=None, log=None):
     """The `stream run` body: open the window, feed it frames until it is closed or `stream off` asks.  -> exit code."""
@@ -285,6 +372,10 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
         import importlib
         import minis_platform as plat
         window_mod = importlib.import_module(plat.package() + '.stream_window')
+    me = os.getpid()
+    if not claim_for_run(me, os.getppid(), alive=opts.get('alive')):
+        log.info('stream: another stream owns stream.lock (pid %s); not starting', lock_owner())
+        return 1
     roles = tuple(r for r in ROLES if not (opts.get('no_plates') and r in PLATE_ROLES))
     fps = max(2.0, min(30.0, float(opts.get('fps') or DEFAULT_FPS)))
     feed = Feed(every_ms=int(1000 / fps), wall=wall, roles=roles)
@@ -292,7 +383,11 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
     transparent = bool(opts.get('transparent'))
     strip = Strip(roles, opaque_hud=not transparent)
     scale = int(opts['scale']) if opts.get('scale') else None
-    win = window_mod.StreamWindow(TITLE, opts.get('width') or 960, opts.get('height') or 300, transparent=transparent, bg=bg)
+    try:
+        win = window_mod.StreamWindow(TITLE, opts.get('width') or 960, opts.get('height') or 300, transparent=transparent, bg=bg)
+    except Exception:
+        release_lock(me)
+        raise
     started = wall()
     sp = state_path()
     st = dict(pid=os.getpid(), active=True, started=started, ts=started, chroma='#%02X%02X%02X' % bg, transparent=transparent,
@@ -301,16 +396,19 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
     shutil.rmtree(dump.dump_root() / REQ_ID, ignore_errors=True)  # leftovers of a stream that died
     n = 0
     last_beat = -1e9
+    ended = 'error'
     try:
         while True:
             t0 = mono()
             if not win.pump() or win.closed:
+                ended = 'closed'
                 break
             now = wall()
             if now - last_beat >= HEARTBEAT_S:
                 last_beat = now
                 if stop_requested(started):
                     log.info('stream: stop requested')
+                    ended = 'stop'
                     break
                 write_json_atomic(sp, dict(st, ts=now))
             rid = feed.ensure_request(now)
@@ -321,6 +419,7 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
             win.present(frame)
             n += 1
             if max_frames is not None and n >= max_frames:
+                ended = 'frames'
                 break
             win.wait(max(0.0, 1.0 / fps - (mono() - t0)))
     finally:
@@ -329,8 +428,9 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
             win.close()
         except Exception:
             pass
-        end = read_state(sp)
-        write_json_atomic(sp, dict(end, active=False, ts=wall(), pid=os.getpid()))
+        if read_state(sp).get('pid') == me:                         # only our own state is closed out
+            write_json_atomic(sp, dict(read_state(sp), active=False, ts=wall(), ended=ended))
+        release_lock(me)
         if opts.get('forge_was') == 'on':                         # closed by its own button: desktop weapons come back too
             try:
                 from . import control
@@ -341,12 +441,18 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
     return 0
 
 
-def snapshot(out_path, seconds=2.0, opts=None, wall=time.time, sleep=time.sleep):
+SNAP_ID = 'snapshot'
+
+
+def snapshot(out_path=None, seconds=2.0, opts=None, wall=time.time, sleep=time.sleep):
     """One composited frame to a PNG, at the strip's natural size x scale (default 2) on the key colour, from the fighters'
-    own images (they must be running).  -> the Path, or None when no window answered in `seconds`."""
+    own images (they must be running).  out_path follows exports.resolve (default <data dir>/exports/).  It uses its own
+    dump request id, so it never touches a running stream's folder.  -> the Path, or None when no window answered."""
+    from . import exports
+    target = exports.resolve(out_path, 'taskbar-fighters-stream-' + time.strftime('%Y%m%d-%H%M%S') + '.png')
     opts = opts or {}
     roles = tuple(r for r in ROLES if not (opts.get('no_plates') and r in PLATE_ROLES))
-    feed = Feed(wall=wall, roles=roles)
+    feed = Feed(wall=wall, roles=roles, req_id=SNAP_ID)
     strip = Strip(roles, opaque_hud=not opts.get('transparent'))
     bg = tuple(opts.get('chroma') or DEFAULT_CHROMA)
     img = None
@@ -355,7 +461,7 @@ def snapshot(out_path, seconds=2.0, opts=None, wall=time.time, sleep=time.sleep)
         end = wall() + seconds
         while wall() < end:
             rid = feed.ensure_request() if own else REQ_ID
-            recs = feed.records(rid)
+            recs = feed.records(rid) if own else Feed(roles=roles, req_id='-').records(rid)   # never prunes the stream's files
             got = strip.compose(recs, lambda r: feed.image(rid, r))
             if got is not None and len(recs) >= 2:
                 img = got
@@ -367,10 +473,8 @@ def snapshot(out_path, seconds=2.0, opts=None, wall=time.time, sleep=time.sleep)
         return None
     k = int(opts.get('scale') or 2)
     frame, _ = fit(img, img.width * k + 32, img.height * k + 32, bg, bool(opts.get('transparent')), k)
-    out = Path(out_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    frame.save(out)
-    return out
+    frame.save(target)
+    return target
 
 
 # ---------------------------------------------------------------- `minis.py stream ...`
@@ -422,11 +526,23 @@ def cmd(args, spawn=None, self_argv=None, alive=None, out=print, sleep=time.slee
         if os.environ.get('MINIS_TESTING'):
             out('stream: refused under tests (MINIS_TESTING)')
             return 1
-        was = control.forge_on()
-        if was:
-            control.set_forge(False)
-        argv = self_argv('stream', 'run', '--forge-was', 'on' if was else 'off', *option_argv(o))
-        spawn(argv)
+        me = os.getpid()
+        if not acquire_lock(me, alive):
+            out(f'stream: another stream is starting or running (pid {lock_owner()}); `stream off` first')
+            return 1
+        try:
+            was = control.forge_on()
+            if was:
+                control.set_forge(False)
+            argv = self_argv('stream', 'run', '--forge-was', 'on' if was else 'off', *option_argv(o))
+            child = spawn(argv)
+        except Exception:
+            release_lock(me)
+            raise
+        if getattr(child, 'pid', None):
+            hand_lock(me, child.pid)                              # the child owns it from now on
+        else:
+            release_lock(me)
         out(f"stream: window \"{TITLE}\" opening; add it in OBS as a Window Capture with a Chroma Key filter "
             f"({'transparent background' if o.get('transparent') else '#%02X%02X%02X' % tuple(o.get('chroma') or DEFAULT_CHROMA)})."
             + ('  Desktop weapons are off while streaming.' if was else ''))
@@ -449,11 +565,13 @@ def cmd(args, spawn=None, self_argv=None, alive=None, out=print, sleep=time.slee
         o['forge_was'] = getattr(args, 'forge_was', None)
         return run(o)
     if act == 'snapshot':
-        if not getattr(args, 'path', None):
-            out('usage: stream snapshot <png>')
+        from . import exports
+        try:
+            p = snapshot(getattr(args, 'path', None), opts=o)
+        except exports.ExportPathError as e:
+            out(f'stream snapshot: refused: {e}')
             return 2
-        p = snapshot(args.path, opts=o)
         out(f'stream snapshot: {p}' if p else 'stream snapshot: no fighter window answered (is Taskbar Fighters running?)')
         return 0 if p else 1
-    out('stream: on | off | status | snapshot <png>')
+    out('stream: on | off | status | snapshot [png | folder]')
     return 2

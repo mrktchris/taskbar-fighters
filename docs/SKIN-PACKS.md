@@ -35,7 +35,8 @@ shadow-ronin/
   preview.png                  optional
 ```
 
-Nothing else is allowed: no other file, no other folder, no link.
+Nothing else is allowed: no other file, no other folder, no link. Any malformed shape (a move that is `null`, frames
+that are not a list, ...) is refused with one plain reason; `packs check` / `install` never show a traceback.
 
 ### pack.json
 
@@ -64,12 +65,12 @@ Nothing else is allowed: no other file, no other folder, no link.
 The same schema as the built-in `assets/<character>/anim.json` (read `minis_core/atlas.py`, and the `schema_notes` block
 inside any built-in anim.json). The validator checks:
 
-- `res` is 1 in `64/` and 2 in `128/`; `cell` is `[64, 64]` / `[128, 128]`; `cols` is 1-16; `anchor` has `R` and `L` inside
+- `res` is 1 in `64/` and 2 in `128/`; `cell` is `[64, 64]` / `[128, 128]`; `cols` is 1-12; `anchor` has `R` and `L` inside
   the cell; `ground_y` is inside the cell.
 - `sheets` is exactly `{"R": "sheet.png", "L": "sheet_l.png"}`; `sheets_unarmed`, if present, exactly
   `{"R": "sheet_unarmed.png", "L": "sheet_unarmed_l.png"}`; `projectile.file`, if present, is `proj.png` and the strip is
   `w * frames` x `h`.
-- Every move has a `row` (0-127) and 1-`cols` frames, each with `ms` 1-5000; move names are `a-z 0-9 _`; `signature` names
+- Every move has a `row` (0-79) and 1-`cols` frames, each with `ms` 1-5000; move names are `a-z 0-9 _`; `signature` names
   only moves the pack has.
 - **Every move of the shared move set is present** (the choreography may ask any fighter for them):
   air_hit, air_slash, backdash, block, block_hit, bow, clash, console, cross, crouch, crouch_block, dash, dizzy, facepalm,
@@ -83,7 +84,11 @@ inside any built-in anim.json). The validator checks:
 
 ### Sheets
 
-- PNG only (checked by signature and by Pillow), each file at most 4 MB, the whole pack at most 16 MB.
+- PNG only (checked by signature and by Pillow), each file at most 4 MB, the whole pack at most 16 MB on disk.
+- **Decoded size, checked from each PNG's header before anything is decoded:** a sheet at most 12 x 80 cells (1536 x
+  10240 px at 128 px), `preview.png` at most 1200 x 1200 px, and every PNG of the pack together at most 256 MiB as RGBA
+  (a pack with the built-in fighters' sizes at 64 and 128 px is about 180 MiB). A tiny file that would unpack into a huge
+  image is refused without being opened.
 - `sheet.png` and `sheet_l.png` (and the unarmed pair) are exactly `cols x cell` wide and `rows x cell` high, where `rows`
   is the highest `row` + 1.
 - **At most 64 colours per sheet** (counting alpha), 32 for `proj.png`: these are pixel-art fighters. The built-in sheets

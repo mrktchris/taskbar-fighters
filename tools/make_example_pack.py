@@ -58,6 +58,19 @@ def build_size(src, dst, name, display, hue):
     (dst / 'anim.json').write_text(json.dumps(meta, indent=1), encoding='utf-8')
 
 
+def target_dir(out, name) -> Path:
+    """<out>/<name>, after checking `name` is a pack name (packs.NAME_RE) and the result is a DIRECT child of <out>.
+    Raises SystemExit before any file operation otherwise (`--name ..` must never point at <out>'s parent)."""
+    from minis_core import packs
+    if not isinstance(name, str) or not packs.NAME_RE.match(name):
+        raise SystemExit(f'--name {name!r}: use 2-32 of a-z 0-9 _ - (a pack name)')
+    base = Path(out).resolve()
+    d = (base / name).resolve()
+    if d.parent != base:
+        raise SystemExit(f'--name {name!r} does not stay inside {base}')
+    return d
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--from', dest='src', default='claude')
@@ -68,9 +81,11 @@ def main(argv=None):
     ap.add_argument('--no-hd', action='store_true', help='only the 64 px set (the engine scales it 2x)')
     a = ap.parse_args(argv)
     from minis_core import atlas, packs
-    out = Path(a.out)
-    d = out / a.name
+    d = target_dir(a.out, a.name)
+    out = d.parent
     if d.exists():
+        if not (d / 'pack.json').is_file():                # only ever replaces an earlier example pack, nothing else
+            raise SystemExit(f'{d} exists and is not a pack folder: refusing to replace it')
         shutil.rmtree(d)
     d.mkdir(parents=True)
     build_size(atlas.ASSETS / a.src, d / '64', a.name, a.display, a.hue)

@@ -47,6 +47,8 @@ def validate(meta):
     if 'idle' not in anims:
         raise AtlasError('no idle anim')
     for name, a in anims.items():
+        if not isinstance(a, dict) or not isinstance(a.get('frames') or [], list):
+            raise AtlasError(f'{name}: not a move object')       # growth: a malformed pack must refuse, never raise past here
         fr = a.get('frames') or []
         if not fr:
             raise AtlasError(f'{name}: no frames')

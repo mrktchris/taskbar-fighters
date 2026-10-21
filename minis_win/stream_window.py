@@ -45,6 +45,9 @@ u.EndPaint.argtypes = [wt.HWND, ctypes.POINTER(PAINTSTRUCT)]
 u.GetClientRect.argtypes = [wt.HWND, ctypes.POINTER(wt.RECT)]
 u.InvalidateRect.argtypes = [wt.HWND, ctypes.c_void_p, wt.BOOL]
 u.AdjustWindowRectEx.argtypes = [ctypes.POINTER(wt.RECT), wt.DWORD, wt.BOOL, wt.DWORD]
+SRCCOPY = 0x00CC0020
+g.BitBlt.argtypes = [wt.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wt.HDC, ctypes.c_int, ctypes.c_int, wt.DWORD]
+g.SetDIBitsToDevice.restype = ctypes.c_int
 g.SetDIBitsToDevice.argtypes = [wt.HDC, ctypes.c_int, ctypes.c_int, wt.DWORD, wt.DWORD, ctypes.c_int, ctypes.c_int, wt.UINT, wt.UINT,
                                 ctypes.c_void_p, ctypes.POINTER(sh.BITMAPINFOHEADER), wt.UINT]
 
@@ -161,10 +164,36 @@ class StreamWindow:
         return max(1, r.right - r.left), max(1, r.bottom - r.top)
 
     def _blit(self, hdc, img):
+        """SetDIBitsToDevice of the frame into `hdc`.  The pixels go through an explicit ctypes array held in a local for
+        the whole call (ctypes would also pass a bytes object to the c_void_p parameter, but an owned buffer leaves no
+        doubt about what the pointer points at or how long it lives).  -> scan lines drawn (0 = failed)."""
         w, h = img.size
         bmi = sh.BITMAPINFOHEADER(ctypes.sizeof(sh.BITMAPINFOHEADER), w, -h, 1, 32, 0, 0, 0, 0, 0, 0)
         data = img.convert('RGB').tobytes('raw', 'BGRX')
-        g.SetDIBitsToDevice(hdc, 0, 0, w, h, 0, 0, 0, h, data, ctypes.byref(bmi), 0)
+        buf = (ctypes.c_ubyte * len(data)).from_buffer_copy(data)
+        return int(g.SetDIBitsToDevice(hdc, 0, 0, w, h, 0, 0, 0, h, ctypes.cast(buf, ctypes.c_void_p), ctypes.byref(bmi), 0))
+
+    def client_pixels(self):
+        """Read back THIS window's client area from its own DC (BitBlt from GetDC(self.hwnd) into a memory DIB): the
+        pixels it painted, for tests and the docs preview.  Never the screen, never another window.  -> RGB image | None."""
+        if self.closed or self.transparent:
+            return None
+        w, h = self.client_size()
+        hdc = u.GetDC(self.hwnd)
+        mem = g.CreateCompatibleDC(hdc)
+        bmi = sh.BITMAPINFOHEADER(ctypes.sizeof(sh.BITMAPINFOHEADER), w, -h, 1, 32, 0, 0, 0, 0, 0, 0)
+        bits = ctypes.c_void_p()
+        bmp = g.CreateDIBSection(mem, ctypes.byref(bmi), 0, ctypes.byref(bits), None, 0)
+        try:
+            old = g.SelectObject(mem, bmp)
+            ok = g.BitBlt(mem, 0, 0, w, h, hdc, 0, 0, SRCCOPY)
+            im = Image.frombuffer('RGBA', (w, h), ctypes.string_at(bits, w * h * 4), 'raw', 'BGRA', 0, 1).convert('RGB') if ok else None
+            g.SelectObject(mem, old)
+        finally:
+            g.DeleteObject(bmp)
+            g.DeleteDC(mem)
+            u.ReleaseDC(self.hwnd, hdc)
+        return im
 
     def present(self, img: Image.Image):
         if self.closed:
@@ -174,10 +203,9 @@ class StreamWindow:
             return self._layered(img)
         hdc = u.GetDC(self.hwnd)
         try:
-            self._blit(hdc, img)
+            return self._blit(hdc, img) > 0
         finally:
             u.ReleaseDC(self.hwnd, hdc)
-        return True
 
     def _layered(self, img):
         w, h = img.size
