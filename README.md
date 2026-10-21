@@ -30,7 +30,7 @@ Claude Code, Codex, Gemini, Cursor, Ollama, LM Studio and more, auto-detected an
 <div align="center">
 
 [![Download for Windows](https://img.shields.io/badge/Download-Windows%20.zip-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/mrktchris/taskbar-fighters/releases/latest/download/TaskbarFighters-windows.zip)
-[![pip install](https://img.shields.io/badge/pip-install%20taskbar--fighters-3776ab?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/taskbar-fighters/)
+[![pip install](https://img.shields.io/badge/pip-install%20from%20release-3776ab?style=for-the-badge&logo=pypi&logoColor=white)](#install)
 [![macOS experimental](https://img.shields.io/badge/macOS-experimental-555555?style=for-the-badge&logo=apple&logoColor=white)](#macos-experimental)
 
 **⭐ Star it if your agents deserve a fight.**
@@ -42,8 +42,8 @@ Claude Code, Codex, Gemini, Cursor, Ollama, LM Studio and more, auto-detected an
 | | |
 | --- | --- |
 | **Windows, no Python needed** | Download [TaskbarFighters-windows.zip](https://github.com/mrktchris/taskbar-fighters/releases/latest/download/TaskbarFighters-windows.zip), unzip it and double-click `TaskbarFighters.exe`. The zip is not code-signed, so SmartScreen may ask once: **More info > Run anyway**. Quit from the tray icon or with `TaskbarFighters-cli.exe stop`. |
-| **pip, Windows (Python 3.12+)** | `pip install taskbar-fighters` then `taskbar-fighters start` |
-| **pip, macOS (experimental)** | `pip install "taskbar-fighters[mac]"` then `taskbar-fighters doctor` and `taskbar-fighters start` |
+| **pip, Windows (Python 3.12+)** | `pip install "taskbar-fighters @ https://github.com/mrktchris/taskbar-fighters/releases/download/v1.0.0/taskbar_fighters-1.0.0-py3-none-any.whl"` then `taskbar-fighters start` (the PyPI listing, `pip install taskbar-fighters`, is coming) |
+| **pip, macOS (experimental)** | `pip install "taskbar-fighters[mac] @ https://github.com/mrktchris/taskbar-fighters/releases/download/v1.0.0/taskbar_fighters-1.0.0-py3-none-any.whl"` then `taskbar-fighters doctor` and `taskbar-fighters start` |
 | **From source** | see [Install and run](#install-and-run) (Windows) or [macOS](#macos-experimental) |
 
 > **Or paste this to your AI agent.** Claude Code, Codex, Cursor or any coding agent:
@@ -289,7 +289,7 @@ python minis.py start
 python minis.py status
 ```
 
-Or `pip install taskbar-fighters` and `taskbar-fighters start`.
+Or `pip install "taskbar-fighters @ https://github.com/mrktchris/taskbar-fighters/releases/download/v1.0.0/taskbar_fighters-1.0.0-py3-none-any.whl"` and `taskbar-fighters start` (`pip install taskbar-fighters` once the PyPI listing is live).
 
 `start` launches three windowless processes (a director and fighter slots `a` and `b`) and after about 3 s prints what is on
 screen, for example `a: Claude Code, b: Sparring bot asleep`.
@@ -322,7 +322,7 @@ the default.
 `brew install python@3.12`; the `python3` that ships with macOS is too old), Pillow and PyObjC.
 
 ```
-pip install "taskbar-fighters[mac]"
+pip install "taskbar-fighters[mac] @ https://github.com/mrktchris/taskbar-fighters/releases/download/v1.0.0/taskbar_fighters-1.0.0-py3-none-any.whl"
 taskbar-fighters doctor
 taskbar-fighters start
 ```
