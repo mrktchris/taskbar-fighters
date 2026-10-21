@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw
 
 from . import config as cfgmod
 from .bus import write_json_atomic
-from .render import font, text
+from .render import font, text, wrap
 
 SECTIONS = (('attacks', 'ATTACKS', ('strike', 'special', 'super', 'ultimate', 'throw')),
             ('defense', 'DEFENSE', ('defense', 'reaction')),
@@ -163,9 +163,9 @@ PAD = 6
 HEAD_H = 26
 STRIP_H = 34
 TAB_H = 16
-CW, CH, CP = 62, 70, 46                # cell width, height, portrait height
-COLS, ROWS = 8, 3
-FOOT_H = 30
+CW, CH, CP = 74, 78, 46                # cell width, height (portrait + a two-line name + the type), portrait height
+COLS, ROWS = 7, 3
+FOOT_H = 48
 FPS = 8
 VK = dict(left=0x25, up=0x26, right=0x27, down=0x28, enter=0x0D, space=0x20, esc=0x1B, back=0x08, tab=0x09, pgup=0x21,
           pgdn=0x22, home=0x24)
@@ -463,16 +463,13 @@ class Book:
                 f = font(16, True)
                 q = '?'
                 d.text((x0 + (CW - int(d.textlength(q, font=f))) // 2, y0 + 10), q, fill=(150, 150, 170), font=f)
-            nm = e['name'] if seen else '? ? ?'
-            f8 = font(8, True)
-            while len(nm) > 1 and d.textlength(nm, font=f8) > CW - 3:
-                nm = nm[:-1]
-            text(d, (x0 + (CW - int(d.textlength(nm, font=f8))) // 2, y0 + CP + 1), nm, INK if seen else GREY, 8)
+            f8, f9 = font(8, True), font(9, False)
+            names = wrap(e['name'] if seen else '? ? ?', CW - 4, 8, True)[:2]
+            for j, nm in enumerate(names):                     # whole names, on two lines when they need them
+                text(d, (x0 + (CW - int(d.textlength(nm, font=f8))) // 2, y0 + CP + 1 + 9 * j), nm, INK if seen else GREY, 8)
             ty = e['type']
-            f7 = font(9, False)
-            while len(ty) > 1 and d.textlength(ty, font=f7) > CW - 3:
-                ty = ty[:-1]
-            text(d, (x0 + (CW - int(d.textlength(ty, font=f7))) // 2, y0 + CP + 11), ty, (150, 210, 150) if seen else GREY, 9, False)
+            text(d, (x0 + (CW - int(d.textlength(ty, font=f9))) // 2, y0 + CP + 2 + 9 * len(names)), ty,
+                 (150, 210, 150) if seen else GREY, 9, False)
             if sel and (blink or self.hover is not None):
                 d.rectangle([x0 - 1, y0 - 1, x1, y1], outline=accent + (255,), width=2)
         if not vis:
@@ -483,11 +480,9 @@ class Book:
             seen = self.is_seen(e)
             line = (f"{e['name']}: {e['desc']}" if seen and e['desc'] else e['name'] if seen else
                     ("Not in this fighter's style." if e['absent'] else 'Not seen yet: it shows up in a fight on your taskbar.'))
-            f9 = font(9, False)
-            while len(line) > 3 and d.textlength(line, font=f9) > self.W - 2 * PAD - 4:
-                line = line[:-4] + '...'
-            text(d, (PAD + 2, self.foot_y), line, INK if seen else DIM, 9, False)
+            for j, ln in enumerate(wrap(line, self.W - 2 * PAD - 4)[:3]):
+                text(d, (PAD + 2, self.foot_y + 11 * j), ln, INK if seen else DIM, 9, False)
         hint = 'Arrows move   Tab section   Up/Down past the grid: fighter   PgUp/PgDn page   Esc close'
         f9 = font(9, False)
-        text(d, ((self.W - int(d.textlength(hint, font=f9))) // 2, self.foot_y + 14), hint, GREY, 9, False)
+        text(d, ((self.W - int(d.textlength(hint, font=f9))) // 2, self.foot_y + 36), hint, GREY, 9, False)
         return im

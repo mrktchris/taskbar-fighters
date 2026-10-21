@@ -313,7 +313,36 @@ def docs(out):
     return paths
 
 
-SECTIONS = {'book': book, 'settings': settings, 'zone': zone, 'guide': guide, 'cards': cards, 'results': results, 'signals': signals,
+def text_fix(out):
+    """Before / after of the small UI text: FreeType monochrome hinting (up to V8) vs render.text now, 1x and 2x."""
+    from minis_core import render
+    from minis_core.render import font
+    lines = [('Claude Code', 10, True), ('rest the mouse on a fighter or plate: its state in words', 9, False),
+             ('Every row is also a command: minis.py settings list', 9, False), ('arena: one screen picture held in RAM', 9, False),
+             ('waiting for you · 1 min 37 s', 9, True), ('Codex 7-12   vs   Claude 12-7', 10, True)]
+    rows = []
+    for label, draw in (('before (fontmode 1)', 'mono'), ('after (render.text)', 'new')):
+        im = Image.new('RGBA', (330, 14 * len(lines) + 18), (18, 18, 22, 255))
+        d = ImageDraw.Draw(im)
+        render.text(d, (6, 2), label, (255, 196, 80), 9, True)
+        for i, (s, size, bold) in enumerate(lines):
+            if draw == 'mono':
+                d.fontmode = '1'
+                d.text((6, 16 + 14 * i), s, fill=(230, 230, 240), font=font(size, bold))
+            else:
+                render.text(d, (6, 16 + 14 * i), s, (230, 230, 240), size, bold)
+        rows.append(im)
+    w = sum(r.width for r in rows) + 10
+    one = Image.new('RGBA', (w, rows[0].height), (10, 10, 14, 255))
+    one.alpha_composite(rows[0], (0, 0))
+    one.alpha_composite(rows[1], (rows[0].width + 10, 0))
+    p1, p2 = out / 'text-before-after.png', out / 'text-before-after-2x.png'
+    one.save(p1)
+    big(one, 2).save(p2)
+    return [p1, p2]
+
+
+SECTIONS = {'text': text_fix, 'book': book, 'settings': settings, 'zone': zone, 'guide': guide, 'cards': cards, 'results': results, 'signals': signals,
             'plate': plate, 'replay': replay_frames, 'docs': docs}
 
 

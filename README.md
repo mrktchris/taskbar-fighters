@@ -228,8 +228,8 @@ Desktop weapons stay on by default (real pixels, held in RAM, never saved); whil
 ![The Settings window](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-settings.png)
 
 **Fight zone.** *Edit...* lays a bar over your taskbar showing where the plates, the fighters and the scoreboard go. Drag
-either end (or the whole bar), then **Save**; **Reset to auto** goes back to the default. It is saved as `zone` in
-`minis.json` and the fighters restart. Without the window: `minis.py zone 40 900`, `minis.py zone auto`.
+either end (or the whole bar), then **Save**; **Reset to auto** goes back to the default. It is saved as `zone` in the
+data folder's `minis.json` (it wins over a `zone` in the one next to `minis.py`) and the fighters restart. Without the window: `minis.py zone 40 900`, `minis.py zone auto`.
 
 ![The zone editor over a mock taskbar](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-zone.png)
 
@@ -257,7 +257,8 @@ winner poses and the loser bows (on the taskbar too). `minis.py results off` tur
 ![The results strip over the scoreboard](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-results.png)
 
 **Instant replay, GIFs and fight codes.** Tray > **Replay last K.O.** plays the deciding exchange again above the taskbar,
-the K.O. in slow motion; **Save last fight as GIF** writes the whole match to `Pictures\Taskbar Fighters`. Both are made by
+the K.O. in slow motion; **Save last fight as GIF** writes the whole match to `exports` in the data folder and opens that folder with the file
+selected (`minis.py replay --gif PATH` writes it where you say instead). Both are made by
 the planner from the match's seed and plan on a plain backdrop, never from the screen. Every match has a **fight code**
 (`minis.py replay code`); anyone with the app can paste it: `minis.py replay TF1-claude-codex-...` (or
 `replay CODE --gif out.gif`). A code holds the seed, the two characters, positions and the odds, never a context number.
@@ -476,7 +477,7 @@ Every command below was checked against `python minis.py --help` and each subcom
 | `python minis.py size 64\|96\|128` | fighter height in px (default 128, HD art); running fighters restart to apply it |
 | `python minis.py settings [open\|list]` / `settings set <row> <value>` | the Settings window / every setting with its value and command / change one |
 | `python minis.py startup on\|off\|status` | start at sign-in: Windows, one `Taskbar Fighters.lnk` in shell:startup (reused, never duplicated); macOS, the LaunchAgent |
-| `python minis.py zone [show\|edit\|auto\|<left> <right>]` | the fight zone on the taskbar (`zone` in `minis.json`); `edit` opens the drag-to-set editor |
+| `python minis.py zone [show\|edit\|auto\|<left> <right>]` | the fight zone on the taskbar (`zone` in the data folder's `minis.json`); `edit` opens the drag-to-set editor |
 | `python minis.py results\|cards\|signals on\|off` | the results strip after a match / hover cards / event signals |
 | `python minis.py guide [--first\|--reset]` | the 10-second legend (`--first`: the three first-run cards; `--reset`: show them at the next start) |
 | `python minis.py replay [CODE] [--gif [PATH]] [--final]` / `replay code` | replay the last K.O. (or a fight code) above the taskbar, or render a GIF offline / print the last fight code |
@@ -556,7 +557,10 @@ Fighters hide while a fullscreen app is up, while the taskbar is not at the bott
 - **Files written:** `%LOCALAPPDATA%\minis\` on Windows, `~/Library/Application Support/minis/` on macOS (bus files,
   `assign.json`, `control.json`, `record.json`, `history.json`, `seen.json`, `ux.json`, `replay.json` (the last 12 matches'
   plans: seeds, character ids, positions, numbers), `collection.json` (move ids seen), pid and lock files, small rotating logs).
-  A GIF goes to your Pictures folder only when you ask for one; `startup on` writes one shortcut (or a LaunchAgent) only then.
+  It writes only under that data folder, or to a path you choose: a GIF goes to its `exports` folder (or the path you
+  give `replay --gif`), and the zone you set in Settings goes to the data folder's own `minis.json` (it overrides the one
+  next to `minis.py`, which the app never writes). The one entry outside it is the start-at-sign-in item you turn on yourself
+  (`startup on` / the Settings checkbox): one `Taskbar Fighters.lnk` in your Startup folder, or the macOS LaunchAgent.
 
 ## How it works
 

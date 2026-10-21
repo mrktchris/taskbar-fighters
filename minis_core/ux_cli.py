@@ -10,7 +10,8 @@ codes, GIF export and the move book are reachable from the command line too.
   guide [--first|--reset]         the 10-second legend (--first: the three first-run cards; --reset: show them at next start)
   replay [CODE]                   play the last match's K.O. (or a pasted fight code) above the taskbar
   replay code                     print the last match's fight code and result
-  replay --gif [PATH] [--final]   render the last match (or CODE) to a GIF offline: Pictures\\Taskbar Fighters by default
+  replay --gif [PATH] [--final]   render the last match (or CODE) to a GIF offline: <data folder>/exports by default (its
+                                  folder opens with the file selected), or PATH
   book [list] [--fighter NAME]    open the move book (while it runs) / print seen counts per fighter
 """
 from __future__ import annotations
@@ -43,7 +44,7 @@ def add_parsers(sub, m):
     g.set_defaults(fn=lambda a: cmd_guide(a, m))
     r = sub.add_parser('replay', help='replay the last K.O. (or a fight code); `replay code` prints the code; --gif saves a GIF')
     r.add_argument('code', nargs='?', default=None)
-    r.add_argument('--gif', nargs='?', const='', default=None, metavar='PATH', help='render a GIF offline (default: Pictures)')
+    r.add_argument('--gif', nargs='?', const='', default=None, metavar='PATH', help='render a GIF offline (default: <data folder>/exports)')
     r.add_argument('--final', action='store_true', help='GIF of the deciding exchange only (default: the whole match)')
     r.set_defaults(fn=lambda a: cmd_replay(a, m))
     b = sub.add_parser('book', help='the move book: every move, set piece and finisher; seen ones animated')
@@ -172,13 +173,15 @@ def cmd_zone(a, m):
     if not args or args[0] == 'show':
         cfg = m.load_config()
         z = cfg.get('zone')
-        own = 'zone' in ux.read_settings()
-        print(f"fight zone: x {z[0]} - {z[1]} ({'set in ' + str(ux.settings_path()) if own else 'auto: the default'})")
+        own = ux.read_settings().get('zone')
+        where = ('auto: the default' if own in (None, 'auto') and list(z) == list(cfgmod.DEFAULTS['zone']) else
+                 'set in ' + str(ux.settings_path()) if own not in (None, 'auto') else 'set in your minis.json')
+        print(f"fight zone: x {z[0]} - {z[1]} ({where})")
         return 0
     if args[0] == 'edit':
         return _request(m, 'zone', what='the zone editor')
     if args[0] == 'auto':
-        if not ux.write_setting('zone', None):
+        if not ux.write_setting('zone', 'auto'):
             print(f'{ux.settings_path()} could not be written (is it valid JSON?)')
             return 1
         print(f"fight zone: auto ({cfgmod.DEFAULTS['zone'][0]} - {cfgmod.DEFAULTS['zone'][1]})")
@@ -236,13 +239,15 @@ def cmd_replay(a, m):
     if a.gif is None:
         return _request(m, 'replay', code, what='the replay')
     from . import control
-    out = Path(a.gif) if a.gif else replay.pictures_dir() / 'Taskbar Fighters' / replay.gif_name(plan)
+    out = Path(a.gif) if a.gif else replay.exports_dir() / replay.gif_name(plan)     # a path you type, else the data folder
     if out.suffix.lower() != '.gif':
         out = out / replay.gif_name(plan) if out.is_dir() or not out.suffix else out.with_suffix('.gif')
     print('rendering offline (the planner on a plain backdrop, never a screen capture) ...')
     p, n = replay.save_gif(replay.frames(plan, 'final' if a.final else 'all', fps=12, names=names, code=fcode,
                                          flashes=control.flashes_on(), label='TASKBAR FIGHTERS'), out)
     print(f'saved {p} ({n} frames)')
+    if not a.gif:
+        replay.reveal(p)                                                    # its folder opens with the file selected
     if fcode:
         print(f'fight code: {fcode}')
     return 0

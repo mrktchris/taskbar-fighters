@@ -36,6 +36,13 @@ def headline(entry) -> tuple:
     return head, rest
 
 
+def width(entry) -> int:
+    """The strip grows to fit its two lines whole (never cut): at least W, the text plus both portraits and margins."""
+    head, rest = headline(entry)
+    tw = max(font(11, True).getlength(head), font(9, False).getlength(rest))
+    return max(W, int(tw) + 2 * (PORTRAIT + 14))
+
+
 _pose_cache = {}
 
 
@@ -78,6 +85,7 @@ def pose(lib, character, anim, t, w=PORTRAIT, h=PORTRAIT, flip=False):
 def render(entry, t, lib=None) -> Image.Image:
     """The strip `t` seconds into its 4 s: slides up in 0.2 s, fades out over the last 0.4 s."""
     head, rest = headline(entry)
+    W = width(entry)
     im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     d.fontmode = '1'
@@ -99,8 +107,6 @@ def render(entry, t, lib=None) -> Image.Image:
     x_mid = W // 2
     text(d, (x_mid - int(d.textlength(head, font=f11)) // 2 + 1, 6), head, (60, 40, 10), 11)
     text(d, (x_mid - int(d.textlength(head, font=f11)) // 2, 5), head, GOLD, 11)
-    while len(rest) > 3 and d.textlength(rest, font=f9) > W - 2 * (PORTRAIT + 10):
-        rest = rest.rsplit(' · ', 1)[0]
     text(d, (x_mid - int(d.textlength(rest, font=f9)) // 2, 24), rest, INK, 9, False)
     a = 1.0
     if t < 0.2:

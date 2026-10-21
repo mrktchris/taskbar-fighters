@@ -203,11 +203,12 @@ class Replay(Isolated):
         self.assertGreater(len(sched), 25)                                  # the K.O. runs at half speed
         self.assertTrue(sched[-1][1])
 
-    def test_gif_goes_to_the_pictures_folder(self):
-        out = Path(tempfile.mkdtemp())
-        with mock.patch.dict(os.environ, {'MINIS_PICTURES': str(out)}):
-            self.assertEqual(replay.pictures_dir(), out)
-            p, n = replay.save_gif(replay.frames(PLAN, 'final', fps=8, limit=6), out / 'Taskbar Fighters' / replay.gif_name(PLAN, now=0))
+    def test_gif_goes_to_the_exports_folder_in_the_data_dir(self):
+        out = replay.exports_dir()
+        self.assertEqual(out, self.data / 'exports')                        # under the data folder, nowhere else
+        self.assertFalse(replay.reveal(out / 'x.gif'))                      # no Explorer / Finder under tests
+        with mock.patch.dict(os.environ, {'MINIS_TESTING': '1'}):
+            p, n = replay.save_gif(replay.frames(PLAN, 'final', fps=8, limit=6), out / replay.gif_name(PLAN, now=0))
         self.assertTrue(p.exists())
         self.assertEqual(n, 6)
         with Image.open(p) as g:
@@ -632,7 +633,8 @@ class Results(unittest.TestCase):
         self.assertIsNone(R.taskbar_beat(e, 'grok', 'a'))
         from minis_core.atlas import Library
         im = R.render(e, 1.0, Library())
-        self.assertEqual(im.size, (R.W, R.H))
+        self.assertEqual(im.size, (R.width(e), R.H))
+        self.assertGreaterEqual(im.width, R.W)
         self.assertLess(R.render(e, R.SHOW_S - 0.05, Library()).getchannel('A').getextrema()[1], 60)    # fading out
 
 
@@ -716,13 +718,14 @@ class Host(Isolated):
         w.thread.join(30)
         self.go(1.0)
         self.assertGreater(w.shown, 5)
-        out = Path(tempfile.mkdtemp())
-        with mock.patch.dict(os.environ, {'MINIS_PICTURES': str(out)}), mock.patch.object(replay, 'frames', _few):
+        with mock.patch.object(replay, 'frames', _few), mock.patch.object(replay, 'reveal', lambda p: self.revealed.append(p)):
+            self.revealed = []
             ux.request('gif', now=self.t['wall'])
             self.go(0.6)
             self.board.ux.gif.join(60)
-        gifs = list((out / 'Taskbar Fighters').glob('*.gif'))
+        gifs = list((self.data / 'exports').glob('*.gif'))
         self.assertEqual(len(gifs), 1)
+        self.assertEqual(self.revealed, gifs)                               # its folder opens with the file selected
 
     def test_zone_editor_saves_to_minis_json_and_restarts(self):
         p = self.data / 'minis.json'
@@ -886,7 +889,7 @@ class Commands(Isolated):
             rc, out = self.run_cli('zone', '100', '1000')
             self.assertEqual(json.loads(p.read_text())['zone'], [100, 1000])
             rc, out = self.run_cli('zone', 'auto')
-            self.assertNotIn('zone', json.loads(p.read_text()))
+            self.assertEqual(json.loads(p.read_text())['zone'], 'auto')
         ux.set_first_run_done(True)
         self.run_cli('guide', '--reset')
         self.assertFalse(ux.first_run_done())
@@ -920,6 +923,119 @@ class Commands(Isolated):
         with mock.patch.object(minis, 'ux_actions', lambda: dict(restart=None, startup=lambda: FakeStartup('other'))):
             rc, out = self.run_cli('startup', 'status')
         self.assertIn('another copy', out)
+
+
+# ======================================================================== text quality (regressions)
+def max_gap_inside(im, ink_min=60):
+    """The widest run of empty columns between a word's first and last inked column (RGBA on a dark ground)."""
+    w, h = im.size
+    px = im.load()
+    cols = [any(px[x, y][0] > ink_min for y in range(h)) for x in range(w)]
+    xs = [x for x, c in enumerate(cols) if c]
+    run = best = 0
+    for x in range(xs[0], xs[-1] + 1):
+        run = 0 if cols[x] else run + 1
+        best = max(best, run)
+    return best
+
+
+class TextQuality(unittest.TestCase):
+    WORDS = ('mouse', 'minis', 'Claude', 'arena', 'settings', 'waiting', 'Codex', 'fighter', 'context', 'restart', 'weapons',
+             'Healthier', 'Settings', 'rival', 'match')
+
+    def word(self, w, size, bold, k=1):
+        from minis_core import render
+        im, d = render.canvas(160, 24, k)
+        d.rectangle([0, 0, 159, 23], fill=(18, 18, 22, 255))
+        render.text(d, (4, 4), w, (230, 230, 240), size, bold)
+        if k > 1:
+            im = im.resize((160, 24), Image.BOX)
+        return im
+
+    def test_no_holes_inside_words(self):
+        """FreeType's monochrome hinting left 2-4 px holes inside 9-10 px words ("m inis", "C laude"); no gap over 1 px now."""
+        for size in (8, 9, 10):
+            for bold in (False, True):
+                for w in self.WORDS:
+                    self.assertLessEqual(max_gap_inside(self.word(w, size, bold)), 1, f'{w!r} {size}px bold={bold}')
+        for w in self.WORDS:                                                 # titles / names at 11 px bold
+            self.assertLessEqual(max_gap_inside(self.word(w, 11, True)), 1, w)
+
+    def test_two_x_and_the_old_mono_path_for_contrast(self):
+        from minis_core import render
+        from PIL import ImageDraw
+        for w in self.WORDS:
+            self.assertLessEqual(max_gap_inside(self.word(w, 9, False, k=2)), 1, w)
+        im = Image.new('RGBA', (160, 24), (18, 18, 22, 255))
+        d = ImageDraw.Draw(im)
+        d.fontmode = '1'
+        d.text((4, 4), 'minis', fill=(230, 230, 240), font=render.font(9, False))
+        if sys.platform == 'win32':                                         # Segoe UI: what the fix is about
+            self.assertGreaterEqual(max_gap_inside(im), 2)
+
+    def test_text_is_crisp_not_washed_out(self):
+        im = self.word('mouse', 9, False)
+        reds = sorted(px[0] for px in (im.getpixel((x, y)) for x in range(160) for y in range(24)) if px[0] > 60)
+        self.assertGreaterEqual(reds[-1], 225)                               # stems reach full ink
+
+
+class NoTruncation(Isolated):
+    def test_settings_help_lines_wrap_whole(self):
+        from minis_core.render import font, wrap
+        be = S.Backend(dict(CFG))
+        for is_mac in (False, True):
+            m = S.Model(be, now=0.0, is_mac=is_mac)
+            for i, r in enumerate(m.rows):
+                y0, y1 = m.ys[i]
+                for h in m.help_variants(r):
+                    lines = wrap(h, m.help_w)
+                    self.assertEqual(' '.join(lines), h)                       # every word kept
+                    self.assertTrue(all(font(9, False).getlength(ln) <= m.help_w for ln in lines), h)
+                    self.assertLessEqual(S.LINE1_H + 11 * len(lines), y1 - y0)  # and room for every line
+            self.assertGreater(m.close_rect()[1], m.foot_y + 22)              # the footer's two lines clear the Close button
+
+    def test_book_captions_and_descriptions_fit(self):
+        from minis_core.render import font, wrap
+        from minis_core.atlas import Library
+        from minis_core import lineup
+        lib = Library()
+        b = collection.Book(lineup.characters(), {}, lib)
+        for c in lineup.characters():
+            for lst in collection.entries(lib[c['id']]).values():
+                for e in lst:
+                    names = wrap(e['name'], collection.CW - 4, 8, True)
+                    self.assertLessEqual(len(names), 2, e['name'])
+                    self.assertTrue(all(font(8, True).getlength(n) <= collection.CW - 4 for n in names), e['name'])
+                    self.assertLessEqual(font(9, False).getlength(e['type']), collection.CW - 2, e['type'])
+                    self.assertLessEqual(len(wrap(f"{e['name']}: {e['desc']}", b.W - 2 * collection.PAD - 4)), 3, e['name'])
+
+    def test_results_strip_toast_and_cards_grow_instead_of_cutting(self):
+        from minis_core.render import font
+        e = dict(id='m', ts=0, plan=dict(PLAN), labels={'a': 'LM Studio', 'b': 'Perplexity'}, winner='b', loser='a',
+                 wins={'a': 1, 'b': 2}, stats=dict(hits=123, best_combo=12, ultimate=True))
+        head, rest = R.headline(e)
+        self.assertGreaterEqual(R.width(e), font(9, False).getlength(rest) + 2 * R.PORTRAIT)
+        t = ux_runtime.toast_image('saved taskbar-fighters-claude-vs-codex-20261021-131347.gif (its folder opens) ' * 3)
+        self.assertGreater(t.height, 20)                                     # wrapped onto more lines
+        info = dict(name='Claude Code', state='waiting', since_s=5, waiting_s=45, ctx=50, record=(1, 2), opponent='Perplexity',
+                    h2h=(3, 4), plan_pct=12.0, plan_label='wk', resets_in='2d 4h')
+        self.assertEqual(HC.render(info).width, HC.W)
+        g = G.Guide('guide', (40, 940), {'fighter': 520, 'plates': (40, 300), 'board': (746, 936)},
+                    names={'a': 'A very long program name indeed'}, now=0.0)
+        self.assertIn('A very long program name indeed.', ' '.join(g.body_lines()))
+
+
+class Overlay(Isolated):
+    def test_the_data_folder_minis_json_overrides_the_zone(self):
+        cfg = dict(CFG, zone=[10, 700])
+        self.assertEqual(ux.apply_overlay(dict(cfg))['zone'], [10, 700])
+        ux.write_setting('zone', [100, 1000])
+        self.assertEqual(ux.settings_path(), self.data / 'minis.json')
+        self.assertEqual(ux.apply_overlay(dict(cfg))['zone'], [100, 1000])
+        ux.write_setting('zone', 'auto')
+        self.assertEqual(ux.apply_overlay(dict(cfg))['zone'], list(CFG['zone']))
+        ux.write_setting('zone', [5, 1])                                     # nonsense is ignored
+        self.assertEqual(ux.apply_overlay(dict(cfg))['zone'], [10, 700])
 
 
 if __name__ == '__main__':

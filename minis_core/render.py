@@ -85,9 +85,61 @@ def canvas(w, h, k=1):
     return im, KDraw(im, k)
 
 
+TEXT_BOOST = 1.7                                  # coverage gain of the small UI text (see text())
+_BOOST_LUT = [min(255, int(v * TEXT_BOOST)) for v in range(256)]
+_mask_cache = {}
+
+
+def text_mask(s, size=9, bold=True):
+    """-> (L mask, dx): the string's coverage mask, drawn antialiased and then sharpened, and its x offset from the pen."""
+    key = (s, size, bold)
+    m = _mask_cache.get(key)
+    if m is None:
+        f = font(size, bold)
+        l, t, r, b = f.getbbox(s)
+        dx = min(0, l)
+        im = Image.new('L', (max(1, r - dx + 1), max(1, b + 1)), 0)
+        dd = ImageDraw.Draw(im)
+        dd.fontmode = 'L'
+        dd.text((-dx, 0), s, fill=255, font=f)
+        m = (im.point(_BOOST_LUT), dx)
+        if len(_mask_cache) > 2048:
+            _mask_cache.clear()
+        _mask_cache[key] = m
+    return m
+
+
+def wrap(s, maxw, size=9, bold=False):
+    """Split `s` into lines no wider than maxw px (on spaces; a single over-long word keeps its own line, never cut)."""
+    import re
+    f = font(size, bold)
+    out, cur = [], ''
+    for tok in re.findall(r'\S+|\s+', str(s)):                     # runs of spaces are kept inside a line
+        if tok.isspace():
+            cur = cur + tok if cur else cur
+            continue
+        nxt = cur + tok
+        if not cur.strip() or f.getlength(nxt) <= maxw:
+            cur = nxt
+        else:
+            out.append(cur.rstrip())
+            cur = tok
+    if cur.strip():
+        out.append(cur.rstrip())
+    return out or ['']
+
+
 def text(d, xy, s, fill, size=9, bold=True):
-    d.fontmode = '1'                              # crisp, un-antialiased pixels
-    d.text(xy, s, fill=fill, font=font(size, bold))
+    """Small UI text.  FreeType's monochrome mode (fontmode '1', used up to V8) hints each glyph to whole pixels on its own
+    at 8-11 px, which tore words apart ("m inis", "C laude", "a rena": 2-4 px holes inside words).  The text is now drawn
+    antialiased, with the font's own even advances, and its coverage sharpened (TEXT_BOOST) so stems stay solid and crisp
+    at 1x and under the windows' 2x nearest-neighbour scale.  KDraw (macOS Retina) keeps its own k-times antialiased path."""
+    if isinstance(d, KDraw):
+        d.fontmode = '1'
+        d.text(xy, s, fill=fill, font=font(size, bold))
+        return
+    mask, dx = text_mask(s, size, bold)
+    d.bitmap((int(xy[0]) + dx, int(xy[1])), mask, fill=fill)
 
 
 def style_of(who_or_atlas):

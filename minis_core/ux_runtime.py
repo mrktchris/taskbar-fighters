@@ -4,7 +4,7 @@ Host (director process, beside the scoreboard it already hosts):
   - opens the windows asked for through ux.json (tray, CLI, fighter menu): Settings, the zone editor, the move book, the
     legend, the replay, a GIF export (on a worker thread)
   - the first-run guide, once, a few seconds after the fighters first appear
-  - the results strip over the scoreboard for 4 s after each match, and small toasts ("Saved ... to Pictures")
+  - the results strip over the scoreboard for 4 s after each match, and small toasts ("saved ... (its folder opens)"); exports go to <data folder>/exports
 SlotUx (each fighter process):
   - event signals on its fighter (minis_core.signals), the hover card, the rival countdown on a sleeping plate, the
     post-match beat (victory pose / bow), the move book's "seen" notes, and storing a finished match for replays
@@ -214,7 +214,7 @@ class Host:
             else:
                 self.say('minis.json could not be written (is it valid JSON?)')
         elif model.phase == 'auto':
-            ux.write_setting('zone', None)
+            ux.write_setting('zone', 'auto')
             self.say('zone back to auto' + (' · restarting ...' if restart else ''))
             if restart:
                 restart()
@@ -282,14 +282,15 @@ class Host:
             self.say(warn or 'no match to save yet')
             return
         flashes = control.flashes_on(default=self.b.cfg.get('flashes', True))
-        out = replay.pictures_dir() / 'Taskbar Fighters' / replay.gif_name(plan)
+        out = replay.exports_dir() / replay.gif_name(plan)
         self.say('making the GIF ... (a few seconds)', 30.0)
 
         def work():
             try:
                 p, n = replay.save_gif(replay.frames(plan, 'all', fps=12, names=names, code=code, flashes=flashes, label='TASKBAR FIGHTERS'), out)
-                self.say(f'saved to Pictures: {p.name}')
-                self.log.info('gif: %d frames written to the Pictures folder', n)
+                self.say(f'saved {p.name} (its folder opens)')
+                self.log.info('gif: %d frames written to the exports folder', n)
+                replay.reveal(p)
             except Exception as e:
                 self.say(f'GIF failed ({type(e).__name__})')
                 self.log.error('gif failed: %s', type(e).__name__)
@@ -332,7 +333,7 @@ class Host:
             from minis_win.ux_window import ImagePopup
             self.strip = ImagePopup(self.b.shell, 'minis-results', scale=self.scale())
         im = results.render(self.strip_entry, t, self.library())
-        x, y = self.strip_xy(results.W, results.H)
+        x, y = self.strip_xy(im.width, im.height)
         self.strip.show(im, x, results.slide_y(t, y, self.scale()), key=(self.strip_entry.get('id'), int(t * 10)))
 
     def say(self, msg, secs=TOAST_S):
@@ -368,17 +369,15 @@ class Host:
 
 def toast_image(msg):
     from PIL import Image, ImageDraw
-    from .render import font, text
-    f = font(9, True)
-    probe = ImageDraw.Draw(Image.new('RGBA', (1, 1)))
-    w = min(360, int(probe.textlength(msg, font=f)) + 16)
-    im = Image.new('RGBA', (w, 18), (0, 0, 0, 0))
+    from .render import font, text, wrap
+    lines = wrap(msg, 400, 9, True)                                    # whole messages, wrapped, never cut
+    w = int(max(font(9, True).getlength(ln) for ln in lines)) + 16
+    h = 7 + 11 * len(lines)
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    d.fontmode = '1'
-    d.rounded_rectangle([0, 0, w - 1, 17], 4, fill=(16, 16, 22, 236), outline=(120, 120, 136, 255))
-    while len(msg) > 3 and d.textlength(msg, font=f) > w - 14:
-        msg = msg[:-4] + '...'
-    text(d, (8, 3), msg, (236, 236, 244), 9)
+    d.rounded_rectangle([0, 0, w - 1, h - 1], 4, fill=(16, 16, 22, 236), outline=(120, 120, 136, 255))
+    for j, ln in enumerate(lines):
+        text(d, (8, 3 + 11 * j), ln, (236, 236, 244), 9)
     return im
 
 

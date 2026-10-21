@@ -509,28 +509,30 @@ def frames(plan, part='final', fps=15, names=None, code=None, flashes=True, slow
 
 
 # ---------------------------------------------------------------- GIF export
-def pictures_dir() -> Path:
-    """The user's Pictures folder (Windows: the known folder, which may be redirected into OneDrive; macOS: ~/Pictures).
-    MINIS_PICTURES overrides it (tests)."""
-    env = os.environ.get('MINIS_PICTURES')
-    if env:
-        return Path(env)
-    if sys.platform == 'win32':
-        try:
-            import ctypes
-            from ctypes import wintypes as wt
+def exports_dir() -> Path:
+    """Where exports go unless you name a path: <data folder>/exports (the app writes only under its data folder, or to a
+    path you choose)."""
+    return cfgmod.data_dir() / 'exports'
 
-            class GUID(ctypes.Structure):
-                _fields_ = [('a', wt.DWORD), ('b', wt.WORD), ('c', wt.WORD), ('d', ctypes.c_ubyte * 8)]
-            fid = GUID(0x33E28130, 0x4E1E, 0x4676, (ctypes.c_ubyte * 8)(0x83, 0x5A, 0x98, 0x39, 0x5C, 0x3B, 0xC3, 0xBB))
-            ptr = ctypes.c_wchar_p()
-            if ctypes.windll.shell32.SHGetKnownFolderPath(ctypes.byref(fid), 0, None, ctypes.byref(ptr)) == 0 and ptr.value:
-                p = Path(ptr.value)
-                ctypes.windll.ole32.CoTaskMemFree(ptr)
-                return p
-        except Exception:
-            pass
-    return Path.home() / 'Pictures'
+
+def reveal(path):
+    """Open the folder holding `path` with the file selected (Explorer /select, Finder -R).  Never under tests.
+    -> True when asked of the OS."""
+    if os.environ.get('MINIS_TESTING'):
+        return False
+    import subprocess
+    p = str(Path(path).resolve())
+    try:
+        if sys.platform == 'win32':
+            exe = os.path.join(os.environ.get('SystemRoot', r'C:\Windows'), 'explorer.exe')
+            subprocess.Popen([exe, '/select,' + p], close_fds=True)
+        elif sys.platform == 'darwin':
+            subprocess.Popen(['/usr/bin/open', '-R', p], close_fds=True)
+        else:
+            return False
+        return True
+    except OSError:
+        return False
 
 
 def gif_name(entry_or_plan, now=None) -> str:

@@ -18,13 +18,15 @@ import threading
 
 from PIL import Image, ImageDraw
 
-from .render import font, text
+from .render import font, text, wrap
 
 BG, EDGE, INK, DIM, GREY = (16, 16, 22, 242), (110, 110, 128, 255), (236, 236, 244), (165, 165, 180), (96, 96, 108)
 ON, OFF, SEL = (120, 210, 130), (70, 70, 84), (44, 44, 56, 255)
 AMBER, LINK, RED = (255, 196, 80), (140, 190, 255), (255, 110, 100)
-PAD, HEAD_H, ROW_H, FOOT_H = 8, 26, 25, 30
-W = 330
+PAD, HEAD_H, LINE1_H, FOOT_H = 8, 26, 14, 40
+W = 352
+STARTUP_HELP = {'on': 'on: Taskbar Fighters starts when you sign in', 'other': 'a startup entry for another copy of the app exists',
+                'unknown': 'checking ...'}
 VK = dict(left=0x25, up=0x26, right=0x27, down=0x28, enter=0x0D, space=0x20, esc=0x1B, back=0x08, tab=0x09)
 
 
@@ -159,7 +161,7 @@ class Backend:
                 self.edit_zone()
                 return None
             if value == 'auto':
-                ux.write_setting('zone', None)
+                ux.write_setting('zone', 'auto')
                 if self.restart is not None and self.restart():
                     return 'zone back to auto: restarting ...'
                 return 'zone back to auto: applies at the next start'
@@ -181,22 +183,43 @@ class Model:
         self.title = title
         self.W = W
         self.rows_y = PAD + HEAD_H
-        self.foot_y = self.rows_y + len(self.rows) * ROW_H + 4
+        self.help_w = self.W - 2 * PAD - 6
+        self.ys = []                                      # every help line is shown whole: rows grow to fit it
+        y = self.rows_y
+        for r in self.rows:
+            n = max(len(wrap(h, self.help_w)) for h in self.help_variants(r))
+            self.ys.append((y, y + LINE1_H + 11 * n + 3))
+            y += LINE1_H + 11 * n + 5
+        self.foot_y = y + 2
         self.H = self.foot_y + FOOT_H + PAD
+
+    def help_variants(self, r):
+        if r['id'] == 'startup':
+            return [r['help']] + list(STARTUP_HELP.values())
+        if r['id'] == 'zone':
+            return ['x 10000 - 10000 px on the taskbar (10000 wide)']
+        return [r['help']]
+
+    def help_of(self, r, v):
+        if r['id'] == 'startup':
+            return STARTUP_HELP.get(v, r['help'])
+        if r['id'] == 'zone' and isinstance(v, (tuple, list)):
+            return f'x {v[0]} - {v[1]} px on the taskbar ({v[1] - v[0]} wide)'
+        return r['help']
 
     def refresh(self):
         self.values = self.backend.get()
 
     # ---------------------------------------------------------- layout
     def row_rect(self, i):
-        y = self.rows_y + i * ROW_H
-        return PAD, y, self.W - PAD, y + ROW_H - 2
+        y0, y1 = self.ys[i]
+        return PAD, y0, self.W - PAD, y1
 
     def controls(self, i):
         """-> [(name, value, rect)] of a row's clickable parts."""
         r = self.rows[i]
         x0, y0, x1, y1 = self.row_rect(i)
-        cy = y0 + 2
+        cy = y0 + 1
         if r['kind'] == 'toggle':
             return [('toggle', None, (x1 - 46, cy, x1 - 4, cy + 13))]
         if r['kind'] == 'choice':
@@ -213,7 +236,7 @@ class Model:
         return []
 
     def close_rect(self):
-        return self.W - PAD - 56, self.foot_y + 12, self.W - PAD, self.foot_y + 26
+        return self.W - PAD - 56, self.foot_y + 25, self.W - PAD, self.foot_y + 39
 
     def hit(self, x, y):
         cx0, cy0, cx1, cy1 = self.close_rect()
@@ -354,19 +377,11 @@ class Model:
             v = self.values.get(r['id'])
             pend = r['id'] in self.backend.pending
             text(d, (x0 + 2, y0 + 1), r['label'], INK, 10)
-            hl = r['help']
             hcol = GREY if not sel else DIM
             if r['id'] == 'forge' and v:
                 hcol = AMBER                                   # make it obvious while it is on
-            if r['id'] == 'startup':
-                hl = {'on': 'on: starts when you sign in', 'off': hl, 'other': 'a startup entry for another copy exists',
-                      'unknown': 'checking ...'}.get(v, hl)
-            if r['id'] == 'zone' and isinstance(v, tuple):
-                hl = f'x {v[0]} - {v[1]} px on the taskbar ({v[1] - v[0]} wide)'
-            f9 = font(9, False)
-            while len(hl) > 3 and d.textlength(hl, font=f9) > x1 - x0 - (135 if r['kind'] != 'toggle' else 56):
-                hl = hl[:-4] + '...'
-            text(d, (x0 + 2, y0 + 12), hl, hcol, 9, False)
+            for j, ln in enumerate(wrap(self.help_of(r, v), self.help_w)):
+                text(d, (x0 + 2, y0 + LINE1_H + 1 + 11 * j), ln, hcol, 9, False)
             for name, val, rect in self.controls(i):
                 hov = self.hover is not None and self.hover[2] == i and self.hover[1] == val and self.hover[0] == name
                 if name == 'toggle':
@@ -384,11 +399,10 @@ class Model:
                     d.rounded_rectangle(rect, 3, fill=((70, 70, 86) if hov else (40, 40, 50)) + (255,), outline=(130, 130, 146, 255))
                     text(d, (rect[0] + (rect[2] - rect[0] - int(d.textlength(lab, font=font(9, True)))) // 2, rect[1]), lab, INK, 9)
         msg = self.msg if now < self.msg_until else ''
-        hint = msg or 'Arrows choose   Enter / Space change   Esc close   (every row: minis.py settings list)'
-        f9 = font(9, False)
-        while len(hint) > 3 and d.textlength(hint, font=f9) > self.W - 2 * PAD - 4:
-            hint = hint[:-4] + '...'
-        text(d, (PAD + 2, self.foot_y), hint, AMBER if msg else GREY, 9, False)
+        lines = wrap(msg, self.W - 2 * PAD - 4)[:2] if msg else ['Arrows choose   Enter / Space change   Esc close']
+        for j, ln in enumerate(lines):
+            text(d, (PAD + 2, self.foot_y + 11 * j + (5 if len(lines) == 1 else 0)), ln, AMBER if msg else GREY, 9, False)
+        text(d, (PAD + 2, self.foot_y + 26), 'Every row is also a command: minis.py settings list', GREY, 9, False)
         cx0, cy0, cx1, cy1 = self.close_rect()
         hov = self.hover is not None and self.hover[0] == 'close'
         d.rounded_rectangle([cx0, cy0, cx1, cy1], 3, fill=((80, 80, 98) if hov else (52, 52, 64)) + (255,), outline=(150, 150, 166, 255))

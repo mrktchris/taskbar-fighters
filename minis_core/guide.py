@@ -16,7 +16,7 @@ the taskbar strip (only the cards take the mouse).
 from __future__ import annotations
 from PIL import Image, ImageDraw
 
-from .render import font, text
+from .render import font, text, wrap
 
 GH = 104                           # the overlay's height above the taskbar (logical px)
 CARD_W, CARD_H = 236, 66
@@ -24,7 +24,10 @@ STEP_S = 14.0                      # a card moves on by itself after this long
 LEGEND_S = 10.0
 BG, EDGE, INK, DIM = (16, 16, 22, 244), (110, 110, 128, 255), (236, 236, 244), (170, 170, 185)
 AMBER, LINK, GOLD = (255, 196, 80), (140, 190, 255), (255, 214, 92)
-KEY_LINE = 'fight = an agent is working   ·   handoff = a task finished   ·   K.O. = context limit   ·   amber = needs you'
+LEGEND_LABELS = {'fighter': ('AI program = fighter', 'name on the plate, W-L on the board'),
+                 'plates': ('state word + context %', 'amber border = waiting for you'),
+                 'board': ('scoreboard', 'W-L · HP · Pause / Arena / Bout now')}
+KEY_LINE ='fight = an agent is working   ·   handoff = a task finished   ·   K.O. = context limit   ·   amber = needs you'
 
 
 def steps(names=None):
@@ -65,7 +68,15 @@ class Guide:
             return (float(t[0]) + float(t[1])) / 2.0 - self.x0
         return float(t) - self.x0
 
-    def card_rect(self, i=None, w=CARD_W, h=CARD_H, y=4):
+    def body_lines(self, i=None):
+        """The card's text, wrapped to the card (whole words, never cut)."""
+        name, title, body, col = self.steps[self.i if i is None else i]
+        txt = ' '.join(body + ([self.plates_note] if name == 'plates' and self.plates_note else []))
+        return wrap(txt, CARD_W - 16)
+
+    def card_rect(self, i=None, w=CARD_W, h=None, y=4):
+        if h is None:
+            h = 19 + 11 * len(self.body_lines(i)) + 26
         name = self.steps[self.i if i is None else i][0]
         tx = self.target_x(name)
         if tx is None:
@@ -161,9 +172,7 @@ class Guide:
         tx = self.target_x(name)
         if tx is not None:
             self._arrow(d, (r[0] + r[2]) // 2, r[3] - 1, int(tx), col)
-        if name == 'plates' and self.plates_note:
-            body = body + [self.plates_note]
-        self._card(d, r, title, body, col, foot=f'{self.i + 1} / {len(self.steps)}')
+        self._card(d, r, title, self.body_lines(), col, foot=f'{self.i + 1} / {len(self.steps)}')
         for key, (bx0, by0, bx1, by1) in self.buttons().items():
             on = self.hover == key
             lab = ('Got it' if self.i + 1 >= len(self.steps) else 'Next >') if key == 'next' else 'Skip'
@@ -176,15 +185,25 @@ class Guide:
         d.rectangle([r[0] + 8, r[3] - 3, r[0] + 8 + int((r[2] - r[0] - 16) * left / STEP_S), r[3] - 3], fill=col + (140,))
         return im
 
+    def legend_text(self, name):
+        t1, t2 = LEGEND_LABELS[name]
+        return t1, (self.plates_note if name == 'plates' and self.plates_note else t2)
+
+    def key_lines(self):
+        return wrap(KEY_LINE, max(120, self.W - 24))
+
     def _legend_boxes(self):
         out = {}
-        w, h = 168, 30
+        h = 30
+        ky1 = 2 + 9 + 11 * len(self.key_lines()) + 4
         for j, (name, title, body, col) in enumerate(self.steps):
             tx = self.target_x(name)
             if tx is None:
                 continue
+            t1, t2 = self.legend_text(name)
+            w = int(max(font(9, True).getlength(t1), font(9, False).getlength(t2))) + 14     # fits its text, whole
             x = int(max(2, min(self.W - w - 2, tx - w / 2)))
-            out[name] = (x, 30, x + w, 30 + h)
+            out[name] = (x, ky1 + 6, x + w, ky1 + 6 + h)
         names = list(out)                                              # keep the three labels from overlapping
         names.sort(key=lambda n: out[n][0])
         for a, b in zip(names, names[1:]):
@@ -192,18 +211,14 @@ class Guide:
                 shift = out[a][2] + 4 - out[b][0]
                 x0, y0, x1, y1 = out[b]
                 out[b] = (x0 + shift, y0, x1 + shift, y1)
-        f = font(9, False)
-        probe = ImageDraw.Draw(Image.new('RGBA', (1, 1)))
-        kw = int(probe.textlength(KEY_LINE, font=f)) + 16
+        kl = self.key_lines()
+        kw = int(max(font(9, False).getlength(ln) for ln in kl)) + 16
         kx = max(2, (self.W - kw) // 2)
-        out['key'] = (kx, 2, kx + kw, 24)
+        out['key'] = (kx, 2, kx + kw, ky1)
         return out
 
     def _render_legend(self, im, d, now):
         boxes = self._legend_boxes()
-        lab = {'fighter': ('AI program = fighter', 'name on the plate, W-L on the board'),
-               'plates': ('state word + context %', 'amber border = waiting for you'),
-               'board': ('scoreboard', 'W-L · HP · Pause / Arena / Bout now')}
         for name, title, body, col in self.steps:
             if name not in boxes:
                 continue
@@ -211,14 +226,13 @@ class Guide:
             tx = self.target_x(name)
             self._arrow(d, (r[0] + r[2]) // 2, r[3] - 1, int(tx), col)
             d.rounded_rectangle([r[0], r[1], r[2] - 1, r[3] - 1], 4, fill=BG, outline=col + (255,))
-            t1, t2 = lab[name]
-            if name == 'plates' and self.plates_note:
-                t2 = self.plates_note
-            text(d, (r[0] + 6, r[1] + 2), t1, col, 9)
-            text(d, (r[0] + 6, r[1] + 15), t2, INK, 9, False)
+            t1, t2 = self.legend_text(name)
+            text(d, (r[0] + 7, r[1] + 3), t1, col, 9)
+            text(d, (r[0] + 7, r[1] + 16), t2, INK, 9, False)
         k = boxes['key']
         d.rounded_rectangle([k[0], k[1], k[2] - 1, k[3] - 1], 4, fill=BG, outline=EDGE)
-        text(d, (k[0] + 8, k[1] + 4), KEY_LINE, INK, 9, False)
+        for j, ln in enumerate(self.key_lines()):
+            text(d, (k[0] + 8, k[1] + 4 + 11 * j), ln, INK, 9, False)
         left = max(0.0, LEGEND_S - (now - self.t0))
         d.rectangle([k[0] + 6, k[3] - 3, k[0] + 6 + int((k[2] - k[0] - 12) * left / LEGEND_S), k[3] - 3], fill=GOLD + (200,))
         return im

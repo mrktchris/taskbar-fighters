@@ -110,12 +110,28 @@ def testing() -> bool:
 
 # ---------------------------------------------------------------- where minis.json lives
 def settings_path() -> Path:
-    """The minis.json the app reads and the Settings window writes `zone` to: next to minis.py in a checkout or next to the
-    executable when frozen (unchanged), and in the data folder for a pip install (site-packages is not a place for it)."""
-    from . import paths
-    if paths.frozen() or paths.checkout():
-        return cfgmod.ROOT / 'minis.json'
+    """The minis.json the Settings window (and `minis.py zone`) writes: in the data folder, never in the install folder (the
+    app writes only under its data folder, or to a path you choose).  Its keys override the hand-written minis.json next to
+    minis.py; `"zone": "auto"` means the default zone even when the hand-written file sets one."""
     return cfgmod.data_dir() / 'minis.json'
+
+
+OVERLAY_KEYS = ('zone',)
+
+
+def apply_overlay(cfg, p=None) -> dict:
+    """cfg with the data folder's minis.json applied (only the keys the UI writes)."""
+    over = read_settings(p)
+    for k in OVERLAY_KEYS:
+        if k not in over:
+            continue
+        v = over[k]
+        if k == 'zone':
+            if v == 'auto':
+                cfg['zone'] = list(cfgmod.DEFAULTS['zone'])
+            elif isinstance(v, list) and len(v) == 2 and all(isinstance(x, (int, float)) for x in v) and v[1] > v[0]:
+                cfg['zone'] = [int(v[0]), int(v[1])]
+    return cfg
 
 
 def read_settings(p=None) -> dict:

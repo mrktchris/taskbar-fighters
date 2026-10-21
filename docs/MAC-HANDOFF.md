@@ -38,7 +38,7 @@ stop`, then `python minis.py guide --reset` so the first-run cards show, then `p
   - Test: Settings > Fight zone > Edit...; drag the right handle, drag the bar, Left/Right arrows; Cancel (Settings comes back);
     Edit again and Save (the app restarts); `python minis.py zone` shows the saved zone; `python minis.py zone auto`.
   - Expected: the bar lines up with the Dock strip; dragging is smooth with the button held outside the strip; while editing the
-    Dock band takes no clicks through, the desktop above the toolbar does; the zone lands in the clone's `minis.json`.
+    Dock band takes no clicks through, the desktop above the toolbar does; the zone lands in `~/Library/Application Support/minis/minis.json` (never in the clone).
 
 - [ ] **MAC-32 (2026-10-21) First-run cards and the legend.**
   - PC change: `minis_core/guide.py`, `minis_win/guide_window.py` (non-activatable, only the cards take the mouse).
@@ -69,12 +69,13 @@ stop`, then `python minis.py guide --reset` so the first-run cards show, then `p
     posing, loser bowing on the Dock too; it fades and never takes a click.
 
 - [ ] **MAC-36 (2026-10-21) Instant replay window and GIF export.**
-  - PC change: `minis_win/replay_window.py` (frames from a worker thread), `minis_core/replay.py` (`pictures_dir()` =
-    `~/Pictures` on macOS).
+  - PC change: `minis_win/replay_window.py` (frames from a worker thread), `minis_core/replay.py` (`exports_dir()` =
+    `~/Library/Application Support/minis/exports`; `reveal()` runs `open -R` on the new file).
   - Test: after a match, menu-bar icon > Replay last K.O.; click it to close; > Save last fight as GIF; `python minis.py replay
     code`, then `python minis.py replay <that code> --gif /tmp/f.gif`.
   - Expected: the replay plays smoothly above the Dock (the K.O. in slow motion) without stalling the scoreboard; the GIF appears
-    in `~/Pictures/Taskbar Fighters/` with a toast; no Screen Recording prompt anywhere (nothing is captured).
+    in `~/Library/Application Support/minis/exports/`, a toast says so and Finder opens with the file selected; with a PATH it
+    is written there and Finder does not open; no Screen Recording prompt anywhere (nothing is captured).
 
 - [ ] **MAC-37 (2026-10-21) Move book.**
   - PC change: `minis_core/collection.py`, `minis_win/book_window.py`; `minis_mac/geometry.MAC_KEYS` now maps Page Up / Page

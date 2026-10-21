@@ -13,9 +13,13 @@ Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.
   flash effects, desktop weapons (default unchanged: real pixels; its help line is amber while on), rival mode, who wins,
   the results strip, hover cards, event signals, **Start with Windows** (one `Taskbar Fighters.lnk` in shell:startup,
   an existing one for this copy reused, one for another copy left alone) / **Open at login** (the macOS LaunchAgent), and a
-  **drag-to-set fight zone** over the taskbar (Save / Reset to auto; written to `minis.json`, the fighters restart). Every
-  row is a command too: `settings list|set`, `startup`, `zone`, `results|cards|signals on|off`. A pip install keeps its
-  `minis.json` in the data folder.
+  **drag-to-set fight zone** over the taskbar (Save / Reset to auto; written to the data folder's own `minis.json`, which
+  overrides the hand-written one; the fighters restart). Every row is a command too: `settings list|set`, `startup`, `zone`,
+  `results|cards|signals on|off`. The app writes only under its data folder, or to a path you choose (plus the startup entry
+  you turn on yourself).
+- **Small UI text renders clean**: FreeType's monochrome hinting tore 9-10 px words apart ("m inis", "C laude"); the shared
+  `render.text` now draws antialiased text with even advances and sharpened coverage (plates, scoreboard, select screen and
+  every new window). No help line, caption or toast is cut with "..." any more: they wrap.
 - **First-run guide + legend**: three cards pointing at the real fighter, plates and scoreboard, once (ux.json); tray >
   *What am I looking at?* / `minis.py guide` shows a 10-second legend.
 - **Hover cards**: rest the mouse on a fighter or plate for the program, its state in words with how long, context, plan,
@@ -26,7 +30,8 @@ Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.
   the winner poses and the loser bows on the taskbar.
 - **Rival countdown** on a sleeping plate ("rival match in ~6 min") and in its hover card.
 - **Instant replay, GIF export and fight codes**: tray > *Replay last K.O.* plays the deciding exchange (K.O. in slow motion)
-  in a window above the taskbar; *Save last fight as GIF* writes the whole match to `Pictures\Taskbar Fighters`; both are
+  in a window above the taskbar; *Save last fight as GIF* writes the whole match to `<data folder>\exports` and opens that folder with the file
+  selected (`replay --gif PATH` writes where you say); both are
   offline renders from the stored plan (`replay.json`, numbers and ids only). `minis.py replay code` prints a short code
   (`TF1-claude-codex-...`: seed, characters, positions, odds as a ratio, outcome check) that `minis.py replay CODE` plays.
 - **Move book** (tray > *Move book...*, `minis.py book`): every move, set piece and finisher per fighter, seen ones animated,

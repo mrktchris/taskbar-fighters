@@ -77,8 +77,7 @@ FPS_KEYS = (('fps_active', 1, 60), ('fps_idle', 1, 60), ('arena_fps', 5, 60))
 def load_config(path=None, log=None):
     """cfgmod.load() plus two guards: a minis.json that does not parse is logged (it used to be ignored silently), and the
     fps values are clamped (fps 0 divided by zero in the loops)."""
-    from minis_core import ux
-    p = Path(path) if path else ux.settings_path()     # a pip install keeps its minis.json in the data folder (Settings > zone)
+    p = Path(path) if path else cfgmod.ROOT / 'minis.json'
     cfg = cfgmod.load(p)
     problem = None
     if p.exists():
@@ -90,6 +89,9 @@ def load_config(path=None, log=None):
                 cfg = dict(cfgmod.DEFAULTS)
         except (OSError, ValueError) as e:
             problem = f'minis.json could not be read ({type(e).__name__}): ignored, defaults used'
+    if path is None:
+        from minis_core import ux
+        ux.apply_overlay(cfg)                          # what Settings / `minis.py zone` saved, in the data folder
     for k, lo, hi in FPS_KEYS:
         try:
             v = float(cfg.get(k, cfgmod.DEFAULTS.get(k, lo)))
