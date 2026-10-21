@@ -541,3 +541,79 @@ prepared the release; the tag is the owner's.
 - macOS: MAC-5, 8, 13, 17, 18, 20 and 21 in `docs/MAC-HANDOFF.md` are still OPEN (real-Mac checks of the V7.1 and V8 work; the
   Mac session closed MAC-14/15/16/19/22 in `f98889f` while this pass ran).
 - The wheel is 51 MB (36 MB of it the HD sheets); under PyPI's 100 MB default file limit.
+
+## Windows on strangers' PCs (2026-10-21, branch `win-robust`, not merged)
+
+Goal (owner: "apply all"): run on other people's Windows PCs, not only the author's 2560x1440, 100%, bottom-taskbar setup.
+Claude wrote it; an independent review is owed like every Claude-written pass.
+
+### Built
+
+- **`config.stage()`** (pure, shared geometry, tested on every OS): from the backend's rect-only `info` (taskbar rect, edge,
+  auto-hide + revealed, monitor, work area, DPI, element rects) -> edge, layout (`taskbar` band or bottom-of-work-area
+  `strip`), usable / why, integer scale, band, floor, zone (logical px) and where the zone came from. Helpers:
+  `occupied_spans` (leaf rects, plus containers their children fill; the whole bar and Windows 10's free-spanning task list
+  do not count), `free_gaps`, `pick_gap` (the leftmost wide gap wins at 3/4 of the widest: left of centred icons, right of
+  left-aligned ones), `zone_from_span` (40 px from a monitor edge, 8 px + the scoreboard's 36 px tail from an element,
+  element-bounded ends on a 48 px grid so independently-detecting processes agree and not every icon re-lays out),
+  `autohide_shown`, `edge_of`, `band_for_dpi`, `apply_stage`. A `zone` in `minis.json` turns `zone_auto` off and wins.
+- **`minis_win/shell.py`**: DPI awareness per-monitor v2 -> v1 -> shcore -> system, and `dpi_awareness()` reports what the
+  process really has; `taskbar_info(monitor)` (primary `Shell_TrayWnd`, or with `monitor` that monitor's
+  `Shell_SecondaryTrayWnd`); `monitor_dpi`; `monitors()` gains each monitor's scale; element rects from
+  **`minis_win/uia.py`** (raw-COM UI Automation via ctypes, reads only BoundingRectangle + IsOffscreen, on a worker thread
+  with a 1.5 s deadline so a hung Explorer cannot freeze a loop) with the shell's own `Start` / `TrayButton` /
+  `TrayNotifyWnd` / (Windows 11) `MSTaskListWClass` window rects as the fallback, cached 5 s; `layout_epoch()` bumped by
+  WM_DISPLAYCHANGE, WM_DPICHANGED, WM_SETTINGCHANGE(SPI_SETWORKAREA) and TaskbarCreated.
+- **`minis.py`**: `taskbar_stage()` used by the fighter, the scoreboard, `status` and `doctor`; a shell without
+  `taskbar_info` (macOS, test fakes) is laid out exactly as before. Fighters re-zone live (`Fighter.rezone`: new fight zone and
+  homes, a running bout called off, plates follow); the scoreboard follows the zone; the select popup opens above the band on
+  its monitor; an auto-hide bar is polled every 0.25 s; a layout-epoch change re-lays out at once.
+- **Tray**: the icon is reloaded at the new small-icon size on WM_DPICHANGED / WM_DISPLAYCHANGE.
+- `doctor` prints `dpi`, `stage` and `zone` lines; README (Configuration, where the fighters stand, Known limits), AGENTS.md
+  (preflight and troubleshooting), CHANGELOG (Unreleased).
+
+Decisions: vertical and top taskbars get a horizontal strip at the bottom of the work area, not a vertical lane (the art,
+the choreography and the bout planner are horizontal; a vertical lane would mean a second engine). Sprite and HUD share one
+integer scale, the largest whose 44 px scoreboard fits the band (`ui_scale`): 1x at 100-175%, 2x at 200%. Sharp pixels and a
+HUD that never spills out of the taskbar beat matching the 100% size at 150%.
+
+### Matrix
+
+| setup | result |
+| --- | --- |
+| Windows 11, 2560x1440, 100%, bottom, centred icons, primary | **verified for real** (this PC): `doctor --headless` `zone: [40, 912] (auto, from uia element rects)`; a real fighter + plate + scoreboard (temp data folder, no capture, window rects read back): fighter 394-458 x 1346-1440 (feet on 1440), plate 40-168 x 1403-1429, scoreboard 758-948 x 1394-1438, 24 px clear of the start button at 972 |
+| second monitor's taskbar via `"monitor": 2` (1920x1080 at x 2560, 100%) | **verified for real**: zone [2600, 3168], scoreboard ends at 3204, start button at 3212 |
+| Win32 window-rect fallback (UIA off) | **verified for real**: the same zone [40, 912] from `Start` + `TrayNotifyWnd` + `MSTaskListWClass` rects |
+| per-monitor v2 DPI awareness; layout messages bump the epoch; `taskbar_info` is ints-only rects; UIA probe deadline | **verified for real** (`tests/test_shell.py` StrangersPCs, real windows; messages sent to our own window only) |
+| 125%, 150%, 175%, 200% DPI (1920x1080, 2560x1440, 3840x2160) | unit-tested only (`tests/test_stage.py`): integer scale, HUD inside the band, feet on the floor, zone clear of the icons, fighter windows at whole scaled px |
+| a taskbar with no room: 1920x1080 at 200%, and the GitHub Windows runner's 1024x768 desktop | **seen for real on the CI runner** (its `doctor --headless`: 18 UIA element rects, occupied x 287-732 and 790-1024 - a centred cluster on a 1024 px bar; the first version fell back to the default zone, which covered those icons) -> fixed: a narrow `auto (cramped)` zone [40, 240] inside the 0-287 gap; unit-tested with those exact rects, both fighters and the scoreboard run, no sprite reaches x 287 |
+| taskbar at the top, left, right (each DPI) | unit-tested only: strip at the bottom of the work area, never under a side taskbar, fighters shown |
+| auto-hide bottom taskbar | unit-tested only: hidden while the bar is away, back within 0.25 s, scoreboard and plates too; `autohide_shown` from synthetic window rects |
+| left-aligned icons; widgets button at the far left; Windows 10 rect set (wide search box, task list spanning the free stretch) | unit-tested only |
+| icon cluster growing 4 -> 23 icons | unit-tested only: zone end steps down on the 48 px grid, never onto an icon; both fighters and the scoreboard re-zone live |
+| display / DPI change, Explorer restart moving the bar | unit-tested only (epoch bump -> immediate re-layout, scale 1 -> 2, bottom -> top strip); the real message path is tested by sending the messages to our own window, not by changing the owner's display or restarting Explorer |
+| tray icon on a DPI change | unit-tested only (fake API: reloaded at the new size, NIM_MODIFY) |
+| Windows 10 on a real PC, a real 125-200% display, a real auto-hide / side taskbar | **not verified**: the owner's display settings were not changed (not allowed) and no Windows 10 machine was available |
+| macOS | unchanged code path (no `taskbar_info` on the Mac shell); CI only |
+
+### Verified
+
+| claim | evidence |
+| --- | --- |
+| suite | `python -m unittest discover -s tests`: 666 OK, 14 skipped (Windows 11, Python 3.14; was 633: +28 `test_stage`, +4 `test_shell` StrangersPCs, +1 `test_tray`) |
+| doctor | `python minis.py doctor --headless`: PASS 5/5 with the `dpi`, `stage` and `zone` lines above |
+| privacy | only rects are read: `uia.py` reads BoundingRectangle and IsOffscreen; window class names of the shell's own windows pick the fallback rects; no text, name or title (a test greps both modules) |
+| owner's live copy | not stopped or started (`doctor` shows it running as `foreign`; the real-window check used a temp data folder) |
+
+### Independent review (Codex, 2026-10-21: "merge after fixes") - both win-robust findings fixed
+
+| finding | reproduced | fix | test (failed before, passes after) |
+| --- | --- | --- | --- |
+| 7 MED: element rects known but no usable gap -> the default zone stood fighters on taskbar buttons | `stage()` on a bar full of 44 px buttons returned `usable=True, zone_src='default'` | known rects (2+) and no gap: `usable=False`, `zone_src='none'`, why "no free taskbar space - set a "zone" in minis.json or use a smaller fighter size"; the default zone only when no rects could be read; an owner's `zone` still shows | `test_review7_known_full_taskbar_hides_instead_of_using_the_default_zone`, `test_review7_a_full_taskbar_hides_fighters_plates_and_scoreboard_and_status_says_why` (fighter, plate and scoreboard hidden; `status` says why) |
+| 8 MED: select popup on a monitor above the primary landed on the primary (`max(MARGIN, y)`) | `placement(..., area=(0, 1920, -48))` returned y = 8 | `stage()` carries the band's monitor rect; `minis.select_area()` passes its top; `placement` clamps to that monitor's top (negative y kept). Other placements touched (fighters, plates, scoreboard, strip) derive y from the band / work area with no positive clamp | `test_review8_select_popup_stays_on_a_monitor_above_the_primary` |
+
+### Not done / not verified
+
+- Not merged to master, not tagged.
+- Real 125-200% displays, side / top / auto-hide taskbars, Windows 10 and a real Explorer restart: unit-tested only (matrix).
+- At 125-175% the sprites stay 1x (crisp but smaller); a per-scale art size would need art work outside this pass.

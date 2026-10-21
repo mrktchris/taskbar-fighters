@@ -37,7 +37,7 @@ Run these and check every answer before going on.
 | Python 3.12+ | `python --version` (or `py -3 --version`) | 3.12 or newer. Tested on 3.12 and 3.14. If missing: ask the user to install it from python.org or `winget install Python.Python.3.12` - with their yes |
 | pip | `python -m pip --version` | any |
 | git | `git --version` | any (or download the ZIP from GitHub) |
-| taskbar at the bottom | ask the user, or Settings > Personalization > Taskbar > Taskbar behaviors | bottom; fighters hide when the taskbar is elsewhere or auto-hides |
+| taskbar position | ask the user, or Settings > Personalization > Taskbar > Taskbar behaviors | any edge. Bottom: fighters stand on the taskbar (auto-hide: only while it is shown). Top / left / right: on a strip at the bottom of the screen. `python minis.py doctor` prints what it detected |
 
 Only one third-party package is needed: Pillow (see `requirements.txt`). Everything else is the Python standard library and
 ctypes.
@@ -68,7 +68,7 @@ python minis.py status
 
 `start` launches three windowless processes and after about 3 s prints what is on screen, e.g. `a: Claude Code, b: Sparring bot
 asleep`. `status` should begin with a line saying it is running and who is on which side. Tell the user to look at the empty part
-of their taskbar, left of the icons.
+of their taskbar (left of the icons when they are centred, right of them when they are left-aligned).
 
 Then show them the basics: right-click a fighter for the menu, click a name on the scoreboard to pick fighters,
 `python minis.py demo match` for a bout right now, `python minis.py pause` / `resume`, `python minis.py size 64|96|128` for the
@@ -153,9 +153,10 @@ login (`print-startup` shows it first; `autostart off` removes it). There is no 
 | symptom | what to do |
 | --- | --- |
 | no fighters on the taskbar | `python minis.py status` (running?), then `python minis.py detect` (which AI programs are seen and how). With nothing detected, nothing is shown. Claude Code and Codex need a session file changed in the last 24 h |
-| fighters cover taskbar icons / sit in the wrong place | set `"zone": [left, right]` in `minis.json` (screen x of the empty stretch), then `python minis.py restart` |
-| nothing visible at all | the taskbar must be at the bottom and not auto-hiding; fullscreen apps hide the fighters |
-| tiny or misplaced on a high-DPI display | only 100% scaling has been observed; integer scaling is untested at 150% / 200%. Tell the user and adjust `zone` |
+| fighters cover taskbar icons / sit in the wrong place | `python minis.py doctor` shows the detected zone. If it is wrong, set `"zone": [left, right]` in `minis.json` (logical px: screen x divided by the sprite scale doctor prints), then `python minis.py restart` |
+| nothing visible at all | an auto-hide taskbar at the bottom: the fighters show only while it is revealed; fullscreen apps hide the fighters |
+| small on a 125-175% display | by design: sprites stay at a whole-number scale (1x) so they are crisp; `python minis.py size 128` is the biggest |
+| fighters on the wrong monitor's taskbar | they use the primary monitor's taskbar; `"monitor": N` in `minis.json` (N from `python minis.py monitors`) picks another |
 | a program is shown that the user does not want | `"ignore_sources": ["<id from detect>"]` in `minis.json` |
 | flashing bothers the user | `python minis.py flash off` |
 | `start` says it is already running | `python minis.py restart` |
