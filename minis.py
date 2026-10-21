@@ -1296,6 +1296,13 @@ def taskbar_stage(shell, cfg):
     return cfgmod.stage(info, cfg)
 
 
+def select_area(st):
+    """(x0, x1, top, monitor_top) for select_window.placement: above the fighters' band, inside the band's monitor (whose
+    top may be negative: a monitor above the primary)."""
+    mon = st.get('monitor') or (st['span'][0], 0, st['span'][1], st['floor'])
+    return (max(st['span'][0], mon[0]), min(st['span'][1], mon[2]), st['band'][0], mon[1])
+
+
 def layout_epoch(shell):
     """The backend's layout-change counter (display / DPI / work-area change, Explorer restart), or None without one."""
     fn = getattr(shell, 'layout_epoch', None)
@@ -1436,7 +1443,7 @@ class Scoreboard:
         st = (self.g or {}).get('stage')
         area = None
         if st and getattr(self.shell, 'taskbar_info', None) is not None:     # Windows: above the fighters' band, on its monitor
-            area = (st['span'][0], st['span'][1], st['band'][0])
+            area = select_area(st)
         self.select = SelectWindow(self.shell, model, self.mono, self.select_done, scale=sc, centre_x=centre, area=area)
 
     def select_done(self, model):
@@ -2573,7 +2580,7 @@ def cmd_doctor(args=None, shell=None, probe=None, describe=None, out=print):
                 where = ('taskbar band' if st['layout'] == 'taskbar' else 'strip at the bottom of the work area') + f" y {st['band']}"
                 out(f"  stage: edge={st['edge']}{' auto-hide' + (' (shown now)' if st['revealed'] else ' (hidden now)') if st['autohide'] else ''}; "
                     f"{where}; {'shown' if st['usable'] else 'hidden: ' + st['why']}")
-                out(f"  zone: {list(cfg['zone'])} logical px ({st['zone_src']}"
+                out(f"  zone: {'none - the fighters hide' if st['zone_src'] == 'none' else list(cfg['zone'])} logical px ({st['zone_src']}"
                     + f"; {st.get('parts_n', 0)} taskbar element rects from {st['parts_src'] or 'nowhere'}"
                     + f"; screen x {int(cfg['zone'][0]) * st['scale']}-{int(cfg['zone'][1]) * st['scale']})")
                 if st.get('spans'):

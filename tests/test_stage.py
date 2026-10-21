@@ -233,6 +233,41 @@ class StagePure(unittest.TestCase):
         x, _ = select_window.placement(None, 300, 200, 2, centre_x=-1900, area=(-1920, 0, 1032))
         self.assertEqual(x, -1920 + select_window.MARGIN)              # kept on that monitor
 
+    def test_review8_select_popup_stays_on_a_monitor_above_the_primary(self):
+        """Codex review #8: max(MARGIN, ...) forced y >= 8, so on a monitor ABOVE the primary (negative screen y) the popup
+        landed on the primary.  It is clamped to the target monitor's own top instead."""
+        mon = (0, -1080, 1920, 0)
+        info = dict(rect=(0, -48, 1920, 0), edge=3, monitor=mon, work=(0, -1080, 1920, -48), dpi=1.0, parts=None)
+        st = cfgmod.stage(info, CFG)
+        self.assertEqual(st['monitor'], mon)
+        area = minis.select_area(st)
+        x, y = select_window.placement(None, 300, 200, 2, centre_x=960, area=area)
+        self.assertEqual(y, -48 - 400 - select_window.MARGIN)                    # just above that bar, negative y kept
+        self.assertTrue(mon[1] <= y and y + 400 <= mon[3])
+        _, y = select_window.placement(None, 300, 600, 2, centre_x=960, area=area)     # taller than the room above the bar
+        self.assertEqual(y, mon[1] + select_window.MARGIN)                         # clamped to THAT monitor's top, not 8
+
+    def test_review7_known_full_taskbar_hides_instead_of_using_the_default_zone(self):
+        """Codex review #7: element rects known, no gap left (a bar full of buttons): the default zone would put fighters on
+        the buttons.  Hide and say why; the default zone stays only for when no element rects could be read."""
+        t, b = 1392, 1440
+        parts = [(0, t, 2560, b)] + [(i * 44, t, i * 44 + 44, b) for i in range(52)] + [(2290, t, 2560, b)]
+        info = dict(rect=(0, t, 2560, b), edge=3, monitor=(0, 0, 2560, 1440), work=(0, 0, 2560, t), dpi=1.0, parts=parts,
+                    parts_src='uia')
+        st = cfgmod.stage(info, CFG)
+        self.assertFalse(st['usable'])
+        self.assertIsNone(st['zone'])
+        self.assertEqual(st['zone_src'], 'none')
+        self.assertIn('no free taskbar space', st['why'])
+        cfg = dict(CFG)
+        self.assertFalse(cfgmod.apply_stage(cfg, st))
+        info['parts'] = None                                                        # nothing readable: default, shown
+        st = cfgmod.stage(info, CFG)
+        self.assertEqual((st['usable'], st['zone_src'], st['zone']), (True, 'default', (40, 900)))
+        info['parts'] = parts                                                       # the owner's own zone always shows
+        st = cfgmod.stage(info, dict(CFG, zone=[40, 400], zone_auto=False))
+        self.assertTrue(st['usable'])
+
 
 # ------------------------------------------------------------------------------------------------ the loops, headless
 class InfoShell:
@@ -393,6 +428,22 @@ class Loops(Isolated):
         for f in (fa, fb):
             self.assertTrue(f.ov.visible)
             self.assertLessEqual(f.brain.x + cfgmod.SPRITE_REACH, 287)
+
+    def test_review7_a_full_taskbar_hides_fighters_plates_and_scoreboard_and_status_says_why(self):
+        from unittest import mock
+        t, b = 1392, 1440
+        parts = [(0, t, 2560, b)] + [(i * 44, t, i * 44 + 44, b) for i in range(52)] + [(2290, t, 2560, b)]
+        info = dict(rect=(0, t, 2560, b), edge=3, monitor=(0, 0, 2560, 1440), work=(0, 0, 2560, t), dpi=1.0, parts=parts,
+                    parts_src='uia', autohide=False, revealed=True)
+        sh = InfoShell(info)
+        f = self.fighter(sh)
+        board = minis.Scoreboard(dict(CFG), sh, wall=lambda: self.t['wall'], mono=lambda: self.t['mono'])
+        board.setup()
+        self.go([f, board], 0.5)
+        self.assertFalse(f.ov.visible or f.pov.visible or board.ov.visible)
+        with mock.patch.object(minis.plat, 'shell', return_value=sh):
+            line, _ok = minis.on_screen(now=self.t['wall'])
+        self.assertIn('no free taskbar space', line)
 
     def test_status_reports_a_hidden_autohide_taskbar(self):
         from unittest import mock

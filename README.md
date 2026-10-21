@@ -539,7 +539,8 @@ minis_platform/   picks minis_win or minis_mac at run time (nothing imports a de
 - At fractional scales (125%, 150%, 175%) sprites stay at 1x so they are crisp: they look smaller than at 100% (use `size 128`).
 - A taskbar too full to hold the plates, a bout and the scoreboard (a 1024 px screen, 1920x1080 at 200% with many icons) gets a
   narrow zone in its gap: nobody walks on an icon, but the plates and the scoreboard overlap; `plates off`, `"scoreboard":
-  false` or `size 64` help, or set `zone`.
+  false` or `size 64` help, or set `zone`. With no free stretch at all the fighters hide, and `status` / `doctor` say "no free
+  taskbar space". The default zone `[40, 900]` is used only when the taskbar's buttons cannot be read at all.
 - Top, left and right taskbars use a strip at the bottom of the screen, over app windows (no vertical lane).
 - At the default 128 px a fighter stands well above the 48 px taskbar, over the bottom of the desktop (its window is
   click-through except the sprite); `size 64` keeps it to about 11 px above the taskbar's top edge. Long weapons tilt to fit

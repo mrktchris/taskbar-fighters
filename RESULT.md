@@ -600,10 +600,17 @@ HUD that never spills out of the taskbar beat matching the 100% size at 150%.
 
 | claim | evidence |
 | --- | --- |
-| suite | `python -m unittest discover -s tests`: 663 OK, 14 skipped (Windows 11, Python 3.14; was 633: +25 `test_stage`, +4 `test_shell` StrangersPCs, +1 `test_tray`) |
+| suite | `python -m unittest discover -s tests`: 666 OK, 14 skipped (Windows 11, Python 3.14; was 633: +28 `test_stage`, +4 `test_shell` StrangersPCs, +1 `test_tray`) |
 | doctor | `python minis.py doctor --headless`: PASS 5/5 with the `dpi`, `stage` and `zone` lines above |
 | privacy | only rects are read: `uia.py` reads BoundingRectangle and IsOffscreen; window class names of the shell's own windows pick the fallback rects; no text, name or title (a test greps both modules) |
 | owner's live copy | not stopped or started (`doctor` shows it running as `foreign`; the real-window check used a temp data folder) |
+
+### Independent review (Codex, 2026-10-21: "merge after fixes") - both win-robust findings fixed
+
+| finding | reproduced | fix | test (failed before, passes after) |
+| --- | --- | --- | --- |
+| 7 MED: element rects known but no usable gap -> the default zone stood fighters on taskbar buttons | `stage()` on a bar full of 44 px buttons returned `usable=True, zone_src='default'` | known rects (2+) and no gap: `usable=False`, `zone_src='none'`, why "no free taskbar space - set a "zone" in minis.json or use a smaller fighter size"; the default zone only when no rects could be read; an owner's `zone` still shows | `test_review7_known_full_taskbar_hides_instead_of_using_the_default_zone`, `test_review7_a_full_taskbar_hides_fighters_plates_and_scoreboard_and_status_says_why` (fighter, plate and scoreboard hidden; `status` says why) |
+| 8 MED: select popup on a monitor above the primary landed on the primary (`max(MARGIN, y)`) | `placement(..., area=(0, 1920, -48))` returned y = 8 | `stage()` carries the band's monitor rect; `minis.select_area()` passes its top; `placement` clamps to that monitor's top (negative y kept). Other placements touched (fighters, plates, scoreboard, strip) derive y from the band / work area with no positive clamp | `test_review8_select_popup_stays_on_a_monitor_above_the_primary` |
 
 ### Not done / not verified
 

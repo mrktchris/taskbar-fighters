@@ -350,6 +350,7 @@ def stage(info, cfg=None) -> dict:
         return out
     mon = tuple(info.get('monitor') or (l, t, r, b))
     work = tuple(info.get('work') or mon)
+    out['monitor'] = mon                                   # popups clamp to THIS monitor (it may sit at negative x / y)
     if edge == 3:
         band = max(24, b - t)
         sc = ui_scale(band)
@@ -369,7 +370,12 @@ def stage(info, cfg=None) -> dict:
                     z = zone_from_span(*ends, min_w=ZONE_GRID)     # the gap - the HUD is crowded, but nobody walks on an icon
                     if z:
                         out.update(zone=z, zone_src='auto (cramped)')
-        if out['zone'] is None:                            # no elements, or no gap at all: the default zone, kept on this bar
+        known = len(info.get('parts') or ()) >= 2         # the bar's elements were read (one rect alone says nothing)
+        if out['zone'] is None and known and cfg.get('zone_auto', True):
+            # the buttons are known and leave no safe gap: the default zone would stand the fighters on them - hide instead
+            out.update(usable=False, zone_src='none',
+                       why='no free taskbar space - set a "zone" in minis.json or use a smaller fighter size (minis.py size 64)')
+        elif out['zone'] is None:                          # no element rects could be read: the default zone, kept on this bar
             import math
             d0, d1 = DEFAULTS['zone']
             base = int(math.ceil(l / sc))                  # measured from the bar's left end (a taskbar on another monitor)

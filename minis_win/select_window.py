@@ -12,18 +12,21 @@ MARGIN = 8
 
 def placement(shell, w, h, scale, centre_x=None, area=None):
     """-> (x, y) in screen px for a w x h (logical) popup: just above the taskbar, centred on `centre_x` (screen px), kept
-    on the primary screen.  area=(x0, x1, top) (physical px, from config.stage: the fighters' band and its monitor's x span)
-    places it above that band instead - any taskbar edge, any monitor."""
+    on the primary screen.  area=(x0, x1, top[, monitor_top]) (physical px, from minis.select_area: the fighters' band and its
+    monitor) places it above that band instead - any taskbar edge, any monitor, negative coordinates kept (a monitor left of
+    or above the primary): it is clamped to that monitor's own edges, never to the primary's."""
     pw, ph = w * scale, h * scale
     if area is not None:
-        x0, x1, top = (int(v) for v in area)
+        vals = [int(v) for v in area]
+        x0, x1, top = vals[:3]
+        mtop = vals[3] if len(vals) > 3 else 0
     else:
         l, t, r, b, edge = shell.taskbar_rect()
         sw, sh = shell.screen_size()
-        x0, x1, top = 0, sw, (t if edge == 3 else sh)
+        x0, x1, top, mtop = 0, sw, (t if edge == 3 else sh), 0
     cx = (x0 + x1) // 2 if centre_x is None else int(centre_x)
     x = max(x0 + MARGIN, min(x1 - pw - MARGIN, cx - pw // 2))
-    y = max(MARGIN, top - ph - MARGIN)
+    y = max(mtop + MARGIN, top - ph - MARGIN)
     return x, y
 
 
