@@ -58,7 +58,7 @@ Gaps a new user hits, in the order they hit them:
 | game | mechanic worth borrowing | source |
 | --- | --- | --- |
 | **Street Fighter 6** | Real-time **commentary**: 10 commentators, colour commentary optional, subtitles in 13 languages. **Frame meter**: a bar of pips for startup/active/recovery, with an in-game infographic, which reviewers said teaches beginners. Ranked ladder from 1,000 LP up to Master, where Master Rate resets every 3 months and nobody is demoted out of Master. Battle Hub avatars. | [Wikipedia](https://en.wikipedia.org/wiki/Street_Fighter_6), [esports.gg](https://esports.gg/news/street-fighter-v/state-of-play-showcases-street-fighter-6s-insane-new-features/), [EventHubs frame meter](https://www.eventhubs.com/news/2022/sep/16/sf6-training-visual-frame-data), [Infil](https://words.infil.net/w03-sf6beta-p6.html), [EventHubs Master League](https://www.eventhubs.com/news/2023/aug/01/sf6-launches-master-league), [Esports.net ranks](https://www.esports.net/wiki/guides/street-fighter-ranks/) |
-| **Smash Ultimate** | Results screen: the winner does one of ~3 random poses while the losers stand back **applauding**. Each character has its own congratulations screen. Stage hazards can be **toggled off**, a first in 19 years, and tournaments run with hazards and spirits off. | [SSBWiki victory pose](https://www.ssbwiki.com/Victory_pose), [SSBWiki credits](https://www.ssbwiki.com/credits), [Zelda Universe](https://zeldauniverse.net/2018/06/14/stage-hazards-are-now-optional-in-super-smash-bros-ultimate/), [SSBWiki rulesets](https://ssbwiki.com/Special:MobileDiff/1635988) |
+| **Smash Ultimate** | Results screen: the winner does one of ~3 random poses while the losers stand back **applauding**. Each character has its own congratulations screen. Stage hazards can be **toggled off**, a first in 19 years, and tournaments run with hazards and spirits off. | [Zelda Universe](https://zeldauniverse.net/2018/06/14/stage-hazards-are-now-optional-in-super-smash-bros-ultimate/) |
 | **Tekken 8** | **Ghosts**: AI that copies your habits from online and offline play. Patch 2.02 added "NICE!" / "Don't do that!" feedback to steer it. My Replay & Tips: watch a replay, get told the mistake, take over and practise on the spot. | [esports.gg](https://esports.gg/guides/tekken-8/tekken-8-super-ghost-battle), [Bandai Namco 2.02](https://www.bandainamcoent.com/news/tekken-8-patch-notes-v2-02), [GamingBolt](https://gamingbolt.com/tekken-8-overhauls-my-replay-and-tips-allows-for-real-time-practice) |
 | **Brawlhalla** | Free battle-pass track that all players advance, gold pass $9.99, 12-week seasons, exclusive cosmetics that can come back through "Classic" passes. | [Brawlhalla wiki](https://brawlhalla.wiki.gg/wiki/Battle_Pass), [Battle Pass FAQ](https://www.brawlhalla.com/battle-pass-faq) |
 | **Rivals of Aether** | Steam Workshop for characters, stages, skins and buddies. **Four community characters were made official.** A creation contest drew 100+ entries for a major event. | [rivalsofaether.com](https://rivalsofaether.com/?p=84), [Steam Workshop](https://steamcommunity.com/workshop/filedetails/discussion/3514263181/524225948489413718) |
@@ -212,8 +212,7 @@ Items marked *(in progress)* overlap work already under way; for those the note 
 **10. A results beat after each match** (S; D, C; OK)
 - *What:* after "CLAUDE WINS 2-1", a 4-second strip: winner pose, loser clapping in the background, three numbers ("hits 23 · best
   combo 5 · ultimate landed"), then back to idle. Turn it off in Settings.
-- *Borrowed from:* Smash's results screen, where losers stand back applauding and each fighter has ~3 random poses
-  ([SSBWiki](https://www.ssbwiki.com/Victory_pose)).
+- *Borrowed from:* Smash's results screen, where losers stand back applauding and each fighter has ~3 random poses.
 - *Mapping:* the scoreboard result line plus the slot fighters. Both sides already share the timeline, so the stats come free from
   the plan.
 
@@ -422,7 +421,7 @@ Desktop companions and idlers
 
 Fighting games and spectating
 - Street Fighter 6: https://en.wikipedia.org/wiki/Street_Fighter_6 · https://esports.gg/news/street-fighter-v/state-of-play-showcases-street-fighter-6s-insane-new-features/ · https://www.eventhubs.com/news/2022/sep/16/sf6-training-visual-frame-data · https://words.infil.net/w03-sf6beta-p6.html · https://www.eventhubs.com/news/2023/aug/01/sf6-launches-master-league · https://www.esports.net/wiki/guides/street-fighter-ranks/
-- Smash Ultimate: https://www.ssbwiki.com/Victory_pose · https://www.ssbwiki.com/credits · https://zeldauniverse.net/2018/06/14/stage-hazards-are-now-optional-in-super-smash-bros-ultimate/ · https://ssbwiki.com/Special:MobileDiff/1635988
+- Smash Ultimate: https://zeldauniverse.net/2018/06/14/stage-hazards-are-now-optional-in-super-smash-bros-ultimate/
 - Tekken 8: https://esports.gg/guides/tekken-8/tekken-8-super-ghost-battle · https://www.bandainamcoent.com/news/tekken-8-patch-notes-v2-02 · https://gamingbolt.com/tekken-8-overhauls-my-replay-and-tips-allows-for-real-time-practice
 - Brawlhalla: https://brawlhalla.wiki.gg/wiki/Battle_Pass · https://www.brawlhalla.com/battle-pass-faq
 - Rivals of Aether: https://rivalsofaether.com/?p=84 · https://steamcommunity.com/workshop/filedetails/discussion/3514263181/524225948489413718

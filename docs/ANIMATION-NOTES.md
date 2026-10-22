@@ -487,19 +487,19 @@ fighters freezing on contact, knockback that grows with accumulated damage, real
 (community frame-data documentation; formulas quoted, nothing else taken):
 
 - Hitlag freezes attacker and victim alike, floor(floor(d / 3 + 3) x e) x c frames, capped at 20; a 15 % hit freezes 8
-  frames ([frame-data wiki: Hitlag](https://www.ssbwiki.com/Hitlag)).
+  frames (community frame-data notes: hitlag).
 - Hitstun is 0.4 frames per unit of knockback, so 100 units stun for 40 frames
-  ([frame-data wiki: Hitstun](https://www.ssbwiki.com/Hitstun)).
+  (community frame-data notes: hitstun).
 - Knockback = ((((p / 10 + p x d / 20) x 200 / (w + 100) x 1.4) + 18) x s) + b, where p already counts the hit; launch speed
-  is knockback x 0.03 per frame and decays by 0.051 per frame ([frame-data wiki: Knockback](https://www.ssbwiki.com/Knockback)).
+  is knockback x 0.03 per frame and decays by 0.051 per frame (community frame-data notes: knockback).
 - Shieldstun is about d x 0.45 + 2 frames at full shield, and the attacker still takes the hitlag
-  ([frame-data wiki: Shieldstun](https://www.ssbwiki.com/Shieldstun)).
+  (community frame-data notes: shieldstun).
 - Directional influence leans a launch by at most about 18 degrees
-  ([frame-data wiki: Directional influence](https://www.ssbwiki.com/Directional_influence)).
+  (community frame-data notes: directional influence).
 - A tech after a tumble is a standing or rolling recovery with a short vulnerable tail; a missed one lies down first
-  ([frame-data wiki: Tech](https://www.ssbwiki.com/Tech)); landing lag after an aerial is its own short animation
-  ([frame-data wiki: Landing lag](https://www.ssbwiki.com/Landing_lag)); startup / active / cool-down / interruptible-as-soon-as
-  is the community's frame-data vocabulary ([frame-data wiki: Interrupt](https://www.ssbwiki.com/Interrupt)).
+  (community frame-data notes: tech); landing lag after an aerial is its own short animation
+  (community frame-data notes: landing lag); startup / active / cool-down / interruptible-as-soon-as
+  is the community's frame-data vocabulary (community frame-data notes: interrupt).
 
 **Our model** (`minis_core/framedata.py`, used by the taskbar timeline `rounds.Bout.frame_data` and the arena
 `Arena._frame_data`; pure functions of the seed and the art, so both slot processes and the arena agree):
