@@ -34,12 +34,12 @@ def find_eye(frame, facing=1, res=1):
 
 def eye_pixels(atlas, anim, i, facing):
     key = (id(atlas), anim, i, facing >= 0)
-    v = _cache.get(key)
-    if v is None:
+    e = _cache.get(key)
+    if e is None or e[0] is not atlas:                  # an id outlives its atlas: a new atlas can reuse it (CI saw one)
         if len(_cache) > 512:
             _cache.clear()
-        v = _cache[key] = find_eye(atlas.frame_image(anim, i, facing), facing, atlas.res)
-    return v
+        e = _cache[key] = (atlas, find_eye(atlas.frame_image(anim, i, facing), facing, atlas.res))
+    return e[1]
 
 
 def shift_eyes(frame, pts, dx, dy):
