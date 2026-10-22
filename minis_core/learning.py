@@ -36,13 +36,15 @@ from .bus import write_json_atomic
 
 VERSION = 1
 FILE = 'learning.json'
-MASTERY_N = 16               # uses of one move (fights count 1, practice reps 1/2) -> its evolved variant
-COUNTER_K = 20               # hits taken of one kind (slash / blunt / pierce) -> a counter that answers it
-MIMIC_M = 15                 # one opponent move watched or taken this often -> a borrowed copy
-INVENT_REPS = 60             # practice reps of a trial variant -> learned (a rep plays the trial PRACTICE_P of the time)
-TRIAL_GAP = 120              # shadowbox reps after an invention before the next trial starts
+MASTERY_N = 30               # uses of one move (fights count 1, practice reps 1/2) -> its evolved variant
+COUNTER_K = 45               # hits taken of one kind (slash / blunt / pierce) -> a counter that answers it
+MIMIC_M = 24                 # one opponent move watched or taken this often -> a borrowed copy
+INVENT_REPS = 40             # practice reps of a trial variant -> learned (a rep plays the trial PRACTICE_P of the time)
+TRIAL_GAP = 90               # shadowbox reps after an invention before the next trial starts
 KIT_MAX = 6                  # learned moves a program keeps
-MASTERY_MAX = 4              # ... of which at most this many are evolved variants, so counters, borrowed moves and inventions keep room
+MASTERY_MAX = 3              # ... of which at most this many are evolved variants, so counters, borrowed moves and inventions keep room
+COUNTER_MAX = 2              # ... and at most this many counters
+LEARN_GAP_BOUTS = 15         # at most one new move every this many bouts: a kit grows over weeks of fights, never in a burst
 COUNTER_DECAY_K = 3          # a counter only fires on a parry: it goes stale three times slower than a strike
 DECAY_BOUTS = 25             # bouts without using a learned move -> its weight starts halving every 10 more...
 FORGET_BOUTS = 60            # ... and after this many it is forgotten (its counters stay)
@@ -338,7 +340,7 @@ def load_row(atlas, spec, data_dir=None):
         if e is None:
             return False
         entry = ev.remap(dict(e, name=base), op, seed, how=how)
-        if entry is None:
+        if entry is None or not ev.remap_ok(atlas.base, base, op):      # timing and silhouette QA, at this atlas's resolution
             return False
         atlas.add_remap(mid, entry, base)
         return True
@@ -480,6 +482,12 @@ def _decay(e):
             e['forgotten'] = int(e.get('forgotten', 0)) + 1
 
 
+def paced(e):
+    """LEARN_GAP_BOUTS have passed since the last new move (the first one waits for none)."""
+    last = e.get('last_learn')
+    return last is None or int(e.get('bouts', 0)) - int(last) >= LEARN_GAP_BOUTS
+
+
 def has_room(e):
     """A kit under the cap, or one holding a move unused for EVICT_BOUTS bouts (that one makes room).  A full kit of moves
     still in use learns nothing new: the loop never churns."""
@@ -505,19 +513,20 @@ def _make_room(e):
 def _unlock(e, spec, how, kind='strike', vs=None, now=None):
     ev = evolve()
     mid = ev.variant_id(spec[1], spec[2], spec[3], how)
-    if mid in e['learned']:
+    if mid in e['learned'] or not paced(e):
         return None
     if not _make_room(e):
         return None
+    e['last_learn'] = int(e.get('bouts', 0))
     e['learned'][mid] = dict(how=how, spec=[spec[0], spec[1], spec[2], int(spec[3]), spec[4], how], kind=kind, vs=vs, level=0, uses=0,
                              last=int(e.get('bouts', 0)), ts=round(time.time() if now is None else float(now), 1))
     return dict(id=mid, how=how, spec=e['learned'][mid]['spec'], kind=kind, vs=vs,
                 name=ev.display_name(mid, spec[1], spec[2], how, spec[3], vs))
 
 
-def _ops_for(entry, render_ok):
+def _ops_for(entry, render_ok, atlas=None, base=None):
     ev = evolve()
-    ops = list(ev.eligible_remap_ops(entry))
+    ops = [o for o in ev.eligible_remap_ops(entry) if atlas is None or ev.remap_ok(getattr(atlas, 'base', atlas), base, o)]
     if render_ok:
         ops += [o for o in ev.eligible_render_ops(entry) if o != 'mimic']
     return ops
@@ -572,7 +581,7 @@ def _queue_render(e, spec, how, kind, vs, fallback):
 def _learn_step(e, A, atlases, opp_program, opp_character, now=None):
     """At most one learning event per bout, in a fixed order: a render build that came back, mastery, a counter, mimicry."""
     ev = evolve()
-    if A is None or not has_room(e):
+    if A is None or not has_room(e) or not paced(e):
         return None
     ready = _pending_ready(e)
     if ready:
@@ -603,7 +612,7 @@ def _step_mastery(e, A, atlases, opp_program, opp_character, character, learned_
         if int(u.get('n', 0)) + int(u.get('prac', 0)) // 2 < MASTERY_N:
             continue
         rng = random.Random(ev.hash_str(f'{character}:{m}:mastery'))
-        ops = _ops_for(A.anim[m], _render_ok())
+        ops = _ops_for(A.anim[m], _render_ok(), A, m)
         if not ops:
             continue
         op = ops[rng.randrange(len(ops))]
@@ -611,7 +620,7 @@ def _step_mastery(e, A, atlases, opp_program, opp_character, character, learned_
         spec = [character, m, op, seed, None, 'mastery']
         if op in ev.REMAP_OPS:
             return _unlock(e, spec, 'mastery', now=now)
-        remap_ops = list(ev.eligible_remap_ops(A.anim[m]))
+        remap_ops = [o for o in ev.eligible_remap_ops(A.anim[m]) if ev.remap_ok(getattr(A, 'base', A), m, o)]
         fb = [character, m, remap_ops[0], seed, None, 'mastery'] if remap_ops else None
         if ev.cached(cfgmod.data_dir(), character, ev.variant_id(m, op, seed, 'mastery')) is not None:
             return _unlock(e, spec, 'mastery', now=now)
@@ -624,6 +633,8 @@ def _step_counter(e, A, atlases, opp_program, opp_character, character, learned_
     """Hit by one kind COUNTER_K times -> a sharpened riposte that answers that kind."""
     ev = evolve()
     have_vs = {r.get('vs') for r in e['learned'].values() if r.get('kind') == 'counter'}
+    if len(have_vs) >= COUNTER_MAX:
+        return None
     rip = next((n for n, a in A.anim.items() if a.get('type') == 'riposte'), None) or ('cross' if 'cross' in A.anim else None)
     if not rip or not ev.eligible_base(A.anim.get(rip)):
         return None
@@ -729,7 +740,7 @@ def _new_trial(e, atlas):
     learned_ids = set(e['learned'])
     for _ in range(8):
         base = bases[rng.randrange(len(bases))]
-        ops = _ops_for(atlas.base.anim[base], _render_ok())
+        ops = _ops_for(atlas.base.anim[base], _render_ok(), atlas, base)
         if not ops:
             continue
         op = ops[rng.randrange(len(ops))]
@@ -1119,6 +1130,6 @@ if __name__ == '__main__':
         n = int(sys.argv[2]) if len(sys.argv) > 2 else 300
         d = Path(tempfile.mkdtemp(prefix='minis-learn-sim-'))
         os.environ.setdefault('MINIS_LEARN_NO_RENDER', '1')
-        print(json.dumps(simulate(n, p=d / FILE, progress=max(1, n // 6)), indent=1))
+        print(json.dumps(simulate(n, p=d / FILE, progress=max(1, n // 12)), indent=1))
     else:
         print('usage: python -m minis_core.learning sim [n]')

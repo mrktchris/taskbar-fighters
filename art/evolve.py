@@ -286,6 +286,48 @@ def _desc(op, base, src=None):
             'mimic': f'A crude {b} learned by watching {str(src or "an opponent").title()}, done with its own weapon.'}.get(op, b)
 
 
+REMAP_IOU_MAX = {'feint': 0.65, 'twin': 0.88}   # the frames a feint / twin inserts must read as different shapes (silhouette
+                                               # IoU below this).  Measured over the roster: a feint between two wind-up keys that
+                                               # differ by 1-2 px (every jab, the heavies' ground slam, the iai crouch: 0.66-0.88) read as a stall
+                                               # at 4x, not a fake, so they are rejected.
+_REMAP_OK = {}
+
+
+def remap_qa(atlas, base, op, seed=1):
+    """Image QA for a remap variant, on the base row's real frames (both facings, this atlas's resolution): the frames a
+    feint inserts (the two wind-up keys it stutters between) and the re-chamber a twin inserts (against its smear) must
+    differ as silhouettes, or the variant reads as a stall instead of a fake / a second cut.  retime adds no new image.
+    -> [failures].  `atlas` needs frame_image(name, i, facing)."""
+    e = atlas.anim.get(base) if hasattr(atlas, 'anim') else None
+    if op == 'retime' or not e:
+        return []
+    sm = sorted(int(i) for i in e.get('smear_frames') or [])
+    if not sm:
+        return ['no smear']
+    s0 = sm[0]
+    pairs = [(s0 - 2, s0 - 1)] if op == 'feint' else [(s0 - 1, s0)]
+    bad = []
+    for facing in (1, -1):
+        for a, b in pairs:
+            if a < 0:
+                return ['not enough wind-up frames']
+            iou = _iou(_mask(atlas.frame_image(base, a, facing)), _mask(atlas.frame_image(base, b, facing)))
+            if iou >= REMAP_IOU_MAX[op]:
+                bad.append(f'{op}: frames {a} and {b} read the same (IoU {iou:.2f})')
+    return bad
+
+
+def remap_ok(atlas, base, op):
+    """remap_qa, cached per (character, res, base, op)."""
+    key = (getattr(atlas, 'character', '?'), getattr(atlas, 'res', 1), base, op)
+    if key not in _REMAP_OK:
+        try:
+            _REMAP_OK[key] = not remap_qa(atlas, base, op)
+        except Exception:
+            _REMAP_OK[key] = False
+    return _REMAP_OK[key]
+
+
 # ---------------------------------------------------------------- tier 2: render operators (pose keys through the rig)
 def eligible_render_ops(entry, src_available=False):
     """amplify / spin for grounded strikes with a hand smear; mimic when a source character is named."""
@@ -851,8 +893,24 @@ def _cli(argv=None):
                         n_rej += 1
                         print(f'REJECT {a.character} {b} {op}: timing')
                     continue
+                img_bad = [f'res {r}: {x}' for r in SIZES for x in remap_qa(Atlas(a.character, hd=(r == 2)), b, op)]
+                if img_bad:
+                    n_rej += 1
+                    print(f'REJECT {a.character} {variant_id(b, op, a.seed)} ({op}, remap): ' + '; '.join(img_bad[:2]))
+                    continue
                 n_pass += 1
-                print(f'PASS   {a.character} {variant_id(b, op, a.seed)} ({op}, remap): {[f["ms"] for f in got["frames"]]} hit {got["hit_frame"]}')
+                mid = variant_id(b, op, a.seed)
+                print(f'PASS   {a.character} {mid} ({op}, remap): {[f["ms"] for f in got["frames"]]} hit {got["hit_frame"]}')
+                if a.cmd == 'review':
+                    fbr = {}
+                    for res in SIZES:
+                        at = Atlas(a.character, hd=(res == 2))
+                        fbr[res] = [dict(r=at.frame_image(b, f['src'], 1), l=at.frame_image(b, f['src'], -1), ms=f['ms']) for f in got['frames']]
+                    sh = review_sheet(a.character, got, fbr, f'{a.character} {mid} ({op}, remap of {b}: frames {got["remap"]})')
+                    pth = out / f'{a.character}-{mid}-4x.png'
+                    sh.save(pth)
+                    sheets.append(sh)
+                    print(f'       -> {pth}')
             continue
         todo = [(b, None) for b in bases if not atlas.anim[b].get('air')] if op != 'mimic' else [(b, src) for b in src_bases]
         for b, sc in todo:
