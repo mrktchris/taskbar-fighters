@@ -1,6 +1,6 @@
 """Real Win32 windows (empty and transparent, so nothing visible is drawn).  Regression guard: a popup window is created HIDDEN,
 and an optimisation once removed the only call that showed it, so the fighters ran invisibly."""
-import sys, unittest
+import sys, time, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -246,6 +246,9 @@ class StrangersPCs(unittest.TestCase):
         got = uia.descendant_rects(h) if h else None
         self.assertTrue(got is None or all(len(r) == 4 for r in got))
         self.assertIsNone(uia.descendant_rects(0))
+        end = time.monotonic() + 15.0                   # past the deadline the call returns None with the worker still
+        while uia._busy.is_set() and time.monotonic() < end:   # running (a loaded CI runner): it must still finish
+            time.sleep(0.05)
         self.assertFalse(uia._busy.is_set())                                             # the worker thread finished
 
 

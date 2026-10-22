@@ -126,6 +126,44 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
   - Mac 2026-10-16: not run (needs forged weapons, see MAC-13, and watching the full screen, which this session does not
     capture).
 
+- [ ] **MAC-23 (2026-10-21) Streamer mode window (branch `growth`).**
+  - PC change: `python minis.py stream on` starts `minis.py stream run`, which opens `minis_mac/stream_window.py`: an
+    ordinary titled, closable, resizable NSWindow (normal level) whose layer shows the composited fight strip, and switches
+    that process to a regular app (Dock icon). Frames come from the fighters' own dumps (`minis_core/dump.py`, request id
+    `stream`), never a capture. Written on Windows; never run on a Mac.
+  - Test: `python minis.py start`, `python minis.py stream on`, `python minis.py demo match`; resize the window a few times;
+    `python minis.py stream snapshot /tmp/s.png`; `python minis.py stream on --transparent` (after `stream off`); close
+    the window with its red button; `stream status`. If OBS is installed: macOS Screen Capture > Window Capture > the
+    stream window + Chroma Key.
+  - Expected: no permission prompt from Taskbar Fighters; fighters, plates (Retina HUD images reduced smoothly, readable
+    text) and scoreboard on green at a whole-number scale, crisp (nearest); the window is a normal window (goes behind
+    others, Cmd-Tab lists Python); closing it ends the stream process and `~/Library/Application Support/minis/dump/stream`
+    is gone; `stream off` restores *Desktop weapons* if it was on. Report the snapshot and whether `--transparent` keeps
+    its alpha in OBS.
+
+- [ ] **MAC-24 (2026-10-21) Stats card, achievements toast, careers (branch `growth`).**
+  - PC change: `python minis.py card [--share]` renders a 1200 x 675 PNG (Pillow; fonts via `render.font`, Arial on macOS);
+    the card goes to `~/Library/Application Support/minis/exports/` and `--share` runs `open -R <file>`; the fighter right-click menu and the menu-bar menu have
+    *Share my stats card…*. A new achievement shows as a 3 s toast in the scoreboard's second row (drawn at the HUD
+    density, 2x on Retina).
+  - Test: `python minis.py card --out /tmp/card.png` and open it; the menu item once; `python minis.py achievements`;
+    `python minis.py demo match` until a toast appears (a first KO or a clean sweep on a fresh data folder).
+  - Expected: card text fits its boxes with the macOS fonts (names, "HEAD TO HEAD" lines, badge names under the
+    medallions); Finder opens the exports folder with the card selected; the toast's star and text are sharp at 2x.
+
+- [ ] **MAC-25 (2026-10-21) Skin packs folder and the new process names (branch `growth`).**
+  - PC change: packs install into `~/Library/Application Support/minis/packs/<name>/` and appear in fighter select as
+    `pack-<name>`; new macOS detection names: `Claude.app` is now the *Claude desktop* program (no longer claimed for
+    Claude Code), `ChatGPT.app`, `Zed.app` / `zed`, `junie`, `cline` and `@continuedev/cli` under node, `q` / `qchat` /
+    `Amazon Q.app`, `crush`, `goose` / `Goose.app`, `Jan.app`. All from vendor docs, unverified on a Mac.
+  - Test: `python tools/make_example_pack.py --no-hd --out /tmp/packs`, `python minis.py packs install
+    /tmp/packs/shadow-ronin.zip`, `python minis.py packs list`, open fighter select (the LOOK grid has Shadow Ronin),
+    `python minis.py skin claude "Shadow Ronin"`, `packs remove shadow-ronin`. Then `python minis.py detect` with whichever
+    of those apps are installed open.
+  - Expected: the pack installs, draws (2x upscaled 64 px art at 128) and removes cleanly; `detect` names each running app
+    on its own row, and the Claude desktop app shows as *Claude desktop* while Claude Code keeps its transcript row. Report
+    any app whose real executable name differs (`ps -axo comm | grep -i <app>`), so the PC side can fix `RULES`.
+
 ## DONE
 
 - [x] **MAC-14 (2026-10-15) DONE fdd0803 2026-10-16 Arena CPU (FOUND-2): measure the V8 macOS window.**

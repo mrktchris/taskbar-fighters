@@ -89,12 +89,13 @@ def signature(state):
     return (tuple(state.get('names', {}).get(s) for s in 'ab'), tuple(tuple(state.get('records', {}).get(s, (0, 0))) for s in 'ab'),
             state.get('mode'), bool(state.get('arena')), bool(state.get('paused')), hp.get('a'), hp.get('b'),
             tuple(sorted((state.get('wins') or {}).items())), state.get('pressed'), state.get('result'), hid,
-            tuple(None if v is None else int(v) for v in (state.get('spark') or ())))
+            tuple(None if v is None else int(v) for v in (state.get('spark') or ())), state.get('toast'))
 
 
 def render(state, k=1) -> Image.Image:
     """state: names {a,b}, records {a: (w, l), b: (w, l)}, mode, arena, paused, hp {a, b} | None, wins {a, b}, pressed,
-    result (str | None), hidden {slot: seconds left | inf}, spark [7 values | None].
+    result (str | None), hidden {slot: seconds left | inf}, spark [7 values | None], toast (str | None: an achievement
+    just unlocked, shown for 3 s in row 2 ahead of the result line; growth).
     k: pixel density (1 everywhere but a macOS Retina screen: drawn 2x and nearly opaque; the layout is the same)."""
     key = signature(state) + ((k,) if k > 1 else ())
     im = _cache.get(key)
@@ -103,6 +104,17 @@ def render(state, k=1) -> Image.Image:
             _cache.clear()
         im = _cache[key] = _render(state, k)
     return im
+
+
+def _star(d, x, y, col):
+    """A 9 px five-point star at (x, y) (top-left): the toast's badge mark, drawn (a font may lack the glyph)."""
+    import math
+    pts = []
+    for i in range(10):
+        r = 4.5 if i % 2 == 0 else 1.9
+        a = -math.pi / 2 + i * math.pi / 5
+        pts.append((x + 4.5 + r * math.cos(a), y + 4.8 + r * math.sin(a)))
+    d.polygon(pts, fill=col)
 
 
 def _caret(d, x, y, col):
@@ -148,6 +160,13 @@ def _render(state, k=1):
                     d.rectangle([x0 + 1, ROW2_Y0 + 1, x0 + w, ROW2_Y1 - 1], fill=fill + (255,))
         rnd = f"{wins.get('a', 0)}-{wins.get('b', 0)}"
         text(d, (W // 2 - int(d.textlength(rnd, font=fb)) // 2, 11), rnd, MODE_COLOR['arena'], 10)
+    elif state.get('toast'):                                   # growth: an achievement just unlocked (achievements.Toaster)
+        _star(d, 6, 11, GOLD + (255,))
+        lab = 'UNLOCKED'
+        text(d, (17, 12), lab, DIM, 9, False)
+        x = 17 + int(d.textlength(lab, font=fr)) + 5
+        s = _fit(d, state['toast'], W - x - 5, 10, True)
+        text(d, (x, 11), s, GOLD, 10)
     elif state.get('result'):
         s = _fit(d, state['result'], W - 10, 10, True)
         text(d, (W // 2 - int(d.textlength(s, font=fb)) // 2, 11), s, GOLD, 10)
@@ -213,7 +232,7 @@ class Model:
         return f"{short_label(last['winner']).upper()} WINS{tail}"
 
     @staticmethod
-    def state(assign, buses, record, paused, arena, winners, pressed=None, spark=None, now=None, hidden=None):
+    def state(assign, buses, record, paused, arena, winners, pressed=None, spark=None, now=None, hidden=None, toast=None):
         from . import records
         names = Model.names_from(assign)
         rec = record if isinstance((record or {}).get('programs'), dict) else dict(record or {}, programs=records.migrate((record or {}).get('characters')))
@@ -230,4 +249,5 @@ class Model:
         mode = 'paused' if paused else ('arena' if arena else 'taskbar')
         return dict(names=names, records=recs, mode=mode, arena=bool(arena), paused=bool(paused), hp=hp or None, wins=wins,
                     winners=winners, pressed=pressed, spark=list(spark) if spark else None,
-                    result=None if hp else Model.result_line(assign, rec, now), hidden=dict(hidden or {}))
+                    result=None if hp else Model.result_line(assign, rec, now), hidden=dict(hidden or {}),
+                    toast=None if hp else toast)

@@ -30,7 +30,12 @@ RULES = [
     dict(source='codex', exe=('chatgpt.exe',), path_has='openai.codex_', mac_bundle=('codex.app',)),
     dict(source='codex', exe=('codex.exe',), mac_exe=('codex',)),
     dict(source='codex', cmd=('codex', '@openai/codex')),
-    dict(source='claude', exe=('claude.exe',), mac_exe=('claude',), mac_bundle=('claude.app',)),
+    # The Claude DESKTOP app (claude.exe in %LOCALAPPDATA%\AnthropicClaude or the MSIX Claude_* package; Claude.app) is
+    # its own program, matched by its install path before the bare claude.exe rule claims the Claude Code CLI.
+    dict(source='claudeapp', program='Claude desktop', character='claude', exe=('claude.exe',), path_has='anthropicclaude',
+         mac_bundle=('claude.app',)),
+    dict(source='claudeapp', program='Claude desktop', character='claude', exe=('claude.exe',), path_has='windowsapps\\claude_'),
+    dict(source='claude', exe=('claude.exe',), mac_exe=('claude',)),
     dict(source='claude', cmd=('claude', '@anthropic-ai/claude-code')),
     dict(source='cursor', program='Cursor', character='cursor', exe=('cursor.exe',), mac_exe=('cursor',), mac_bundle=('cursor.app',)),
     dict(source='windsurf', program='Windsurf', character='generic', exe=('windsurf.exe',), mac_exe=('windsurf',), mac_bundle=('windsurf.app',)),
@@ -47,6 +52,17 @@ RULES = [
     dict(source='perplexity', program='Perplexity', character='generic', exe=('perplexity.exe',), mac_exe=('perplexity',),
          mac_bundle=('perplexity.app',)),
     dict(source='grok', program='Grok', character='generic', exe=('grok bot.exe',), mac_exe=('grok',), mac_bundle=('grok.app',)),
+    # Growth (2026-10-21).  Names from each vendor's install docs; none seen on a real machine yet (README "Detected programs").
+    # Plain ChatGPT.exe comes AFTER the Codex rule above: under an OpenAI.Codex_* folder the same image name is Codex.
+    dict(source='chatgpt', program='ChatGPT', character='generic', exe=('chatgpt.exe',), mac_bundle=('chatgpt.app',)),
+    dict(source='zed', program='Zed', character='knight', exe=('zed.exe',), mac_exe=('zed',), mac_bundle=('zed.app',)),
+    dict(source='junie', program='Junie', character='kunoichi', exe=('junie.exe',), cmd=('junie', '@jetbrains/junie'), mac_exe=('junie',)),
+    dict(source='continue', program='Continue CLI', character='monk', cmd=('@continuedev/cli',)),
+    dict(source='cline', program='Cline CLI', character='barbarian', cmd=('cline',)),
+    dict(source='amazonq', program='Amazon Q', character='generic', mac_exe=('q', 'qchat'), mac_bundle=('amazon q.app',)),
+    dict(source='crush', program='Crush', character='oni', exe=('crush.exe',), cmd=('crush', '@charmland/crush'), mac_exe=('crush',)),
+    dict(source='goose', program='Goose', character='nomad', exe=('goose.exe',), mac_exe=('goose',), mac_bundle=('goose.app',)),
+    dict(source='jan', program='Jan', character='lmstudio', exe=('jan.exe',), mac_bundle=('jan.app',)),
 ]
 MAC_INTERPRETERS = {'node', 'bun', 'deno', 'python', 'python3', 'uv', 'uvx'}
 _MAC_RULES = None
@@ -97,7 +113,8 @@ for _r in RULES:
 CHARACTER = {r['source']: r.get('character', r['source']) for r in RULES}
 CHARACTER[SPARRING] = 'generic'
 # V6: the short name the scoreboard, the select screen and a skinned plate use ("Claude Code" -> "Claude"); never truncated
-LABEL = {'claude': 'Claude', 'codex': 'Codex', SPARRING: 'Bot', 'lmstudio': 'LM Studio', 'copilot': 'Copilot', 'qwen': 'Qwen'}
+LABEL = {'claude': 'Claude', 'codex': 'Codex', SPARRING: 'Bot', 'lmstudio': 'LM Studio', 'copilot': 'Copilot', 'qwen': 'Qwen',
+         'claudeapp': 'Claude app', 'continue': 'Continue', 'cline': 'Cline', 'amazonq': 'Amazon Q'}
 
 
 def short_label(source_id, program=None) -> str:
@@ -412,6 +429,6 @@ def describe(cfg, now=None, srcs=None):
             by = [f"exe {' / '.join(r2['exe'])}" for r2 in table if r2['source'] == sid and r2.get('exe')]
             by += [f"app {' / '.join(r2['bundle'])}" for r2 in table if r2['source'] == sid and r2.get('bundle')]
             by += [f"command {' / '.join(r2['cmd'])}" for r2 in table if r2['source'] == sid and r2.get('cmd')]
-            how = 'not running (would match ' + '; '.join(by) + ')'
+            how = ('not running (would match ' + '; '.join(by) + ')') if by else 'not detected on this OS (no known process name here)'
         rows.append(dict(source=sid, program=PROGRAM.get(sid, sid), character=CHARACTER.get(sid, 'generic'), state=a.state if a else '-', how=how))
     return rows

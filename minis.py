@@ -1199,7 +1199,16 @@ def tray_flags(cfg, board):
     from minis_core import control
     return dict(paused=control.paused(), plates=control.plates_on(), arena=control.arena_active(),
                 rival=control.rival_on(default=cfg.get('rival', True)), flash=control.flashes_on(default=cfg.get('flashes', True)),
-                forge=control.forge_on(default=cfg.get('forge', True)), select_ok=board is not None, arena_ok=board is not None)
+                forge=control.forge_on(default=cfg.get('forge', True)), select_ok=board is not None, arena_ok=board is not None,
+                stream=_stream_on())
+
+
+def _stream_on():
+    from minis_core import stream
+    try:
+        return stream.running(alive=pid_alive) is not None
+    except Exception:
+        return False
 
 
 def tray_choice(choice, flags, board, wall=time.time, log=None, quit_fn=None, restart_fn=None):
@@ -1224,6 +1233,14 @@ def tray_choice(choice, flags, board, wall=time.time, log=None, quit_fn=None, re
             board.act('arena')                             # the scoreboard's Arena button: start it, or ask it to leave
     elif choice == T.BOUT:
         control.request_demo('match', now=wall())          # what the scoreboard's bout button asks for
+    elif choice == T.CARD:
+        if not share_card():
+            log.info('stats card: refused (tests)')
+    elif choice == T.STREAM:
+        if os.environ.get('MINIS_TESTING'):
+            log.info('stream: refused (tests)')
+        else:                                              # the same CLI the owner would type, in a child process
+            spawn_detached(self_argv('stream', 'off' if flags.get('stream') else 'on'))
     elif choice == T.RESTART:
         if not (restart_fn or restart_all)():
             log.info('restart: refused (tests)')
@@ -1467,8 +1484,12 @@ class Scoreboard:
         from minis_core import history
         buses = {s: bus.read(s, now=wall) for s in SLOTS}
         hidden = {s: v for s in SLOTS for v in [control.hidden_left(s, now=wall)] if v is not None}
+        if getattr(self, 'toaster', None) is None:                    # growth: achievement toasts (3 s, row 2)
+            from minis_core import achievements
+            self.toaster = achievements.Toaster(wall=self.wall)
         return self.SB.Model.state(assign, buses, records.read(), control.paused(), control.arena_active(now=wall), control.winners(),
-                                   pressed=self.pressed, spark=history.last_days(7, wall), now=wall, hidden=hidden)
+                                   pressed=self.pressed, spark=history.last_days(7, wall), now=wall, hidden=hidden,
+                                   toast=self.toaster.poll(wall))
 
     def step(self):
         """One iteration; None when the window is gone."""
@@ -1712,7 +1733,10 @@ class Fighter:
             else:
                 return rounds.record_result(winner_char, loser_char)      # cannot tell: the old per-character line
             score = (max(me, op), min(me, op)) if me is not None and op is not None else None
-            return records.record(mine if won else theirs, theirs if won else mine, score=score)
+            from minis_core import achievements                       # growth: numbers about the match, for the badges
+            facts = achievements.match_facts(getattr(self.brain, 'last_match', None), {self.slot: mine, other(self.slot): theirs},
+                                             plan=(getattr(self.brain, 'script', None) or {}).get('plan'))
+            return records.record(mine if won else theirs, theirs if won else mine, score=score, facts=facts)
         return rounds.record_result(winner_char, loser_char)
 
     # -------------------------------------------------- assignment + controls
@@ -1850,6 +1874,8 @@ class Fighter:
             control.set_rival(not flags['rival'], cp)
         elif choice == L.SELECT:
             control.request_picker(SLOTS, cp, now=self.wall())       # the director hosts the select screen
+        elif choice == L.CARD:
+            share_card()
 
     def toggle_arena(self):
         """Menu / scoreboard: start the arena on the configured (or the only other) monitor, or ask it to leave (without
@@ -2295,7 +2321,8 @@ def _arena_record(arena, winner, loser, where='arena'):
     side = {v: k for k, v in arena.chars.items()}
     w = getattr(arena, 'wins', {}) or {}
     score = (w.get(side.get(winner), 0), w.get(side.get(loser), 0)) if side.get(winner) and side.get(loser) else None
-    return records.record(winner, loser, where=where, score=score)
+    from minis_core import achievements                               # growth: KO, ultimates, forges (the arena's own counters)
+    return records.record(winner, loser, where=where, score=score, facts=achievements.arena_facts(arena, side.get(winner)))
 
 
 def set_flash_effects(fxp, on):
@@ -2642,6 +2669,39 @@ def add_arena_option_flags(p):
     p.add_argument('--no-outro', action='store_true', help="skip the winner's pose on the highest window")
 
 
+def add_growth_parsers(sub):
+    """growth: `stream`, `card`, `achievements`, `packs` - each module owns its command; this only registers them."""
+    from minis_core import achievements, packs, stats_card, stream
+    st = sub.add_parser('stream', help='streamer mode: an OBS-friendly window with the live fight (docs/STREAMING.md)')
+    st.add_argument('action', nargs='?', default='status', choices=('on', 'off', 'status', 'snapshot', 'run'))
+    st.add_argument('path', nargs='?', default=None, help='snapshot: an existing folder or a .png path (default: <data dir>/exports)')
+    st.add_argument('--chroma', default=None, help='key colour, default #00FF00')
+    st.add_argument('--scale', type=int, default=None, help='a fixed whole-number scale instead of fit-to-window')
+    st.add_argument('--fps', type=float, default=None, help='frames per second (2-30, default 15)')
+    st.add_argument('--width', type=int, default=None)
+    st.add_argument('--height', type=int, default=None)
+    st.add_argument('--transparent', action='store_true', help='alpha background instead of the key colour (experimental)')
+    st.add_argument('--no-plates', action='store_true', help='leave the HUD plates (context numbers) out of the stream')
+    st.add_argument('--forge-was', default=None, help=argparse.SUPPRESS)
+    st.set_defaults(fn=lambda a: stream.cmd(a, spawn=spawn_detached, self_argv=self_argv, alive=pid_alive))
+    cd = sub.add_parser('card', help="render a 1200x675 PNG of your agents' record (numbers and program names only)")
+    cd.add_argument('--out', default=None, help='an existing folder or a .png path in one (default: <data dir>/exports)')
+    cd.add_argument('--share', action='store_true', help='then open its folder with the card selected')
+    cd.set_defaults(fn=stats_card.cmd)
+    sub.add_parser('achievements', help='list every achievement and what it takes').set_defaults(fn=achievements.cmd)
+    pk = sub.add_parser('packs', help='community skin packs: list | install <zip|folder> | remove <name> | check <folder>')
+    pk.add_argument('action', nargs='?', default='list', choices=('list', 'install', 'remove', 'check', 'import-codex'))
+    pk.add_argument('path', nargs='?', default=None)
+    pk.add_argument('--replace', action='store_true', help='install over a pack of the same name')
+    pk.set_defaults(fn=packs.cmd)
+
+
+def share_card():
+    """The menus' "Share my stats card…": a child process renders it (no window loop stalls) and opens the folder."""
+    from minis_core import stats_card
+    return stats_card.share_async(spawn_detached, self_argv)
+
+
 def prog_name():
     """What --help calls this program: `python minis.py` in a checkout, `taskbar-fighters` for a pip install, the
     executable's own name in a frozen build."""
@@ -2725,6 +2785,7 @@ def main(argv=None):
     au = sub.add_parser('autostart', help='macOS: start at login with a LaunchAgent (on | off | status)')
     au.add_argument('state', choices=('on', 'off', 'status'))
     au.set_defaults(fn=cmd_autostart)
+    add_growth_parsers(sub)
     a = ap.parse_args(argv)
     try:
         return a.fn(a)

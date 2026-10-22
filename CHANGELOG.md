@@ -2,6 +2,44 @@
 
 Taskbar Fighters (internal short name: minis). Summarised from the git history and the build logs in [RESULT.md](RESULT.md).
 
+## Unreleased - growth
+
+- **Streamer mode** (`python minis.py stream on|off|status|snapshot`, tray *Streamer mode (OBS window)*): a normal,
+  resizable, non-topmost window "Taskbar Fighters — Stream" with the live fight strip (fighters, plates, scoreboard) on a
+  chroma-key background (default `#00FF00`, `--chroma`), whole-number scaling, `--no-plates`, experimental `--transparent`.
+  Built from the processes' own window images through the existing self-dump (`minis_core/dump.py`), never a screen
+  capture; desktop weapons are switched off while streaming. `minis_core/stream.py`, `minis_win/stream_window.py`,
+  `minis_mac/stream_window.py` (experimental), [docs/STREAMING.md](docs/STREAMING.md), `tools/stream_preview.py`.
+- **Stats card** (`python minis.py card [--out] [--share]`, menus *Share my stats card…*; written to
+  `<data folder>/exports/` unless you name an existing folder or a `.png` in one): a 1200 x 675 PNG with each
+  program's sprite, rank, W-L, win %, streak, favourite move and head-to-head, an identity line ("Your main: CLAUDE ·
+  34-29 vs Codex"), and every achievement badge. `minis_core/stats_card.py`, `tools/card_preview.py`.
+- **Careers, head-to-head and ranks**: lifetime per-program totals and per-pair records in `record.json`
+  (`totals`, `h2h`), ranks by lifetime wins that never demote; `minis.py card` prints them.
+- **Achievements** (`python minis.py achievements`): 22 Fight / Discovery / Partnership badges with open criteria and
+  progress, none for token use, hours or time of day; persisted in `achievements.json`, a 3 s toast on the scoreboard.
+  `minis_core/achievements.py` (a documented public API for the UX layer).
+- **Match log with replay plans**: `record.json` keeps the last 500 matches (`log`) with KO / flawless / comeback /
+  ultimate / set-piece facts and the match's seed and lineup (`replay`), enough for `rounds.make_match` to rebuild the
+  same fight (tested).
+- **More AI programs detected**: Claude desktop (its own program now; `Claude.app` is no longer claimed for Claude Code),
+  ChatGPT desktop, Zed, Junie, Continue CLI, Cline CLI, Amazon Q Developer CLI (macOS), Crush, Goose, Jan; VS Code's
+  extension host is never mistaken for Cline / Continue / Roo. `detect` says when a program has no process name on this OS.
+- **Community skin packs** (`python minis.py packs list|install|remove|check`): a documented, data-only format
+  (`pack.json` + 64 / 128 px sheets), strict validation and safe zip install, shown in fighter select as `pack-<name>`;
+  `tools/make_example_pack.py`. [docs/SKIN-PACKS.md](docs/SKIN-PACKS.md). Codex pet import is documented as future work
+  (its format is not knowable offline).
+
+- **Review fixes (Codex review of `growth`).** Exports (card, stream snapshot) default to `<data folder>/exports/` and
+  only go elsewhere to an existing folder or `.png` path you name; `stream on` takes an O_EXCL `stream.lock` before it
+  spawns, so two quick starts open one stream, and a stream only ever closes out its own state; pack PNGs are capped by
+  their header size before decoding (per sheet and 256 MiB per pack); malformed pack metadata is always a plain refusal;
+  `tools/make_example_pack.py` validates `--name` before touching any folder; the Win32 stream window passes an owned
+  pixel buffer and is tested by reading back its own pixels. Second review: a stale `stream.lock` is reclaimed under a
+  guard so two starters never both take it; `stream off` reaches a stream still opening its window; `--scale`,
+  `--width`, `--height` are capped (8 / 4096) and a frame never exceeds 4096 x 2304; `packs.FIGHTER_ID_RE` is the
+  fighter-id contract for fight codes (pack names may contain hyphens).
+
 ## Unreleased - Windows on strangers' PCs (branch `win-robust`)
 
 - **Any taskbar edge.** Bottom: on the taskbar as before. Top / left / right: a strip along the bottom of the work area

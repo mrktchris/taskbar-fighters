@@ -186,7 +186,8 @@ class TrayLogic(unittest.TestCase):
         items = T.tray_menu(dict(paused=True, flash=False, plates=True, rival=False, arena=True))
         labels = L.labels_of(items)
         self.assertEqual(labels, ['Select fighters\u2026', 'Pause animations', 'Flash effects', 'Desktop weapons', 'Plates', 'Rival mode',
-                                  'Exit arena', 'Bout now', 'Restart Taskbar Fighters', 'Quit Taskbar Fighters'])
+                                  'Exit arena', 'Bout now', 'Share my stats card…', 'Streamer mode (OBS window)',
+                                  'Restart Taskbar Fighters', 'Quit Taskbar Fighters'])
         opts = {it[0]: (it[2] if len(it) > 2 else {}) for it in items if it}
         self.assertTrue(opts[T.PAUSE]['checked'])
         self.assertFalse(opts[T.FLASH]['checked'])
@@ -195,7 +196,7 @@ class TrayLogic(unittest.TestCase):
         self.assertEqual(L.find_item(T.tray_menu({}), 'Start arena')[0], T.ARENA)
         self.assertTrue(T.tray_menu(dict(select_ok=False, arena_ok=False))[0][2]['disabled'])
         from minis_platform.menus import menu_entries                          # the spec is what the real menu builder takes
-        self.assertEqual(sum(1 for e in menu_entries(items) if e[0] == 'sep'), 2)
+        self.assertEqual(sum(1 for e in menu_entries(items) if e[0] == 'sep'), 3)          # growth: card + streamer group
 
 
 class Tooltip(unittest.TestCase):
