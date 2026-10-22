@@ -655,5 +655,16 @@ the model are in `docs/ANIMATION-NOTES.md` sections 11-12; the arena numbers in 
 | no anchor jitter | `tests/test_art_v9.py` `Anchors`: between consecutive frames of a grounded row the soles stay on one ground row (the two rows that hopped inside the cell now hop on `air`) |
 | arena frames | `tests/arena_harness.py bench --backend winblit --seeds 3`: 1920x1080 max 159.5 -> 58.4 ms, frames over 33 ms 33 -> 17, px written per frame 193 665 -> 170 197, CPU 9.0 -> 8.5 %; 2560x1440 max 109 -> 64.1, p99 37.3 -> 34.6 (`docs/ARENA.md`) |
 | pixel identity | `tests/test_arena_perf.py`: two seeds plus a freeze-backdrop seed, V8 compositor in lockstep, no frame where V8 was right and V9 was not |
-| taskbar at 60 fps | `tools/taskbar_bench.py`: compose 0.17 ms per frame at 128 px, about 1 % of a core per slot at 60 fps |
+| taskbar at 60 fps | `tools/taskbar_bench.py --fps 60` (HD sheets decoded first, as the slot does at start-up), three pairings: mean 0.12-0.13 ms, p95 0.21-0.26 ms, max 1.8-2.2 ms per frame, 0.7-0.8 % of one core; no frame missed its 16.7 ms slot, so the 30 fps + interpolation fallback the brief allowed was not needed and is not built. Compose only: the layered-window upload was not measured (no real window opened) |
 | hand polish | 224 frames written and read back by the builder (`tests/test_art.py` `Sigil`, `tests/test_art_v9.py` `HandHookHD`); every target viewed at 4x in `qa/v9/hand-polish/*.png` |
+| reels | `tools/fight_compare.py`: 3 taskbar matches (claude / codex, cursor / oni, gemini / knight) at 1x and 2x and 2 arena matches, rendered from v1.0.0 and from this branch, viewed side by side as contact sheets (launch arcs, techs and knockdowns visible in the after column) |
+| CI | run 39852592813 (`a851150`): Windows and macOS, Python 3.12 and 3.13, all green |
+
+### Not verified
+
+- Sound was never heard: the wav files were generated and checked by their samples (length, peak, no clipping) and the
+  playback path by tests with a fake backend; nobody listened on Windows or a Mac (MAC-26).
+- The 60 fps taskbar cost is the compose step; the layered-window upload per frame on a real taskbar was not timed.
+- The fight feel on the live taskbar: every judgement here comes from headless reels and 4x strips, not from watching the
+  real overlay (the owner's live copy was left alone).
+- macOS: MAC-26 (sound) and MAC-27 (frame data, 60 fps, damage %, arena boost) are OPEN.
