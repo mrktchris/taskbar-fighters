@@ -120,6 +120,28 @@ every existing seeded behaviour are unchanged. With no kit in the plan, `Picker`
 Both fighter processes write `learning.json` when a bout ends, each folding its own side only, under a lock file
 (`learning.json.lock`, stale after 5 s) with an atomic replace; `v` counts every write.
 
+## Trust boundaries (Codex review 3)
+
+`learning.json` and the bus plan are files another process (or a person) can edit, so nothing read from them is trusted:
+
+- **Ids.** Every character, move and source id is checked against `[a-z0-9_]{1,48}` (`movegen.valid_id`) before it can
+  name anything. `movegen.cache_paths` resolves every path and refuses one outside `<data dir>/learned`, so a spec like
+  `["../../outside", ...]` can never probe or load a file elsewhere. `prepare()` requires each spec's character to be the
+  plan's fighter on that slot, and the spec to derive the kit's move id.
+- **Kits.** Each entry is validated in `prepare()` (inside `brain._possible`, so before `_accept` emits anything): a
+  finite weight in 0..1.2, a known kind and hit kind, at most 6 entries per slot. `kit_for` drops damaged entries from
+  the file, and `Picker` skips a bad weight instead of raising.
+- **Render workers.** `spawn_build` keeps its child handles: one build per spec, at most 2 at once, each killed after
+  180 s (only our own children) and reaped on the next home tick and at exit. A pending build whose worker is gone is
+  asked again.
+- **Cache writes.** A build writes every file under a temp name and renames it into place, metadata last; a failure
+  removes everything it wrote. Eviction counts every file in the cache and first removes orphan sheets (no metadata)
+  and temp files left by a crash.
+- **The lock.** `learning.update` uses `minis_core/filelock.py`, which now writes an owner token into the lock file. A
+  holder deletes the lock only while it still carries its own token, so a holder that stalled past the 5 s takeover can
+  no longer delete the next owner's lock. (On Windows an open lock file cannot be deleted at all, so that race exists
+  only on macOS / Linux; the end-to-end test runs there.)
+
 ## Data format (`<data dir>/learning.json`)
 
 ```json
@@ -170,6 +192,7 @@ with a default that keeps V9 behaviour.
 | `minis_core/scoreboard.py` | `_render`: `state['toast']` may be `(kind, text)`; `learned` draws `LEARNED` with a green mark | the LEARNED toast; a bare string is still a badge |
 | `minis_core/collection.py` | `SECTIONS` + `('learned', 'LEARNED', ())`; `entries()` skips `type: learned` rows in the other tabs and fills `learned_entries(atlas)`; `counts()` skips the tab; `Book.__init__` wraps its library; `is_seen` is True for a learned entry | the move book's LEARNED tab |
 | `minis_core/hovercard.py`, `minis_core/ux_runtime.py` | `lines()`: `info['learned']`; `card_info()`: `info['learned'] = learning.summary_line(src)` | the hover card line |
+| `minis_core/filelock.py` | the lock file carries an owner token; `_release` deletes it only while it is still ours | a stalled holder never deletes a newer owner's lock (all users: learning.json, ux.json, collection.json) |
 | `minis_core/achievements.py` | `stats()` + `learn=_learning_stats()`; badges `self_taught`, `student`; `Toaster._sig` also watches `learning.json` | the two badges |
 
 `Learner` is off by default, so `sim.py`, the tests and the preview tools never touch `learning.json`. `MINIS_LEARN_OFF=1`
