@@ -238,7 +238,9 @@ frame-by-frame QA as the shipped art (anchors, the weapon in the hand, a readabl
 caps, both facings, 64 and 128 px). Anything that fails is never learned. The memory, `learning.json` in the data folder,
 holds only move ids, counters and seeds. `python minis.py learned [program]` lists what each fighter learned and how.
 Details, numbers and the reviewed frames: [docs/LEARNING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/LEARNING.md).
-Learning currently needs a source checkout (the pip and zip installs fight with the shipped move set).
+Every install learns: pip and the Windows zip through re-timed and re-sequenced moves; a source checkout also redraws
+moves (the bigger, spinning and borrowed ones). Learned moves get their own LEARNED tab in the move book, a line on the hover
+card, a toast on the scoreboard and two achievements (*Self-Taught*, *Student of the Game*).
 
 ### V5 -> V6
 

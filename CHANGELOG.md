@@ -12,7 +12,9 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
   reach, colour caps, both facings, 64 + 128 px), shown once under a `LEARNED: <MOVE>` banner and then used in fights.
   Kits cap at six, grow one move per 15 bouts at most, decay and forget unused moves; both slot processes agree through
   the shared plan. `learning.json` holds ids, counters and seeds only; `python minis.py learned [program]` lists it all.
-  Checkout installs only for now.
+  Every install learns (the no-new-art operators ship in `minis_core/movegen.py`); redrawn moves need a source checkout.
+  Surfaces: a LEARNED tab in the move book, "learned N moves" on the hover card, *Self-Taught* and *Student of the Game*
+  badges, and LEARNED toasts sharing the scoreboard's toast row with achievement toasts (queued, never overlapping).
 - **Platform-fighter frame data** (`minis_core/framedata.py`): hitlag that freezes both fighters by damage, a damage % per
   round (on the plate during a match, under the HP bars in the arena), knockback from damage, % and weight, hitstun from
   knockback, tumbles along a real arc with one bounce and a tech or a missed tech, shieldstun and pushback, DI. Taskbar

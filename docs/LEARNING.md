@@ -12,8 +12,14 @@ Everything is offline and numbers-only: no network, no prompts, nothing read fro
 move ids, character ids, program ids, operator names, counters and seeds (`tests/test_learning.py` `Privacy` audits every
 leaf of the file).
 
-Files: `minis_core/learning.py` (the loop, the overlay atlas, the views), `art/evolve.py` (synthesis, QA, cache, review
-sheets), `tests/test_learning.py`, this file, and the small hooks listed under [Hooks](#hooks).
+Files: `minis_core/learning.py` (the loop, the overlay atlas, the views, the shared toast row), `minis_core/movegen.py`
+(the no-new-art operators, their QA and the cache: in every install), `art/evolve.py` (the redrawn operators, their QA and
+the review sheets: source checkout only), `tests/test_learning.py`, this file, and the hooks listed under [Hooks](#hooks).
+
+**Every install learns.** A pip install and the Windows zip learn through `retime`, `twin` and `feint`, which reuse the
+frames the character's sheet already has. Only a source checkout also redraws moves (`amplify`, `spin`, `mimic`), because
+those go through the rig in `art/`; without it `learning.redraws()` is False, so a packaged install never learns a
+borrowed move and never starts a build process.
 
 ## What learns from what
 
@@ -39,26 +45,35 @@ Learning follows the program *and* the skin: a kit learned as the Knight stays h
 - **LEARNED: \<MOVE\>.** When a fighter learns something, the next time it stands at home and awake it plays the new move
   once under a green `LEARNED: IAI SLASH II` banner (`Learner.home`, `Learner.banner_image`: the same text-banner type as
   the winner's name banner).
-- **Scoreboard toast.** `learning.Toaster.poll(now)` returns `CLAUDE LEARNED IAI SLASH II` for 3 s per new move (the first
-  look seeds silently, so an old file never floods the board). Hook spec below.
+- **Scoreboard toast.** `LEARNED Claude: Iai Slash II` for 3 s per new move, in the scoreboard's toast row, which it shares with
+  the achievement toasts (`UNLOCKED Self-Taught`) through `learning.ToastSlot`: one queue, in arrival order, each toast
+  held for its full 3 s, never two at once. The first look seeds silently, so an old file never floods the board.
+- **Move book.** A LEARNED tab after FINISHERS: every move learned in that skin, drawn animated, typed mastered / counter /
+  borrowed / invented, the footer saying who learned it and how ("Claude mastered iai slash (31 thrown in fights)").
+  Learned moves count as seen and stay out of "N of M seen", since the tab grows.
+- **Hover card.** One green line, `learned 4 moves`, under the record.
+- **Achievements.** *Self-Taught* (a fighter teaches itself a new move) and *Student of the Game* (a fighter learns a
+  counter to the attack that keeps hitting it), Discovery badges with their criteria and progress in the open, read from
+  `learning.stats()` (counts of learned moves, nothing about usage).
 - **Fights.** Learned moves appear in the move picker in later fights; the remap rows play the shipped frames in a new
   order and timing, and the render rows play rig-drawn frames from the cache.
 - **`python minis.py learned [program]`.** Every learned move, how it was learned ("mastered iai slash (31 thrown in
   fights)", "learned the hard way: hit by pierce attacks 45 times", "borrowed from Codex after watching its kunai toss",
   "invented while shadowboxing (a twin variation of jab)"), uses and level, the trial being practised and any pending build.
 
-## Procedural move synthesis (`art/evolve.py`)
+## Procedural move synthesis (`minis_core/movegen.py`, `art/evolve.py`)
 
 A variant is `(character, base move, operator, seed[, source character])`. Its id is derived from those numbers
 (`iai_slash_ii`, `cross_twin`, `jab_x2d6` for an invention, `riposte_vs884` for a counter), and so is its display name.
 Names are generic and original.
 
-**Remap tier (`retime`, `twin`, `feint`).** These re-sequence and re-time the base row's own frames. A learned row is an
+**Remap tier (`retime`, `twin`, `feint`; `minis_core/movegen.py`, every install).** These re-sequence and re-time the base row's own frames. A learned row is an
 anim.json-shaped entry whose frames carry `src` (the base frame to draw). No rig, no cache, no image is written. `retime`
 warps a row's `air` curve with its frames, so a retimed leap still lifts on the same frames.
 
-**Render tier (`amplify`, `spin`, `mimic`).** These edit the pose keys (hand targets scaled, a spin key inserted, another
-family's poses) and run them through every pass the shipped moves go through: `fit_weapons`, `_fit_chain`,
+**Render tier (`amplify`, `spin`, `mimic`; `art/evolve.py`, source checkout only).** These edit the pose keys (hand targets
+scaled; for `spin` a side-on coil and a BACK-TURNED key - the coil drawn from the other facing with the hip kept on the
+anchor column, so hips and shoulders swap - before the smear sweeps round from behind the back; another family's poses) and run them through every pass the shipped moves go through: `fit_weapons`, `_fit_chain`,
 `settle_to_stance`, `inbetween_weapons`, `settle_frame` and `annotate_contact`. The real builder (`build_fighters.render_move`)
 then draws them at 64 and 128 px in both facings, including the V9 pixel clean-up. Frames go to
 `<data dir>/learned/<character>/<id>.r1.png|.r2.png` plus `<id>.json` (frame timings, reach, contact metadata). The cache is
@@ -77,7 +92,9 @@ then falls back to its remap form.
 | weapon attached | weapon pixels within 3 px (x res) of the hand on every frame that holds one |
 | silhouette | the contact pose differs from idle (IoU < 0.8) and from the last wind-up key (IoU < 0.92); the smear draws its crescent |
 | novelty | at least one frame no base frame matches closely (IoU < 0.87): an operator whose edits the fit passes undid is the base move again |
-| reach | measured from the striking pixels (`hit_reach`), at least 10 px x res |
+| a spin turns | a spin contains a frame that matches the base move's OTHER facing at least 0.05 IoU better than its own facing (the back-turned frame); a near-symmetric coil that cannot read as a turn is rejected |
+| no stray pixels | no opaque pixel off the body, weapon and effects on any frame that is not a smear (or the frame after one), unless the key authors an afterimage (`ghost`): smudges and leftover copies fail |
+| reach | measured from the striking pixels (`hit_reach`), at least 10 px x res; a variant whose contact frame cannot be measured fails (a check that cannot run never passes) |
 | cell | nothing touches the top edge or dips below the outline row, nothing leaves the cell |
 | colours | inside the cap (31 / 63 plus transparency), and no colour the character's own sheet does not already have |
 | facings and sizes | the left facing is the mirror (bounding boxes), checked at 64 and 128 px |
@@ -149,40 +166,20 @@ with a default that keeps V9 behaviour.
 | `minis.py` | `Fighter.resolve_size`: `self.hd = learning.wrap_library(Library(hd=True))` | learned rows at 128 px |
 | `minis.py` | `Fighter.setup`: `self.brain.learner.on = not os.environ.get('MINIS_LEARN_OFF')` | only the real fighter process writes experience; test brains and the simulator never do |
 | `minis.py` | `learned [program]` subcommand | the CLI listing |
+| `minis.py` | `Scoreboard`: `self.toaster = learning.toast_slot(wall=...)` (was `achievements.Toaster`) | achievements and learned moves share the toast row |
+| `minis_core/scoreboard.py` | `_render`: `state['toast']` may be `(kind, text)`; `learned` draws `LEARNED` with a green mark | the LEARNED toast; a bare string is still a badge |
+| `minis_core/collection.py` | `SECTIONS` + `('learned', 'LEARNED', ())`; `entries()` skips `type: learned` rows in the other tabs and fills `learned_entries(atlas)`; `counts()` skips the tab; `Book.__init__` wraps its library; `is_seen` is True for a learned entry | the move book's LEARNED tab |
+| `minis_core/hovercard.py`, `minis_core/ux_runtime.py` | `lines()`: `info['learned']`; `card_info()`: `info['learned'] = learning.summary_line(src)` | the hover card line |
+| `minis_core/achievements.py` | `stats()` + `learn=_learning_stats()`; badges `self_taught`, `student`; `Toaster._sig` also watches `learning.json` | the two badges |
 
 `Learner` is off by default, so `sim.py`, the tests and the preview tools never touch `learning.json`. `MINIS_LEARN_OFF=1`
 turns learning off in a real run; `MINIS_LEARN_NO_RENDER=1` keeps it to the remap tier (the tests set it).
 
-Not hooked yet (follow-ups for the fight-quality agent):
+Not hooked yet:
 - **The arena** (`minis_core/arena.py`, `Arena.__init__` `self.pick`): it builds its own pickers, so learned moves do not
   appear there. Hook: pass `learning.kit_for(program, character)` per side into `choreo.Picker`, and wrap the arena's
   atlases with `learning.wrap_atlases`.
 - **Set pieces** never use learned moves (they fill slots by `type`; learned rows have `type: learned`). Intentional.
-
-## Hook specs for the other branches (no ux / growth file is edited here)
-
-**ux - the move book's "Learned" tab** (`minis_core/collection.py`):
-- Add a section `('learned', 'LEARNED', ())` to `SECTIONS`; in `entries(atlas)` fill it with
-  `learning.book_entries(atlas.character)`. Each entry already has the book's shape (`key` `l:<id>`, `name`, `type`
-  `learned mastery|counter|mimic|invention`, `anim`, `desc` = the how-line, `absent` False), plus `program`, `how` and `spec`.
-- The portrait draws `anim` through the book's `Library`. Wrap it once (`learning.wrap_library(lib)`) and call
-  `learning.load_row(lib[character], entry['spec'])` before drawing; a render row whose cache was evicted returns False
-  and should be drawn as a silhouette with "rebuilding".
-- Seen-tracking: a learned move counts as seen when learned (no `m:` key needed); `counts()` should leave the Learned
-  section out of "N of M seen", since its size grows.
-
-**ux - the hover card**: one line under the record, `learning.summary_line(program)` -> `'learned 3 moves'` or None
-(omit the line).
-
-**growth - achievements** (`minis_core/achievements.py`): read `learning.stats()` (`learned`, `by_how`, `programs`,
-`forgotten`), never `learning.json` directly. Suggested Discovery badges with open criteria: *Self-Taught* (any fighter
-learns a move), *Quick Study* (a counter learned), *Copycat* (a borrowed move), *Inventor* (an invention), *Full Kit*
-(one program holds 6). `stats()` folds in when record.json's mtime moves, or `Toaster` can watch `learning.json` the
-same way.
-
-**scoreboard toast**: the director's scoreboard loop owns one `learning.Toaster(label=sources.short_label)` and shows
-`toaster.poll(now)` where the result line goes, when no match is on. This is not wired in this branch: the scoreboard row
-is shared with growth's achievement toasts, so the two should queue through one slot.
 
 ## Numbers
 
@@ -204,28 +201,34 @@ learning.
 `Sim.test_300_match_balance` asserts the bounds: every kit at most 6, no move over 25 %, learned moves between 3 % and
 35 % of a fighter's attacks, at least two learning sources, and a clean privacy audit.
 
-**Frame-by-frame review (4x, three characters).** `python art/evolve.py review <character> --out <dir>` writes one sheet
-per variant: right and left facing at 64 px (4x) and 128 px (2x), an onion skin of the previous frame, ms / HIT / smear
-labels, and a 1x taskbar strip. Claude, Codex and Knight: 89 variants pass, the rest are rejected. Three defects found by
-eye became QA rules:
+**Frame-by-frame review (4x, three characters).** `python art/evolve.py review <character> --out <dir> [--onion]` writes one
+sheet per variant: right and left facing at 64 px (4x) and 128 px (2x), ms / HIT / smear labels, a 1x taskbar strip, and
+with `--onion` the previous frame's silhouette in dark red behind each frame (a review aid, labelled; never in the sprite).
+Claude, Codex and Knight: 83 variants pass. Five defects found by eye became QA rules:
 1. *Feints that are a stall.* Every jab feint and the heavies' ground-slam feint stuttered between two wind-up keys 1-2 px
    apart (the knight's ground slam: frames 0, 1, 0, 1), which reads as a pause, not a fake. Silhouette bar: IoU < 0.65
    (rejects 12 of the three characters' feints; the kicks', sweeps' and spins' chamber feints pass).
 2. *A variant the fit passes undid.* The knight's amplified cleave rendered as the plain cleave (`fit_weapons` pulls a
-   greatsword's hands back in). Novelty bar: IoU < 0.87 (rejects 11 amplify / spin variants, among them every jab and
-   riposte amplify).
+   greatsword's hands back in). Novelty bar: IoU < 0.87 (rejects 8 amplify variants, among them every jab and riposte
+   amplify).
 3. *Borrowing what you already have.* The knight "borrowed" the barbarian's cleave, which is its own family move. Mimicry
    never offers a move the learner has.
+4. *A spin that does not turn* (coordinator review of `claude-iai_slash_spiral-4x.png`). The first spin inserted only a
+   side-on coil and read as the base iai slash. It now has a back-turned frame and a crescent from behind the back, and the
+   rotation rule rejects spins that cannot read as a turn (12 pass, 9 rejected: every jab and low-kick spin, near-symmetric
+   coils). Before / after: `qa/learning/claude-iai_slash_spiral-before-after.png`.
+5. *Dark-red smudges behind the body* (same review). Audited: they were the review sheet's onion skin, not sprite pixels
+   (no semi-transparent pixel, no colour outside the character's sheet, no afterimage key on any of the frames). The onion
+   skin is now opt-in and labelled, and the gate has a stray-pixel budget so a real smudge fails automatically (a test
+   injects one).
 
-Reviewed sheets kept in the repo (one per operator per character): `qa/learning/*-4x.png`. The full set is regenerated by
-the command above.
+Reviewed sheets kept in the repo (one per operator per character): `qa/learning/*-4x.png`, plus the before / after above
+and `qa/learning/surfaces-2x.png` (the LEARNED tab, the hover card and both toasts). The full set is regenerated by the
+command above.
 
 ## Open items
 
-- The pip wheel and the Windows zip ship without `art/`, so fighters learn only in a checkout. Shipping the remap tier
-  means moving `remap`, `timing_qa`, `remap_qa`, `variant_id` and `display_name` into `minis_core` (they need no rig), or
-  adding `art/evolve.py` to the package.
-- Not wired here: the arena, the scoreboard toast and the ux / growth surfaces (see the specs above).
+- Not wired: the arena (above).
 - The render tier has only run in the review tool and the tests, not inside a long live session. `spawn_build` starts one
   Python process per queued build (a few per week at these thresholds); an owner run should confirm it stays quiet.
 - Inventions and mimicry depend on practice and on meeting the same opponent, so in real use they come slower than

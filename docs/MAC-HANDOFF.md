@@ -264,13 +264,15 @@ stop`, then `python minis.py guide --reset` so the first-run cards show, then `p
     `~/Library/Application Support/minis/learned/<character>/` (PNG + JSON, at most 24 MB, LRU). Render-tier moves are
     built by `python art/evolve.py build ...` spawned with `subprocess.Popen` (no window flag on macOS; stdio to /dev/null).
     A learned move plays once at home under a green `LEARNED: <MOVE>` banner. Files: `minis_core/{learning,brain,choreo,rounds}.py`,
-    `art/evolve.py`, `minis.py` (`learned`, the HD library wrap). docs/LEARNING.md.
+    `art/evolve.py`, `minis_core/movegen.py`, `minis.py` (`learned`, the HD library wrap, the shared toast row),
+    `minis_core/{collection,hovercard,achievements,scoreboard}.py`. docs/LEARNING.md.
   - Test: from the clone, `MINIS_LEARN_NO_RENDER=1 .venv/bin/python -m unittest tests.test_learning -v`, then without the
     variable; `python minis.py learned`; leave the fighters running a working day, then `python minis.py learned` again
     and `ls ~/Library/Application\ Support/minis/learned/`.
   - Expected: the tests pass; `learned` lists moves with their how-lines; the cache holds `.r1.png` / `.r2.png` pairs and
     stays under 24 MB; no Dock icon or window flashes when a build is spawned (report if a Python rocket appears in the
-    Dock - the spawn may then need `LSUIElement` / a different interpreter flag); the LEARNED banner reads at Retina scale.
+    Dock - the spawn may then need `LSUIElement` / a different interpreter flag); the LEARNED banner reads at Retina scale;
+    the move book's LEARNED tab animates its moves and the scoreboard shows `LEARNED <program>: <move>` after any badge toast.
 
 ## DONE
 
