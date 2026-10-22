@@ -460,9 +460,9 @@ class Book:
             elif e['anim']:
                 im.alpha_composite(self.portrait(self.char, e['anim'], t + i * 0.37, seen), (x0, y0))
             if not seen and not e['absent']:
-                f = font(16, True)
                 q = '?'
-                d.text((x0 + (CW - int(d.textlength(q, font=f))) // 2, y0 + 10), q, fill=(150, 150, 170), font=f)
+                qw = int(d.textlength(q, font=font(11, True))) * 2
+                text(d, (x0 + (CW - qw) // 2, y0 + 8), q, (150, 150, 170), 11, True, scale=2)
             f8, f9 = font(8, True), font(9, False)
             names = wrap(e['name'] if seen else '? ? ?', CW - 4, 8, True)[:2]
             for j, nm in enumerate(names):                     # whole names, on two lines when they need them

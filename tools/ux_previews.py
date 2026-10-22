@@ -313,10 +313,19 @@ def docs(out):
     return paths
 
 
+def font_sheet(out):
+    """The shipped pixel font: every variant and glyph at 1x and 2x."""
+    from minis_core import pixelfont
+    p1, p2 = out / 'font-specimen.png', out / 'font-specimen-2x.png'
+    pixelfont.specimen(1).save(p1)
+    pixelfont.specimen(2).save(p2)
+    return [p1, p2]
+
+
 def text_fix(out):
     """Before / after of the small UI text: FreeType monochrome hinting (up to V8) vs render.text now, 1x and 2x."""
     from minis_core import render
-    from minis_core.render import font
+    from minis_core.render import os_font as font
     lines = [('Claude Code', 10, True), ('rest the mouse on a fighter or plate: its state in words', 9, False),
              ('Every row is also a command: minis.py settings list', 9, False), ('arena: one screen picture held in RAM', 9, False),
              ('waiting for you · 1 min 37 s', 9, True), ('Codex 7-12   vs   Claude 12-7', 10, True)]
@@ -342,7 +351,7 @@ def text_fix(out):
     return [p1, p2]
 
 
-SECTIONS = {'text': text_fix, 'book': book, 'settings': settings, 'zone': zone, 'guide': guide, 'cards': cards, 'results': results, 'signals': signals,
+SECTIONS = {'font': font_sheet, 'text': text_fix, 'book': book, 'settings': settings, 'zone': zone, 'guide': guide, 'cards': cards, 'results': results, 'signals': signals,
             'plate': plate, 'replay': replay_frames, 'docs': docs}
 
 

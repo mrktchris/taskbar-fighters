@@ -17,9 +17,12 @@ Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.
   overrides the hand-written one; the fighters restart). Every row is a command too: `settings list|set`, `startup`, `zone`,
   `results|cards|signals on|off`. The app writes only under its data folder, or to a path you choose (plus the startup entry
   you turn on yourself).
-- **Small UI text renders clean**: FreeType's monochrome hinting tore 9-10 px words apart ("m inis", "C laude"); the shared
-  `render.text` now draws antialiased text with even advances and sharpened coverage (plates, scoreboard, select screen and
-  every new window). No help line, caption or toast is cut with "..." any more: they wrap.
+- **The UI has its own pixel font** (`minis_core/pixelfont.py`, generated in code: cap height 7, proportional, regular /
+  bold / tall variants for 8-12 px). FreeType's monochrome hinting of the OS fonts tore 9-10 px words apart ("m inis",
+  "C laude") and macOS drew them with other fonts again; now every small-text surface (plates, scoreboard, select screen and
+  every new window) renders pixel for pixel the same on Windows, macOS and in the frozen bundle, with no OS font involved.
+  OS fonts remain only for the large banners and the arena HUD. No help line, caption or toast is cut with "..." any more:
+  they wrap.
 - **First-run guide + legend**: three cards pointing at the real fighter, plates and scoreboard, once (ux.json); tray >
   *What am I looking at?* / `minis.py guide` shows a 10-second legend.
 - **Hover cards**: rest the mouse on a fighter or plate for the program, its state in words with how long, context, plan,

@@ -232,7 +232,9 @@ class Model:
                 x -= w + 2
             return list(reversed(out))
         if r['kind'] == 'zone':
-            return [('zone', 'edit', (x1 - 124, cy, x1 - 76, cy + 13)), ('zone', 'auto', (x1 - 72, cy, x1 - 4, cy + 13))]
+            f = font(9, True)
+            wa, we = int(f.getlength('Reset to auto')) + 12, int(f.getlength('Edit...')) + 12
+            return [('zone', 'edit', (x1 - 4 - wa - 4 - we, cy, x1 - 4 - wa - 4, cy + 13)), ('zone', 'auto', (x1 - 4 - wa, cy, x1 - 4, cy + 13))]
         return []
 
     def close_rect(self):

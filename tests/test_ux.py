@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from helpers import CFG, Isolated  # noqa: E402
 import minis  # noqa: E402
 from PIL import Image  # noqa: E402
-from minis_core import (bus, collection, control, director, guide as G, hovercard as HC, records, replay, results as R,  # noqa: E402
+from minis_core import (bus, collection, control, director, guide as G, hovercard as HC, records, render, replay, results as R,  # noqa: E402
                         settings_ui as S, signals as SG, ux, ux_runtime)
 from minis_core.sources import Activity  # noqa: E402
 from minis_core.telemetry import Snapshot  # noqa: E402
@@ -969,9 +969,39 @@ class TextQuality(unittest.TestCase):
         im = Image.new('RGBA', (160, 24), (18, 18, 22, 255))
         d = ImageDraw.Draw(im)
         d.fontmode = '1'
-        d.text((4, 4), 'minis', fill=(230, 230, 240), font=render.font(9, False))
-        if sys.platform == 'win32':                                         # Segoe UI: what the fix is about
+        d.text((4, 4), 'minis', fill=(230, 230, 240), font=render.os_font(9, False))
+        if sys.platform == 'win32':                                         # Segoe UI, monochrome-hinted: what the fix is about
             self.assertGreaterEqual(max_gap_inside(im), 2)
+
+    def test_the_pixel_font_needs_no_os_font(self):
+        """The UI text is the shipped pixel font: with every OS font refusing to load, a word renders pixel for pixel the same."""
+        from PIL import ImageFont
+        from minis_core import pixelfont
+        before = self.word('Claude Code', 10, True).tobytes()
+        render._font_cache.clear()
+        pixelfont.PixelFont._mask_cache.clear()
+        pixelfont.PixelFont._glyph_cache.clear()
+        with mock.patch.object(ImageFont, 'truetype', side_effect=OSError('no fonts here')):
+            render._font_cache.clear()
+            self.assertEqual(self.word('Claude Code', 10, True).tobytes(), before)
+            self.assertEqual(self.word('Claude Code', 10, True, k=2).tobytes(), self.word('Claude Code', 10, True, k=2).tobytes())
+            f = render.font(9, False)
+            self.assertTrue(render.is_pixel(f))
+            self.assertEqual(f.getlength('minis'), pixelfont.for_size(9, False).getlength('minis'))
+        render._font_cache.clear()
+        self.assertEqual(self.word('Claude Code', 10, True).tobytes(), before)
+
+    def test_every_glyph_is_drawn_and_unknown_characters_fall_back(self):
+        from minis_core import pixelfont
+        f = pixelfont.for_size(9, False)
+        for code in range(33, 127):
+            self.assertGreater(f.mask(chr(code)).getbbox()[2], 0, chr(code))
+        self.assertEqual(pixelfont.normalize('a…b — c×d · 中'), 'a...b - cxd · ?')
+        self.assertEqual(f.getlength('ab'), f.getlength('a') + f.getlength('b') + pixelfont.SPACING)
+        bold = pixelfont.for_size(9, True)
+        self.assertGreater(bold.getlength('Claude'), f.getlength('Claude'))
+        self.assertEqual(pixelfont.for_size(8, True).getlength('Barbarian'), f.getlength('Barbarian'))   # 8 px: never emboldened
+        self.assertEqual(pixelfont.for_size(11, True).height, f.height + 1)                              # tall: one row more
 
     def test_text_is_crisp_not_washed_out(self):
         im = self.word('mouse', 9, False)
