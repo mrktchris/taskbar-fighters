@@ -1,7 +1,8 @@
 """Runs ONE real arena process headless for tests/test_integration_processes.py (not a test itself), or benchmarks the arena.
 
     LOCALAPPDATA=<temp> python tests/arena_harness.py
-    python tests/arena_harness.py bench [--intensity normal] [--seeds 6] [--forge on|off] [--tile 128|256]
+    python tests/arena_harness.py bench [--intensity normal] [--seeds 6] [--forge on|off] [--tile 128|256] [--size 2560x1440]
+                                        [--backend win|winblit|mac|none] [--json out.json]
 
 Everything is real (minis.run_arena, Arena, Compositor, control / arena.json heartbeats, the monotonic clock) except:
 - the monitor is a synthetic rect from <data>/harness.json {"arena": {"rect": [l, t, r, b], "windows": [[id, l, t, r, b], ...],
@@ -16,6 +17,9 @@ Everything is real (minis.run_arena, Arena, Compositor, control / arena.json hea
 what each backend adds: the Windows premultiply of every dirty rect, and the macOS tile upload (RGBa conversion + bytes of
 every touched tile, empty tiles skipped as minis_mac/arena_window.py does), with V7's 256-pt tiles or V8's 128.  It never
 opens a window and never grabs the screen.
+V9 `winblit`: everything minis_win/arena_window.ArenaWindow.write does except the window itself - the premultiplied BGRA
+conversion AND the row-by-row memmove into a monitor-sized ctypes buffer (the DIB), plus the dirty-rect merge of flush;
+only UpdateLayeredWindowIndirect (the compositor's own upload) is left out.  `--json` writes the per-frame times too.
 """
 import argparse, json, statistics, sys, time
 from pathlib import Path
@@ -77,20 +81,71 @@ class BenchSurface(AR.Surface):
         self.dirty = []
         self.backend_s = 0.0
         self.tiles_up = self.tiles_skip = 0
+        self.px_written = 0
         self.empty = set()
         if tint:
             self.tint = lambda rgb, a: None
+        if mode == 'winblit':
+            import ctypes
+            self._buf = ctypes.create_string_buffer(w * h * 4)
+            self._base = ctypes.addressof(self._buf)
 
     def write(self, img, x, y):
-        super().write(img, x, y)
+        if self.mode != 'winblit':                       # winblit: the DIB is the only copy, as in the real window
+            super().write(img, x, y)
+        else:
+            self.writes += 1
         t0 = time.perf_counter()
+        self.px_written += img.width * img.height
         if self.mode == 'win':
             premultiply(img)
+        elif self.mode == 'winblit':
+            self._blit(img, int(x), int(y))
         elif self.mode == 'mac':
             self.dirty.append((int(x), int(y), int(x) + img.width, int(y) + img.height))
         self.backend_s += time.perf_counter() - t0
 
+    def fill(self, rgba):
+        """minis_win/arena_window.ArenaWindow.fill (V9), minus the window."""
+        from PIL import Image
+        t0 = time.perf_counter()
+        self.px_written += self.w * self.h
+        if self.mode == 'winblit':
+            import ctypes
+            px = premultiply(Image.new('RGBA', (1, 1), tuple(rgba)))
+            ctypes.memmove(self._base, px * (self.w * self.h), self.w * self.h * 4)
+            self.dirty.append((0, 0, self.w, self.h))
+        else:
+            super().fill(rgba)
+        self.backend_s += time.perf_counter() - t0
+
+    def _blit(self, img, x, y):
+        """minis_win/arena_window.ArenaWindow.write, minus the window: clip, premultiply to BGRA, memmove each row."""
+        import ctypes
+        x0, y0 = max(0, x), max(0, y)
+        x1, y1 = min(self.w, x + img.width), min(self.h, y + img.height)
+        if x1 <= x0 or y1 <= y0:
+            return
+        if (x0, y0, x1, y1) != (x, y, x + img.width, y + img.height):
+            img = img.crop((x0 - x, y0 - y, x1 - x, y1 - y))
+        data = premultiply(img)
+        row = img.width * 4
+        base = self._base + (y0 * self.w + x0) * 4
+        stride = self.w * 4
+        if img.width == self.w and x0 == 0:
+            ctypes.memmove(base, data, len(data))
+        else:
+            for j in range(img.height):
+                ctypes.memmove(base + j * stride, data[j * row:(j + 1) * row], row)
+        self.dirty.append((x0, y0, x1, y1))
+
     def flush(self, full=False):
+        if self.mode == 'winblit':
+            from minis_platform.rects import merge_rects
+            t0 = time.perf_counter()
+            merge_rects(self.dirty)
+            self.dirty = []
+            self.backend_s += time.perf_counter() - t0
         if self.mode == 'mac':
             from minis_platform.rects import tile_keys
             t0 = time.perf_counter()
@@ -118,21 +173,26 @@ def bench(argv):
     ap.add_argument('--intensity', default='normal', choices=AR.INTENSITIES)
     ap.add_argument('--seeds', type=int, default=6)
     ap.add_argument('--forge', default='on', choices=('on', 'off'))
-    ap.add_argument('--backend', default='win', choices=('win', 'mac', 'none'))
+    ap.add_argument('--backend', default='win', choices=('win', 'winblit', 'mac', 'none'))
+    ap.add_argument('--size', default='1920x1080')
+    ap.add_argument('--json', default=None)
     ap.add_argument('--tile', type=int, default=128)
     ap.add_argument('--tint', action='store_true', help='mac: flashes through the GPU layer instead of full frames (V8)')
     a = ap.parse_args(argv)
     lib, fxd = Library(hd=True), fx.default()
-    per, tiles = [], []
+    W, H = (int(v) for v in a.size.lower().split('x'))
+    kx, ky = W / 1920.0, H / 1080.0
+    wins = [(i, int(l * kx), int(t * ky), int(r * kx), int(b * ky)) for i, l, t, r, b in BENCH_WINS]
+    per, tiles, pxw = [], [], []
     for seed in range(a.seeds):
-        st = AR.Stage((0, 0, 1920, 1080), BENCH_WINS, floor_y=1032)
+        st = AR.Stage((0, 0, W, H), wins, floor_y=H - 48)
         scr = None
         if a.forge == 'on':
-            scr = FG.ScreenImage(AR.synthetic_backdrop(1920, 1080, seed=5), rects=[(w['id'], w['l'], w['t'], w['r'], w['b']) for w in st.windows])
+            scr = FG.ScreenImage(AR.synthetic_backdrop(W, H, seed=5), rects=[(w['id'], w['l'], w['t'], w['r'], w['b']) for w in st.windows])
         ar = AR.Arena(st, {'a': lib['claude'], 'b': lib['knight']}, fxd, seed=seed, now=0.0, record=lambda *x, **k: None,
                       options={'intensity': a.intensity}, screen=scr, forge=a.forge == 'on')
         ar.flashes = True
-        surf = BenchSurface(1920, 1080, a.backend, a.tile, tint=a.tint)
+        surf = BenchSurface(W, H, a.backend, a.tile, tint=a.tint)
         comp = AR.Compositor(ar, surf)
         now, n = 0.0, 0
         while ar.phase != 'done' and now < 240:
@@ -143,16 +203,22 @@ def bench(argv):
             comp.render(now)
             per.append((time.perf_counter() - t0) * 1000.0)
             n += 1
+        pxw.append(surf.px_written / max(1, n))
         tiles.append((surf.tiles_up / max(1, n), surf.tiles_skip / max(1, n)))
+    raw = list(per)
     per.sort()
     q = lambda p: per[min(len(per) - 1, int(p * len(per)))]
-    out = dict(intensity=a.intensity, forge=a.forge, backend=a.backend, tile=a.tile, tint=a.tint, frames=len(per),
-               mean=round(statistics.mean(per), 2), p50=round(q(0.5), 2), p95=round(q(0.95), 2), max=round(per[-1], 1),
-               cpu_pct_at_30fps=round(statistics.mean(per) * 30 / 10.0, 1))
+    out = dict(intensity=a.intensity, forge=a.forge, backend=a.backend, size=a.size, tile=a.tile, tint=a.tint, frames=len(per),
+               mean=round(statistics.mean(per), 2), p50=round(q(0.5), 2), p95=round(q(0.95), 2), p99=round(q(0.99), 2),
+               max=round(per[-1], 1), over_33ms=sum(1 for v in per if v > 33.3),
+               cpu_pct_at_30fps=round(statistics.mean(per) * 30 / 10.0, 1),
+               px_written_per_frame=int(statistics.mean(pxw)))
     if a.backend == 'mac':
         out['tiles_up_per_frame'] = round(statistics.mean(t[0] for t in tiles), 1)
         out['tiles_skipped_per_frame'] = round(statistics.mean(t[1] for t in tiles), 1)
     print(json.dumps(out))
+    if a.json:
+        Path(a.json).write_text(json.dumps(dict(out, per_frame_ms=[round(v, 3) for v in raw])), encoding='utf-8')
     return 0
 
 

@@ -35,9 +35,10 @@ import math, random
 from collections import deque
 from PIL import Image, ImageDraw, ImageFilter, ImageChops
 
-from . import choreo, rounds
+from . import choreo, framedata as FD, rounds
 from . import arena_setpieces as SP
 from . import forge as FG
+from . import sfx as sfx_mod
 from .effects import EffectPlayer
 from .fx import text_image
 from .render import font, text, TRACK, AMBER, RED
@@ -67,6 +68,8 @@ LEDGE_P = 0.3                                 # chance the defender flies to a w
 DASH_PX = 220                                 # an approach longer than this is an air dash, not a walk (was 300)
 APPROACH_S = 4.0                              # give up walking and dash in after this (was 6 s)
 COOLDOWN_CLOSE, COOLDOWN_FAR = (0.15, 0.35), (0.3, 0.55)    # pause between exchanges (was 0.25-0.5 / 0.5-0.9)
+ARENA_UNIT_PX = 7.0                           # V9: arena px per launch unit (a launch unit per frame = 420 px/s)
+ARENA_PUSH_K = 40.0                           # V9: block pushback px (RES 1) -> arena px/s
 ARENA_DMG_K = 1.25                            # landed strikes / specials / supers hit this much harder than on the taskbar (the
                                               # arena spends time flying between exchanges); the ultimate stays 40
 
@@ -221,6 +224,12 @@ class Surface:
         self.flushes += 1
         return True
 
+    def fill(self, rgba):
+        """V9: the whole surface one colour (straight alpha), as the window's fill does it."""
+        self.canvas.paste(tuple(rgba), (0, 0, self.w, self.h))
+        self.fills = getattr(self, 'fills', 0) + 1
+        self.writes += 1
+
     def offset(self, dx, dy):
         self._offset = (dx, dy)
         self.offsets.append((dx, dy))
@@ -365,15 +374,33 @@ class Body:
         self.loop = self.atlas.anim[name]['loop'] if loop is None else loop
         self.hold = hold
 
-    def frame(self, now):
-        if self.pose is not None:
-            return self.pose[1], False
+    def elapsed_ms(self, now):
+        """The animation clock of the current row (hitstop stands still, slow motion slows), in ms."""
         el = now - self.anim_t0
         if self.stop is not None:
             el -= max(0.0, min(now, self.stop[1]) - max(self.stop[0], self.anim_t0))
         if self.slow is not None:
             el -= max(0.0, min(now, self.slow[1]) - max(self.slow[0], self.anim_t0)) * (1.0 - self.slow[2])
-        return self.atlas.locate(self.anim, max(0.0, el) * 1000.0, self.loop)
+        return max(0.0, el) * 1000.0
+
+    def frame(self, now):
+        if self.pose is not None:
+            return self.pose[1], False
+        return self.atlas.locate(self.anim, self.elapsed_ms(now), self.loop)
+
+    LIFT_CATS = ('ultimate', 'emote', 'pair')
+
+    def row_lift(self, now):
+        """V9: arena px the sprite is lifted by its row's `air` curve when the arena's physics is NOT already flying it:
+        a standing fighter playing an ultimate / emote that is a real jump in the art (the grapple zip, the victory hops),
+        which used to hop inside the cell.  Jumps, juggles and spikes stay with the physics (their rows are strikes,
+        locomotion or reactions)."""
+        if self.pose is not None or not self.grounded:
+            return 0
+        a = self.atlas.anim.get(self.anim) or {}
+        if not a.get('air') or a.get('cat') not in self.LIFT_CATS:
+            return 0
+        return int(round(choreo.air_lift(a, self.elapsed_ms(now)) * self.atlas.res * SCALE))
 
     def drawn_anim(self):
         return self.pose[0] if self.pose is not None else self.anim
@@ -509,11 +536,16 @@ def _art(key, make):
 _BAR_IDS = set()
 
 
+def _is_bar(im):
+    return bool(im.info.get('minis_bar'))
+
+
 def _bar(w, h):
     def make():
         im = Image.new('RGBA', (w, h), (6, 6, 10, 236))
         _BAR_IDS.add(id(im))                               # the compositor repaints only the strip a bar grew or shrank by
-        return im
+        im.info['minis_bar'] = True                        # V9: marked on the image: an id outlives a cleared _ART cache and
+        return im                                          # was reused by other images, which then were never repainted
     return _art(('bar', w, h), make)
 
 
@@ -838,7 +870,14 @@ class Arena:
         self.last_att, self.last_hit = None, False
         self.ult_rolled = False                                # V6: one ultimate roll per match, one ultimate per match
         self.comeback_for = None                               # the loser of the last round gets one comeback exchange
+        self.sfx = None                                        # V9: sfx.Player (the real process sets it), None = silent
         self.boost = []                                        # slots whose agent just finished a task: signature super first
+        self.boost_any = set()                                 # V9: ... from a live bus marker: the very next exchange, any round
+        self.pct = {'a': 0.0, 'b': 0.0}                        # V9 frame data: damage % this round (later hits launch further)
+        self.fd_rng = random.Random(seed * 7919 + 211)         # V9: DI draws on their own stream (the fight's rng is unchanged)
+        self.fd_log = []                                       # V9: frame data of every landed hit (tests, the QA log)
+        self.boost_seen = set()                                # V9: marker ids already used (one super per finished task)
+        self._boost_read = -1e9
         self.impact = None                                     # (t0, t1, struck slot): impact frames on screen
         self.flashes = None                                    # control.json `flashes`; None = read it here (every 2 s)
         self._flash_cache, self._flash_read = True, -1e9
@@ -849,6 +888,16 @@ class Arena:
             forge = bool(ctl.get('forge', self.cfg.get('forge', True))) if cfg is not None else False
         self._forge_read = now
         self.forge = FG.Forge(self, screen=screen, enabled=forge, seed=seed)
+        if self.forge.enabled:                                 # V9: decode the unarmed sheets now, not on the first forged
+            for s in 'ab':                                     # weapon's frame (a 130 ms stall mid-fight)
+                warm = getattr(atlases[s], '_unarmed_sheets', None)
+                if warm is not None:
+                    try:
+                        warm()
+                    except Exception:
+                        pass
+        if cfg is not None:                                    # V9: the real process may play sounds (control.json `sound`, off by default)
+            self.sfx = sfx_mod.Player(enabled=sfx_mod.control_enabled())
         for s in 'ab':
             self.f[s].vy = -1700.0                             # entry: burst out of the taskbar, upward
             self.f[s].fly_until = 0.0
@@ -858,6 +907,10 @@ class Arena:
     # ---- bookkeeping
     def note(self, kind, t, **kw):
         self.events.append((kind, round(t, 3), kw))
+        if self.sfx is not None:                               # V9 sound effects (off by default; the arena plays its own)
+            snd = sfx_mod.sound_for_arena(kind, kw)
+            if snd:
+                self.sfx.play(snd, t, t)
         self.counts[kind] = self.counts.get(kind, 0) + 1
 
     def state(self):
@@ -904,6 +957,7 @@ class Arena:
                 self.f[s].play('powerup' if 'powerup' in self.f[s].atlas.anim else 'idle', now + 0.25, loop=False, hold='idle')
         elif phase == 'intro':
             self.round += 1
+            self.pct = {'a': 0.0, 'b': 0.0}
             for s in 'ab':
                 b = self.f[s]
                 b.hp = rounds.HP_MAX
@@ -1002,6 +1056,8 @@ class Arena:
     def tick(self, now):
         dt = max(0.0, min(0.05, now - self.last_now))
         self.last_now = now
+        if self.sfx is not None:
+            self.sfx.quiet = self.paused                       # paused: no sound at all
         if self.paused or self.phase == 'done':
             return
         self.fxp.tick(now)
@@ -1050,6 +1106,7 @@ class Arena:
                 self._window_collisions(self.f[s], now)
         self._tick_world(now, dt)
         self._forge_poll(now)
+        self._boost_poll(now)
         self.forge.tick(now, dt)
         for s in 'ab':
             b = self.f[s]
@@ -1107,8 +1164,9 @@ class Arena:
         a, b = self.f['a'], self.f['b']
         k = self.k_round
         boost = comeback = False
-        if self.boost and k < 2:
+        if self.boost and (k < 2 or self.boost[0] in self.boost_any):
             att, boost = self.boost.pop(0), True                   # its agent just finished a task: the signature super opens
+            self.boost_any.discard(att)
         elif self.comeback_for is not None and k == 1:
             att, comeback = self.comeback_for, True                # lost the last round: one exchange where everything lands
             self.comeback_for = None
@@ -1451,11 +1509,19 @@ class Arena:
             react = bt.get('react') or 'block_hit'
             T.play(react, now, loop=False, hold='idle')
             self.fxp.spawn_at('block_spark', now, cx + T.facing * 24, cy)
-            T.vx = W.facing * (160.0 if outcome != 'parry' else 0.0)
+            d = arena_dmg(bt) * FD.PCT_PER_HP or choreo.damage_of(W.atlas, move, kind) * FD.PCT_PER_HP
+            push = FD.shield_push_px(d) * ARENA_PUSH_K                 # V9: pushback and shieldstun grow with the blocked damage
+            T.vx = W.facing * (push if outcome != 'parry' else 0.0)
+            T.knocked_until = max(T.knocked_until, now + hs + FD.ms(FD.shieldstun_frames(d)) / 1000.0)
             self.note('block' if outcome != 'parry' else 'parry', now, who=ex['tgt'])
             self.forge.on_hit_landed(ex['who'], now)                  # a blocked forged weapon still cracks
             return
         dmg = arena_dmg(bt)
+        fd = self._frame_data(ex, W, T, bt, kind, move, dmg)
+        if not final and hs and fd['hitlag'] / 1000.0 > hs:          # V9: the hitlag grows with the damage (both freeze)
+            hs = fd['hitlag'] / 1000.0
+            for f in (W, T):
+                f.stop = (now, now + hs)
         T.hp = max(0, T.hp - dmg)
         self.meter[ex['who']] += dmg
         self.meter[ex['tgt']] += dmg / 2.0
@@ -1464,23 +1530,26 @@ class Arena:
         self.hp_history.append((round(now, 3), ex['tgt'], T.hp))
         heavy = dmg >= 24
         beam = kind == 'ultimate' and self._reach(ex['who'], move) > 0
-        down = T.hp <= 0 or bt.get('down') or bt.get('react') == 'knockdown' or 'throw' in traits
+        down = (T.hp <= 0 or bt.get('down') or bt.get('react') == 'knockdown' or 'throw' in traits
+                or (fd['tumble'] and not ex['air']))                   # V9: knockback past the tumble line knocks it down
         T.hover, T.fly_until, T.target = False, 0.0, None
         airborne = not T.grounded
         T.grounded = False
         if down:
             T.play('knockdown', now, loop=False, hold='ko' if T.hp <= 0 else 'knockdown')
             T.down = True
-            T.vx, T.vy = W.facing * (950.0 if beam else 820.0), (0.0 if beam else -620.0)      # a beam carries it straight along itself
-            T.knocked_until = now + 1.2
+            vx, vy = fd['v']
+            T.vx, T.vy = W.facing * (950.0 if beam else max(560.0, vx)), (0.0 if beam else min(-420.0, vy))   # V9: the launch arc
+            T.knocked_until = now + max(1.2, hs + fd['stun'])
             if T.hp > 0:
                 T.getup_at = now + hs + T.atlas.total_ms('knockdown') / 1000.0     # V6: springs up the moment the fall ends
             self.note('knockdown', now, who=ex['tgt'], ko=T.hp <= 0)
         else:
             T.play('hit_heavy' if heavy else 'hit', now, loop=False, hold='idle')
-            T.vx = W.facing * ((950.0 if beam else 260.0 + dmg * 14.0))
-            T.vy = 0.0 if beam else (-380.0 if heavy else -120.0)
-            T.knocked_until = now + (0.7 if heavy else 0.4)
+            vx, vy = fd['v']                                              # V9: knockback from damage, % and weight
+            T.vx = W.facing * (950.0 if beam else max(200.0, vx))
+            T.vy = 0.0 if beam else min(-80.0, vy)
+            T.knocked_until = now + max(0.3, hs + fd['stun'])             # V9: hitstun proportional to the knockback
             T.recover_ok = True
         self._traits(ex, W, T, traits, bt, now, down, airborne or ex['air'] or bool(bt.get('juggle')))
         ix = cx
@@ -1494,6 +1563,8 @@ class Arena:
         sh = choreo.move_shake(W.atlas, move)
         if sh:
             self.fxp.add_shake(now, sh['frames'], sh['amp'] * SCALE)
+        elif fd['kb'] >= 40:                                               # V9: the screen shakes with the knockback
+            self.fxp.add_shake(now, 2 + int(fd['kb'] // 60), min(4.0, fd['kb'] / 40.0) * SCALE)
         if kind == 'ultimate':
             imp = f'{move}_impact' if self.fx.has_art(f'{move}_impact') else 'explosion'
             self.fxp.spawn_at(imp, now, ix, cy, W.facing)
@@ -1515,6 +1586,28 @@ class Arena:
         self.forge.on_hit_landed(ex['who'], now, heavy=heavy, final=final)
         if T.hp <= 0:
             self._end_round(now, ex['tgt'])
+
+    def _frame_data(self, ex, W, T, bt, kind, move, dmg):
+        """V9 platform-fighter frame data for an arena hit (framedata.py): the target's % grows by the hit, then knockback
+        (damage, %, weight, the move's scaling / base), its launch velocity along the move's angle leaned by DI, the
+        hitstun, the hitlag, and whether it tumbles."""
+        tgt = ex['tgt']
+        a = W.atlas.anim.get(move) or {}
+        d = dmg * FD.PCT_PER_HP
+        self.pct[tgt] += d
+        s, base, ang = FD.move_kb(W.atlas.power(move, 1), a.get('height'), kind)
+        if a.get('type') == 'spike':
+            ang = FD.SPIKE_ANGLE
+        ang = FD.di(ang, self.fd_rng)
+        fam = (T.atlas.anim.get('riposte') or {}).get('family')
+        kb = FD.knockback(self.pct[tgt], d, FD.weight_of(fam), s, base)
+        v = FD.launch_speed(kb) * FD.FPS * ARENA_UNIT_PX                     # px / s at the moment of launch
+        r = math.radians(ang)
+        out = dict(kb=kb, pct=self.pct[tgt], angle=ang, v=(v * math.cos(r), -v * math.sin(r)), stun=FD.hitstun_ms(kb) / 1000.0,
+                   hitlag=max(choreo.HITSTOP_FLOOR_MS, FD.hitlag_ms(dmg * FD.HITLAG_DMG_K)), tumble=FD.tumbles(kb))
+        self.fd_log.append(dict(who=ex['who'], tgt=tgt, move=move, kind=kind, dmg=dmg, pct=round(self.pct[tgt], 2),
+                                kb=round(kb, 2), stun=round(out['stun'], 3), tumble=out['tumble']))
+        return out
 
     def _traits(self, ex, W, T, traits, bt, now, down, aerial):
         """V7: what a move's family does to the defender's flight (launch, throw, pull, boomerang, pound, meteor)."""
@@ -1579,6 +1672,44 @@ class Arena:
             except Exception:
                 self._flash_cache = True
         return self._flash_cache
+
+    BOOST_POLL_S = 0.5
+
+    def _boost_poll(self, now, buses=None, wall=None):
+        """V9: the task-finished boost, across processes.  The slot whose agent went working -> done publishes a short-lived
+        marker on its bus file ({'id', 'left'}: brain.boost_marker); the arena reads both bus files every 0.5 s (only in the
+        real process, i.e. with a cfg) and queues that slot, so its next exchange opens with the signature super, as the
+        taskbar does.  Each marker id is used once.  `buses` / `wall` are for tests."""
+        if buses is None and not self.cfg:
+            return
+        if now - self._boost_read < self.BOOST_POLL_S and now >= self._boost_read:
+            return
+        self._boost_read = now
+        import time as _time
+        wall = _time.time() if wall is None else wall
+        if buses is None:
+            try:
+                from . import bus
+                buses = {s: bus.read(s, now=wall) for s in 'ab'}
+            except Exception:
+                return
+        for s in 'ab':
+            d = buses.get(s) or {}
+            m = d.get('boost') if isinstance(d, dict) else None
+            if not isinstance(m, dict) or not m.get('id'):
+                continue
+            try:
+                until = float(d.get('ts', 0)) + float(m.get('left', 0))
+            except (TypeError, ValueError):
+                continue
+            key = (s, str(m['id']))
+            if key in self.boost_seen or until <= wall or self.phase in ('winner', 'exit', 'done'):
+                continue
+            self.boost_seen.add(key)
+            if s not in self.boost:
+                self.boost.append(s)
+            self.boost_any.add(s)
+            self.note('boost', now, who=s)
 
     def _forge_poll(self, now):
         """control.json `forge` read every 2 s in the real process: switched off mid-match, the grab is dropped at once."""
@@ -2485,6 +2616,8 @@ class Arena:
         self.note('through', now, who=b.slot)
 
     def _shatter(self, win, now, cx, cy):
+        if self.sfx is not None:
+            self.sfx.play('shatter', now, now)
         self.crack_marks.pop(win['id'], None)
         self.fxp.clear(tag=None)
         for d in [d for d in self.decals if d['wid'] == win['id']]:
@@ -2690,9 +2823,10 @@ class Arena:
                 age = (now - t) / AFTERIMAGE_S
                 if age >= 1.0:
                     continue
-                im = self._sprite(b.atlas, anim, fr, facing, alpha=int(110 * (1.0 - int(age * 4) / 4.0)),   # 4 steps: cacheable
-                                  unarmed=self.forge.armed(s))
-                out.append((im, int(x - b.atlas.anchor(facing) * SCALE), int(y - b.atlas.ground_y * SCALE)))
+                im, dx, dy = self._sprite_trim(b.atlas, anim, fr, facing, alpha=int(110 * (1.0 - int(age * 4) / 4.0)),   # 4 steps
+                                               unarmed=self.forge.armed(s))
+                if im is not None:
+                    out.append((im, int(x - b.atlas.anchor(facing) * SCALE) + dx, int(y - b.atlas.ground_y * SCALE) + dy))
         imp = self.impact if (self.impact and self.impact[0] <= now < self.impact[1]) else None
         for s in 'ab':
             b = self.f[s]
@@ -2702,14 +2836,16 @@ class Arena:
             if b.alpha is not None and sil is None:
                 if b.alpha <= 0.05:
                     continue
-                im = self._sprite(b.atlas, b.drawn_anim(), idx, b.facing, alpha=int(255 * round(b.alpha * 4) / 4.0), unarmed=armed)
+                im, dx, dy = self._sprite_trim(b.atlas, b.drawn_anim(), idx, b.facing, alpha=int(255 * round(b.alpha * 4) / 4.0), unarmed=armed)
                 l, t, r, bt = b.sprite_rect()
-                out.append((im, l + b.jitter, t))
+                if im is not None:
+                    out.append((im, l + b.jitter + dx, t + dy))
                 continue
             out.extend(self.forge.held(s, now, 'back'))        # a dual-wielder's second forged weapon, behind the body
-            im = self._sprite(b.atlas, b.drawn_anim(), idx, b.facing, silhouette=sil, unarmed=armed)
+            im, dx, dy = self._sprite_trim(b.atlas, b.drawn_anim(), idx, b.facing, silhouette=sil, unarmed=armed)
             l, t, r, bt = b.sprite_rect()
-            out.append((im, l + b.jitter, t))
+            if im is not None:
+                out.append((im, l + b.jitter + dx, t - b.row_lift(now) + dy))
             out.extend(self.forge.held(s, now, 'front'))       # the forged weapon at this frame's grip, swinging with the arm
         out.extend(self.forge.drawables(now, 'front'))           # cuts, morphs, slabs, debris
         for im, lx, ty, layer, inst in self.fxp.placements(now, layer='front'):
@@ -2887,10 +3023,34 @@ class Arena:
             self._sprite_cache[key] = im
         return im
 
+    _trim_cache = {}
+
+    def _sprite_trim(self, atlas, anim, idx, facing, alpha=None, silhouette=None, unarmed=False):
+        """V9 (arena 30 fps): the sprite cut to the box of its opaque pixels -> (image or None, dx, dy).  A 256 px cell is
+        mostly transparent, so the fighter's dirty rectangle - and the premultiply and the window upload behind it - shrinks
+        to the body.  The transparent margin composites to nothing: the same pixels on screen.  Sprites are never changed
+        after they are made, so the box is measured once per cached sprite."""
+        im = self._sprite(atlas, anim, idx, facing, alpha=alpha, silhouette=silhouette, unarmed=unarmed)
+        e = self._trim_cache.get(id(im))
+        if e is None or e[0] is not im:
+            bb = im.getchannel('A').getbbox()
+            if bb is None:
+                e = (im, None, 0, 0)
+            elif bb == (0, 0, im.width, im.height):
+                e = (im, im, 0, 0)
+            else:
+                e = (im, im.crop(bb), bb[0], bb[1])
+            if len(self._trim_cache) > 1000:
+                self._trim_cache.clear()
+            self._trim_cache[id(im)] = e
+        return e[1], e[2], e[3]
+
     _hud_cache = {}
 
     def _hud(self):
-        key = (self.f['a'].hp, self.f['b'].hp, self.wins['a'], self.wins['b'], self.round, self.names['a'], self.names['b'], self.stage.w, self.to_win)
+        pc = {s: int(round(self.pct.get(s, 0.0))) for s in 'ab'}
+        key = (self.f['a'].hp, self.f['b'].hp, self.wins['a'], self.wins['b'], self.round, self.names['a'], self.names['b'], self.stage.w, self.to_win,
+               pc['a'], pc['b'])
         im = self._hud_cache.get(key)
         if im is not None:
             return im
@@ -2911,6 +3071,11 @@ class Arena:
             nm = str(self.names[s])[:14]
             tw = int(d.textlength(nm, font=font(16, True)))
             text(d, (x0 + bar_w - tw if flip else x0, 38), nm, (245, 245, 250), 16)
+            pt = f'{pc[s]}%'                                     # V9: the damage %, next to the name
+            pw = int(d.textlength(pt, font=font(14, True)))
+            nx = x0 + bar_w - tw - 10 - pw if flip else x0 + tw + 10
+            from .render import dmg_colour
+            text(d, (nx, 39), pt, dmg_colour(pc[s]), 14)
             dots = f'x{self.wins[s]}' if self.to_win is None else ' '.join('*' if i < self.wins[s] else 'o' for i in range(self.to_win))
             dw = int(d.textlength(dots, font=font(14, True)))
             text(d, (x0 if flip else x0 + bar_w - dw, 38), dots, (255, 226, 122), 14)
@@ -2973,9 +3138,9 @@ class Compositor:
             return [(0, 0, W, H)]
         cur = {(id(im), x, y) for im, x, y in items}
         old = {(id(im), x, y) for im, x, y in self.prev}
-        rects = [(x, y, x + im.width, y + im.height) for im, x, y in items if (id(im), x, y) not in old and id(im) not in _BAR_IDS]
-        rects += [(x, y, x + im.width, y + im.height) for im, x, y in self.prev if (id(im), x, y) not in cur and id(im) not in _BAR_IDS]
-        bh = next((im.height for im, x, y in items if id(im) in _BAR_IDS), 0)
+        rects = [(x, y, x + im.width, y + im.height) for im, x, y in items if (id(im), x, y) not in old and not _is_bar(im)]
+        rects += [(x, y, x + im.width, y + im.height) for im, x, y in self.prev if (id(im), x, y) not in cur and not _is_bar(im)]
+        bh = next((im.height for im, x, y in items if _is_bar(im)), 0)
         if bh != self.bar_h:                                    # letterbox: only the strips between the old and new heights
             lo, hi = min(bh, self.bar_h), max(bh, self.bar_h)
             rects += [(0, lo, W, hi), (0, H - hi, W, H - lo)]
@@ -3025,20 +3190,74 @@ class Compositor:
             return self._render(now)
         W, H = a.stage.w, a.stage.h          # V5: a white screen flash is one full frame (and the frame after it clears it)
         items = a.drawables(now)
-        base = self._compose(items, 0, 0, W, H)
         if flash > 0:                        # the whole overlay goes white for a frame (click-through stays: it is only paint)
-            base.alpha_composite(Image.new('RGBA', (W, H), (255, 255, 255, int(255 * min(1.0, flash)))))
+            ov = (255, 255, 255, int(255 * min(1.0, flash)))
         elif cf is not None:                 # V7: a colour flash in the striker's accent
-            base.alpha_composite(Image.new('RGBA', (W, H), cf[0] + (int(255 * min(1.0, cf[1])),)))
-        self.surface.write(base, 0, 0)
+            ov = tuple(cf[0]) + (int(255 * min(1.0, cf[1])),)
+        else:
+            ov = None
+        fill = getattr(self.surface, 'fill', None)
+        if ov is not None and self.flashed and ov == self.flash_ov and self.zoomed is None:
+            dirty = self._flash_step(items, ov, W, H)      # V9: the same flash as last frame: only what moved under it
+        elif fill is not None and a.backdrop is None:
+            fill(ov or (0, 0, 0, 0))                        # V9: one fill for the empty screen, then only the drawables
+            for x0, y0, x1, y1 in _merge([(x, y, x + im.width, y + im.height) for im, x, y in items], W, H, limit=MERGE_LIMIT):
+                reg = self._compose(items, x0, y0, x1, y1)
+                if ov is not None:
+                    reg.alpha_composite(Image.new('RGBA', reg.size, ov))
+                self.surface.write(reg, x0, y0)
+            dirty = [(0, 0, W, H)]
+        else:
+            self.surface.write(self._flash_frame(items, ov, W, H), 0, 0)
+            dirty = [(0, 0, W, H)]
         self.prev = items
-        self.bar_h = next((im.height for im, x, y in items if id(im) in _BAR_IDS), 0)
+        self.bar_h = next((im.height for im, x, y in items if _is_bar(im)), 0)
         self.zoomed = None
-        self.flashed = flash > 0 or cf is not None
+        self.flashed = ov is not None
+        self.flash_ov = ov
         self.surface.offset(*a.fxp.shake(now))
         self.surface.flush()
         self.frames += 1
-        return [(0, 0, W, H)]
+        return dirty
+
+    flash_ov = None
+
+    def _flash_frame(self, items, ov, W, H):
+        """A whole frame with the flash colour `ov` over everything (None: the plain frame that clears a flash).
+        V9: with no backdrop (the live arena), everywhere outside the drawables the result is just `ov` over transparency,
+        i.e. `ov` itself, so the frame starts as one fill and only the drawables' rects are composited and washed - the
+        same pixels as compositing the full frame and washing it all (tests/test_arena.py ArenaPerf9), about 10 ms less at
+        1920x1080."""
+        a = self.arena
+        if ov is None or a.backdrop is not None:
+            base = self._compose(items, 0, 0, W, H)
+            if ov is not None:
+                base.alpha_composite(Image.new('RGBA', (W, H), ov))
+            return base
+        base = Image.new('RGBA', (W, H), ov)
+        for x0, y0, x1, y1 in _merge([(x, y, x + im.width, y + im.height) for im, x, y in items], W, H, limit=MERGE_LIMIT):
+            reg = self._compose(items, x0, y0, x1, y1)
+            reg.alpha_composite(Image.new('RGBA', reg.size, ov))
+            base.paste(reg, (x0, y0))
+        return base
+
+    def _flash_step(self, items, ov, W, H):
+        """The second and later frames of one steady flash: the wash is already on the window, so only the rects whose
+        drawables appeared, moved, changed or left are composited, washed with the same colour and written."""
+        cur = {(id(im), x, y) for im, x, y in items}
+        old = {(id(im), x, y) for im, x, y in self.prev}
+        rects = [(x, y, x + im.width, y + im.height) for im, x, y in items if (id(im), x, y) not in old]
+        rects += [(x, y, x + im.width, y + im.height) for im, x, y in self.prev if (id(im), x, y) not in cur]
+        a = self.arena
+        if a.holes:
+            rects += [tuple(h) for h in a.holes]
+            a.holes = []
+        dirty = _merge(rects, W, H, limit=MERGE_LIMIT)
+        for x0, y0, x1, y1 in dirty:
+            reg = self._compose(items, x0, y0, x1, y1)
+            reg.alpha_composite(Image.new('RGBA', reg.size, ov))
+            self.surface.write(reg, x0, y0)
+        return dirty
 
 
 def _lens(base, z, fx, fy, grid=4):
@@ -3073,41 +3292,76 @@ def _paste(dst, src, x, y):
     dst.alpha_composite(src, (max(0, x), max(0, y)))
 
 
+MERGE_CELL = 64                  # V9: px; many small rects (debris, letters, sparks) are first pooled per cell of this grid
+MERGE_POOL_N = 64                # ... once a frame has more dirty rects than this (a shatter, a burst of debris)
+
+
+def _overlaps(a, b):
+    return a[0] <= b[2] and b[0] <= a[2] and a[1] <= b[3] and b[1] <= a[3]
+
+
+def _union(a, b):
+    return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
+
+
 def _merge(rects, W, H, limit=10):
+    """Dirty rects -> at most `limit` rects that cover all of them (the compositor repaints exactly these).
+    V9 (arena 30 fps): the same cover, but cheap on busy frames.  Before, touching rects were merged pairwise until
+    nothing changed and the excess was then reduced by trying every pair for every merge (cubic): a shatter or a burst of
+    debris (100+ rects) cost up to 33 ms in this function alone.  Now many small rects are first pooled per 64 px cell
+    (a superset: every pixel stays covered), overlaps are merged in one sorted sweep, and the excess is reduced greedily
+    from a heap of pair costs, recomputing only the merged rect's costs."""
+    import heapq
     rs = []
     for x0, y0, x1, y1 in rects:
         x0, y0, x1, y1 = max(0, int(x0)), max(0, int(y0)), min(W, int(x1)), min(H, int(y1))
         if x1 > x0 and y1 > y0:
             rs.append((x0, y0, x1, y1))
+    if len(rs) > MERGE_POOL_N:
+        cells = {}
+        for r in rs:
+            k = ((r[0] + r[2]) // (2 * MERGE_CELL), (r[1] + r[3]) // (2 * MERGE_CELL))
+            cells[k] = _union(cells[k], r) if k in cells else r
+        rs = list(cells.values())
     changed = True
-    while changed:
+    while changed:                                        # merge everything that touches, until stable
         changed = False
+        rs.sort()
         out = []
-        while rs:
-            a = rs.pop()
-            i = 0
-            while i < len(rs):
-                b = rs[i]
-                if a[0] <= b[2] and b[0] <= a[2] and a[1] <= b[3] and b[1] <= a[3]:
-                    a = (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
-                    rs.pop(i)
+        for r in rs:
+            for i in range(len(out) - 1, -1, -1):
+                o = out[i]
+                if _overlaps(o, r):
+                    r = _union(o, r)
+                    out.pop(i)
                     changed = True
-                else:
-                    i += 1
-            out.append(a)
+            out.append(r)
         rs = out
-    while len(rs) > limit:
-        best = None
-        for i in range(len(rs)):
-            for j in range(i + 1, len(rs)):
-                a, b = rs[i], rs[j]
-                u = (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
-                cost = (u[2] - u[0]) * (u[3] - u[1])
-                if best is None or cost < best[0]:
-                    best = (cost, i, j, u)
-        _, i, j, u = best
-        rs = [r for k, r in enumerate(rs) if k not in (i, j)] + [u]
-    return rs
+    if len(rs) <= limit:
+        return rs
+    alive = {i: r for i, r in enumerate(rs)}
+    nxt = len(rs)
+
+    def cost(a, b):
+        u = _union(a, b)
+        return (u[2] - u[0]) * (u[3] - u[1])
+    heap = []
+    ids = list(alive)
+    for ai in range(len(ids)):
+        for bi in range(ai + 1, len(ids)):
+            i, j = ids[ai], ids[bi]
+            heap.append((cost(alive[i], alive[j]), i, j))
+    heapq.heapify(heap)
+    while len(alive) > limit and heap:
+        c, i, j = heapq.heappop(heap)
+        if i not in alive or j not in alive:
+            continue                                      # a stale pair (one side was merged already)
+        u = _union(alive.pop(i), alive.pop(j))
+        k, nxt = nxt, nxt + 1
+        for m, r in alive.items():
+            heapq.heappush(heap, (cost(u, r), m, k))
+        alive[k] = u
+    return list(alive.values())
 
 
 def synthetic_backdrop(w, h, seed=1):

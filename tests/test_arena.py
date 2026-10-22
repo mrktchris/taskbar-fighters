@@ -686,7 +686,8 @@ class Camera7(unittest.TestCase):
             hs.append(ar.cam.bar)
             bars = [k for k, (im, x, y) in enumerate(items) if im.width == st.w and y + im.height == st.h and x == 0]
             if bars:
-                spr = [k for k, (im, x, y) in enumerate(items) if im.width == spr_w]
+                sprites = {id(e[1]) for e in AR.Arena._trim_cache.values() if e[1] is not None}     # V9: trimmed sprites
+                spr = [k for k, (im, x, y) in enumerate(items) if im.width == spr_w or id(im) in sprites]
                 self.assertLess(bars[0], min(spr))                        # drawn first: never over a foot
         self.assertGreater(max(hs), 0)
         self.assertEqual(hs[-1], 0)

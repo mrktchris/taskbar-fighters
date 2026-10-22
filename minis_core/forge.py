@@ -987,6 +987,9 @@ class Forge:
         l, t, r, bt = b.sprite_rect()
         gx = l + b.jitter + (b.atlas.anchor(b.facing) + 0.5 + g[0]) * SCALE
         gy = t + (b.atlas.ground_y + g[1]) * SCALE
+        lift = getattr(b, 'row_lift', None)
+        if lift is not None:
+            gy -= lift(now)                                # V9: an ultimate / emote leap lifts the sprite: the weapon goes with it
         return gx, gy, g[2]
 
     def armed(self, slot):

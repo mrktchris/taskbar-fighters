@@ -121,6 +121,14 @@ class ArenaWindow:
                 ctypes.memmove(base + j * stride, data[j * row:(j + 1) * row], row)
         self._dirty.append((x0, y0, x1, y1))
 
+    def fill(self, rgba):
+        """V9: the whole window one colour (straight alpha) - a colour / white flash's empty screen, or clearing it - as
+        one premultiplied row repeated into the DIB: a few ms instead of premultiplying a monitor-sized image (~30 ms at
+        1920x1080).  The arena compositor then writes only the drawables' rects on top."""
+        px = premultiplied_bgra(Image.new('RGBA', (1, 1), tuple(int(v) for v in rgba)))
+        ctypes.memmove(self._bits.value, px * (self.w * self.h), self.w * self.h * 4)
+        self._dirty.append((0, 0, self.w, self.h))
+
     def flush(self, full=False):
         """Push the dirty rectangles to the screen (one UpdateLayeredWindowIndirect per merged rect)."""
         rects = [(0, 0, self.w, self.h)] if full else merge_rects(self._dirty)
