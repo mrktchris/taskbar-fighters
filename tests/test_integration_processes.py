@@ -22,6 +22,44 @@ DEMO_AT = 20.0
 LINE = re.compile(r' INFO (bout|contact|hit) (\S+) ([0-9.]+) (\S+)$')
 
 
+def _env(tmp):
+    """The child processes' environment: every data path (LOCALAPPDATA on Windows, MINIS_DATA_BASE anywhere, which wins over
+    it) points into the temp dir, so nothing reads or writes the real data folder."""
+    return dict(os.environ, LOCALAPPDATA=str(tmp), MINIS_DATA_BASE=str(tmp), PYTHONDONTWRITEBYTECODE='1')
+
+
+def _bus(data, slot):
+    try:
+        return json.loads((data / 'bus' / f'{slot}.json').read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return None
+
+
+def _present_counts(data):
+    """How many frames each slot has presented so far (lines in its headless present log), or None before both exist."""
+    out = {}
+    for s in 'ab':
+        try:
+            with open(data / f'present-{s}.log', encoding='ascii') as f:
+                out[s] = sum(1 for _ in f)
+        except OSError:
+            return None
+    return out
+
+
+def _wait_for(cond, timeout, what, procs=()):
+    """Poll `cond` until it is true (a condition, not a fixed sleep); fail loudly on timeout or when a process died."""
+    t0 = time.monotonic()
+    while time.monotonic() - t0 < timeout:
+        if cond():
+            return time.monotonic() - t0
+        dead = [p.args for p in procs if p.poll() is not None]
+        if dead:
+            raise AssertionError(f'waiting for {what}: a process exited early: {dead}')
+        time.sleep(0.05)
+    raise AssertionError(f'timed out after {timeout} s waiting for {what}')
+
+
 @unittest.skipUnless(os.environ.get('MINIS_INTEGRATION'), 'slow two-process test: set MINIS_INTEGRATION=1')
 class TwoRealProcesses(unittest.TestCase):
     @classmethod
@@ -35,7 +73,7 @@ class TwoRealProcesses(unittest.TestCase):
         (data / 'assign.json').write_text(json.dumps({'a': {'source': 'srcA', 'character': 'claude', 'program': 'Claude Code'},
                                                       'b': {'source': 'srcB', 'character': 'gemini', 'program': 'Gemini'},
                                                       'ts': time.time()}))
-        env = dict(os.environ, LOCALAPPDATA=str(cls.tmp), PYTHONDONTWRITEBYTECODE='1')
+        env = _env(cls.tmp)
         cls.procs = [subprocess.Popen([sys.executable, str(ROOT / 'tests' / 'two_process_harness.py'), s], env=env, cwd=str(ROOT),
                                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, creationflags=0x08000000) for s in 'ab']
         cls.samples = []
@@ -91,12 +129,19 @@ class TwoRealProcesses(unittest.TestCase):
             self.assertNotIn('ERROR', text, text[-2000:])
 
     def test_a_positions_stay_apart_outside_bouts_and_off_the_plates(self):
+        # The bus x is the brain's hip in RES 1 px; at fighter size N the window shows that world k = N/64 times larger, and
+        # the sprite reaches clearance_px(N) - HUD_GAP screen px behind the hip (V7.1).  The harness keeps the default size and
+        # the legacy (rect-only) taskbar, so the zone is DEFAULTS['zone'].
+        size = cfgmod.DEFAULTS['fighter_size']
+        k, reach = size / 64.0, cfgmod.clearance_px(size) - cfgmod.HUD_GAP
         plates_end = cfgmod.plate_left(cfgmod.DEFAULTS, 'b') + cfgmod.PLATE_W
         outside = 0
         for r in self.both():
             a, b = r['a'], r['b']
             for p in (a, b):
-                self.assertGreater(float(p['x']) - 33, plates_end, f"t={r['t']:.1f} {p['who']} over the plates at x={p['x']}")
+                left = float(p['x']) * k - reach                   # screen x of the sprite's furthest-back pixel
+                self.assertGreaterEqual(left, plates_end, f"t={r['t']:.1f} {p['who']} over the plates: hip x={p['x']} (RES 1), "
+                                                          f"sprite from {left:.0f} px, plates end at {plates_end} px")
             if a.get('bout') or b.get('bout') or 'script' in (a['mode'], b['mode']):
                 continue
             outside += 1
@@ -164,7 +209,7 @@ class RivalWithASleepingPartner(unittest.TestCase):
         (data / 'assign.json').write_text(json.dumps({'a': {'source': 'srcA', 'character': 'claude', 'program': 'Claude Code'},
                                                       'b': {'source': 'sparring', 'character': 'generic', 'program': 'Sparring bot', 'bot': True},
                                                       'ts': time.time()}))
-        env = dict(os.environ, LOCALAPPDATA=str(cls.tmp), PYTHONDONTWRITEBYTECODE='1')
+        env = _env(cls.tmp)
         cls.procs = [subprocess.Popen([sys.executable, str(ROOT / 'tests' / 'two_process_harness.py'), s], env=env, cwd=str(ROOT),
                                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, creationflags=0x08000000) for s in 'ab']
         cls.samples = []
@@ -220,7 +265,8 @@ class RivalWithASleepingPartner(unittest.TestCase):
     def test_b_the_result_is_recorded_once_and_the_sleeper_goes_back_to_sleep(self):
         rec = json.loads((self.data / 'record.json').read_text(encoding='utf-8'))
         self.assertEqual(rec.get('matches'), 1, rec)
-        self.assertEqual({rec['last']['winner'], rec['last']['loser']}, {'claude', 'generic'})
+        self.assertEqual({rec['last']['winner'], rec['last']['loser']}, {'srcA', 'sparring'})       # V6: keyed by program (source id)
+        self.assertEqual(set(rec['programs']), {'srcA', 'sparring'}, rec)
         self.assertEqual(rec['last']['where'], 'taskbar')
         last = self.both()[-1]
         self.assertEqual((last['b']['mode'], last['b']['anim']), ('home', 'sleep'), last['b'])
@@ -250,10 +296,10 @@ class ArenaWithTwoSlots(unittest.TestCase):
                                                        'arena': {'rect': rect, 'windows': wins, 'seconds': cls.ARENA_S, 'freeze': True, 'seed': 3, 'monitor': 2}}))
         (data / 'assign.json').write_text(json.dumps({'a': {'source': 'srcA', 'character': 'claude', 'program': 'Claude Code'},
                                                       'b': {'source': 'srcB', 'character': 'codex', 'program': 'Codex'}, 'ts': time.time()}))
-        env = dict(os.environ, LOCALAPPDATA=str(cls.tmp), PYTHONDONTWRITEBYTECODE='1')
+        env = _env(cls.tmp)
         cls.procs = [subprocess.Popen([sys.executable, str(ROOT / 'tests' / 'two_process_harness.py'), s], env=env, cwd=str(ROOT),
                                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, creationflags=0x08000000) for s in 'ab']
-        time.sleep(3.0)
+        _wait_for(lambda: all(_bus(data, s) for s in 'ab'), 30, 'both slots on the bus before the arena starts', cls.procs)
         cls.arena = subprocess.Popen([sys.executable, str(ROOT / 'tests' / 'arena_harness.py')], env=env, cwd=str(ROOT),
                                      stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, creationflags=0x08000000)
         cls.samples = []
@@ -271,10 +317,7 @@ class ArenaWithTwoSlots(unittest.TestCase):
                     row['arena'] = json.loads((data / 'arena.json').read_text(encoding='utf-8'))
                 except (OSError, ValueError):
                     row['arena'] = None
-                try:
-                    row['present'] = {s: sum(1 for _ in open(data / f'present-{s}.log', encoding='ascii')) for s in 'ab'}
-                except OSError:
-                    row['present'] = None
+                row['present'] = _present_counts(data)
                 cls.samples.append(row)
                 if cls.arena.poll() is not None:
                     exited = exited if exited is not None else row['t']
@@ -317,7 +360,8 @@ class ArenaWithTwoSlots(unittest.TestCase):
         rec = json.loads((self.data / 'record.json').read_text(encoding='utf-8'))
         self.assertEqual(rec['matches'], 1)
         self.assertEqual(rec['last']['where'], 'arena')
-        self.assertEqual(set(rec['characters']), {'claude', 'codex'})
+        self.assertEqual(set(rec['programs']), {'srcA', 'srcB'}, rec)                # V6: keyed by program (source id)
+        self.assertEqual({rec['last']['winner'], rec['last']['loser']}, {'srcA', 'srcB'}, rec)
         last = states[-1]
         self.assertTrue(last['phase'] in ('winner', 'exit', 'done') or last['winner'] in ('a', 'b'), last)
         print(f"\n  [arena] phases {phases}; rounds {max(s['round'] for s in states)}; winner {last.get('winner')}; "
@@ -327,6 +371,11 @@ class ArenaWithTwoSlots(unittest.TestCase):
         rows = self.arena_rows()
         self.assertTrue(rows)
         t_in, t_out = rows[0]['t'], rows[-1]['t']
+        # The slots may legitimately come back if the heartbeat goes stale (a crashed arena); make that case say so instead of
+        # looking like a hide bug.  (A heartbeat newer than a slot's clock is fresh: control.arena_state.)
+        beats = sorted({r['arena']['ts'] for r in rows})
+        worst = max((b - a for a, b in zip(beats, beats[1:])), default=0.0)
+        self.assertLess(worst, control.ARENA_FRESH_S, f'the arena heartbeat stalled {worst:.1f} s (machine overloaded?)')
         during = [r for r in self.samples if t_in + 4 < r['t'] < t_out - 1 and r['present']]
         self.assertGreater(len(during), 10)
         for s in 'ab':
