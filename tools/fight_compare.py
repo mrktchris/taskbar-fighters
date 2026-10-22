@@ -23,6 +23,7 @@ from PIL import Image, ImageDraw  # noqa: E402
 
 ARENA_W, ARENA_H = 1280, 720
 CROP_X = (300, 760)                       # the fight zone of the 940 px strip
+PAIRS = {3: ('claude', 'codex'), 7: ('cursor', 'oni'), 11: ('gemini', 'knight')}   # the strip's bout ignores the seed: vary the pair
 
 
 def save_gif(frames, path, fps):
@@ -35,7 +36,7 @@ def taskbar(out, seeds, secs, fps):
     import doc_images
     os.makedirs(out, exist_ok=True)
     for seed in seeds:
-        frames, meta, cfg = doc_images.taskbar_strip_frames(seconds=secs, fps=fps, seed=seed, chars=('claude', 'codex'), size=128)
+        frames, meta, cfg = doc_images.taskbar_strip_frames(seconds=secs, fps=fps, seed=seed, chars=PAIRS.get(seed, ('claude', 'codex')), size=128)
         idx = [i for i, m in enumerate(meta) if m['script']]
         a, b = (max(0, idx[0] - fps), min(len(frames) - 1, idx[-1] + 2 * fps)) if idx else (0, len(frames) - 1)
         clip = [f.crop((CROP_X[0], 0, CROP_X[1], f.height)) for f in frames[a:b + 1]]

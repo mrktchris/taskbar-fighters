@@ -54,8 +54,10 @@ def for_program(rec, source_id) -> tuple:
         return 0, 0
 
 
-def record(winner, loser, path=None, now=None, where='taskbar', score=None) -> bool:
-    """One match result keyed by program (source id).  Atomic; False instead of raising on disk trouble."""
+def record(winner, loser, path=None, now=None, where='taskbar', score=None, facts=None) -> bool:
+    """One match result keyed by program (source id).  Atomic; False instead of raising on disk trouble.
+    facts (growth, optional; achievements.match_facts): numbers and booleans about the match, appended to the capped
+    `log` and folded into the lifetime per-program `totals`.  Only source ids, move ids and numbers are stored."""
     rounds = _rounds()
     p = Path(path) if path else rounds.record_path()
     rec = read(p)
@@ -69,6 +71,11 @@ def record(winner, loser, path=None, now=None, where='taskbar', score=None) -> b
     if score and len(score) == 2:
         last['score'] = [int(score[0]), int(score[1])]
     rec['last'] = last
+    try:
+        from . import achievements
+        achievements.fold(rec, last, facts)
+    except Exception:                    # the W-L line above must land even if the extras cannot
+        pass
     return write_json_atomic(p, rec)
 
 

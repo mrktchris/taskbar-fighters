@@ -130,6 +130,17 @@ class TrayLogic(unittest.TestCase):
         self.assertIn(('destroy_icon', 101), api.calls)                       # the old HICON is freed, a fresh one loaded
         self.assertEqual(api.notifies('add')[-1][2], 102)
 
+    def test_a_dpi_or_display_change_reloads_the_icon_at_the_new_size(self):
+        api = FakeApi()
+        t = make_tray(api)
+        t.create()
+        api.small_icon_size = lambda hwnd: 32                                     # the monitor went to 200%
+        for msg in (T.WM_DPICHANGED, T.WM_DISPLAYCHANGE):
+            self.assertFalse(api.handler(msg, 0, 0))                              # handled, but DefWindowProc still sees it
+        self.assertEqual([c for c in api.calls if c[0] == 'load'][-1][2], 32)
+        self.assertEqual(len(api.notifies('modify')), 2)
+        self.assertEqual(api.notifies('modify')[-1][2], 103)                      # the fresh HICON, not the 16/24 px one
+
     def test_a_refused_add_falls_back_to_modify(self):
         api = FakeApi()
         real = api.notify
@@ -175,7 +186,8 @@ class TrayLogic(unittest.TestCase):
         items = T.tray_menu(dict(paused=True, flash=False, plates=True, rival=False, arena=True))
         labels = L.labels_of(items)
         self.assertEqual(labels, ['Select fighters\u2026', 'Pause animations', 'Flash effects', 'Desktop weapons', 'Sound effects', 'Plates', 'Rival mode',
-                                  'Exit arena', 'Bout now', 'Restart Taskbar Fighters', 'Quit Taskbar Fighters'])
+                                  'Exit arena', 'Bout now', 'Share my stats card…', 'Streamer mode (OBS window)',
+                                  'Restart Taskbar Fighters', 'Quit Taskbar Fighters'])
         opts = {it[0]: (it[2] if len(it) > 2 else {}) for it in items if it}
         self.assertTrue(opts[T.PAUSE]['checked'])
         self.assertFalse(opts[T.FLASH]['checked'])
@@ -184,7 +196,7 @@ class TrayLogic(unittest.TestCase):
         self.assertEqual(L.find_item(T.tray_menu({}), 'Start arena')[0], T.ARENA)
         self.assertTrue(T.tray_menu(dict(select_ok=False, arena_ok=False))[0][2]['disabled'])
         from minis_platform.menus import menu_entries                          # the spec is what the real menu builder takes
-        self.assertEqual(sum(1 for e in menu_entries(items) if e[0] == 'sep'), 2)
+        self.assertEqual(sum(1 for e in menu_entries(items) if e[0] == 'sep'), 3)          # growth: card + streamer group
 
 
 class Tooltip(unittest.TestCase):

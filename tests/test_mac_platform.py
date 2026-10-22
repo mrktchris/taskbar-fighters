@@ -270,11 +270,11 @@ class MacSourcesTable(unittest.TestCase):
             (40, 1, 'python3.12', '/opt/homebrew/bin/python3.12', ['/opt/homebrew/bin/python3.12', '/opt/homebrew/bin/aider'], 0.2),
             (50, 1, 'lm studio', '/Applications/LM Studio.app/Contents/MacOS/LM Studio', None, 0.0),
             (60, 1, 'windsurf-main', '/Applications/Windsurf.app/Contents/MacOS/Electron', None, 0.0),   # by bundle only
-            (70, 1, 'chatgpt', '/Applications/ChatGPT.app/Contents/MacOS/ChatGPT', None, 0.0),            # not a known program
+            (70, 1, 'chatgpt', '/Applications/ChatGPT.app/Contents/MacOS/ChatGPT', None, 0.0),            # growth: ChatGPT desktop
         ])
         sc = S.ProcessScanner(dict(CFG), info, platform='darwin')
         out = sc.scan(100.0)
-        self.assertEqual(set(out), {'cursor', 'gemini', 'aider', 'lmstudio', 'windsurf'})
+        self.assertEqual(set(out), {'cursor', 'gemini', 'aider', 'lmstudio', 'windsurf', 'chatgpt'})
         self.assertEqual(sc.claimed, {'claude': 1})
         self.assertEqual(sc.matched['cursor'], ['cursor'])               # the helper is in the tree, not a root
 
