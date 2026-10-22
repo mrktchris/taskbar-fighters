@@ -284,7 +284,9 @@ def arena_state(path=None, now=None):
     d = read(path or arena_path())
     now = time.time() if now is None else now
     try:
-        if d.get('active') and 0 <= now - float(d.get('ts', 0)) <= ARENA_FRESH_S:
+        # A heartbeat stamped a little AFTER `now` is the freshest one: the reader took its clock before reading, and the
+        # arena wrote in between (common on a busy machine).  Only one from far in the future (a clock jump) is distrusted.
+        if d.get('active') and -ARENA_FRESH_S <= now - float(d.get('ts', 0)) <= ARENA_FRESH_S:
             return d
     except (TypeError, ValueError):
         pass

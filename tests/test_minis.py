@@ -436,6 +436,25 @@ class FighterLoop(Isolated):
         self.go(0.6)
         self.assertTrue(self.f.ov.visible)
 
+    def test_a_heartbeat_written_after_the_slot_read_its_clock_still_hides_the_fighters(self):
+        """The slot takes its wall clock at the top of a step and reads arena.json later; under load the arena writes a
+        heartbeat in between, stamped a little AFTER that clock.  That is the freshest heartbeat there is - it must not
+        read as 'no arena' (the process-level suite caught the fighters flashing back mid-arena on a busy machine)."""
+        self.f.setup()
+        self.go(0.6)
+        self.assertTrue(self.f.ov.visible)
+        control.write_arena_state({'active': True, 'pid': 1, 'monitor': 2, 'phase': 'fight'}, now=self.t['wall'])
+        self.go(0.6)
+        self.assertFalse(self.f.ov.visible)
+        for _ in range(4):
+            control.write_arena_state({'active': True, 'pid': 1, 'monitor': 2, 'phase': 'fight'}, now=self.t['wall'] + 0.3)
+            self.go(0.6)
+            self.assertFalse(self.f.ov.visible)
+        t = self.t['wall'] + 0.3
+        self.assertTrue(control.arena_active(now=t - 0.5))                     # read a moment before the write: fresh
+        self.assertFalse(control.arena_active(now=t + control.ARENA_FRESH_S + 1))   # stale: the arena stopped beating
+        self.assertFalse(control.arena_active(now=t - 60))                    # far in the future: a bad clock, not trusted
+
     def test_menu_has_match_winners_and_arena_entries(self):
         self.f.setup()
         self.go(0.5)
