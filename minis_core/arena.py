@@ -2666,7 +2666,7 @@ class Arena:
             k = i / n
             pts.append((l + self.rng.uniform(0, 14), b - (b - t) * k))
         d.polygon(pts, fill=HOLE)
-        self.holes.append((l, t, r, b))
+        self.holes.append((l, t, r + 1, b + 1))       # the polygon's boundary lands on row b / column r too (PIL paints it)
 
     # ---- stage hazards and the world's own particles (V7)
     def _hazards(self, now):

@@ -110,12 +110,18 @@ FX_PARTS = {rig.PID[n] for n in rig.NOLINE if n in rig.PID}
 def _candidates(im):
     """(specks, corners): opaque pixels with at most two opaque neighbours, and opaque pixels with exactly two opaque side
     neighbours - the only places steps 1 and 3 can apply, found with two 3x3 kernels instead of a Python loop."""
-    from PIL import ImageFilter
-    a = im.getchannel('A').point(lambda v: 1 if v else 0)
-    n8 = a.filter(ImageFilter.Kernel((3, 3), [1, 1, 1, 1, 0, 1, 1, 1, 1], scale=1))
-    n4 = a.filter(ImageFilter.Kernel((3, 3), [0, 1, 0, 1, 0, 1, 0, 1, 0], scale=1))
-    w = im.width
-    av, v8, v4 = _pixels(a), _pixels(n8), _pixels(n4)
+    from PIL import ImageChops
+    w, h = im.size
+    a = Image.new('L', (w + 2, h + 2), 0)                          # a transparent border, so a shifted copy wraps zeros
+    a.paste(im.getchannel('A').point(lambda v: 1 if v else 0), (1, 1))
+    n8, n4 = Image.new('L', a.size, 0), Image.new('L', a.size, 0)
+    for dx, dy in N8:                                              # exact integer sums (a convolution kernel rounds
+        sh = ImageChops.offset(a, dx, dy)                          # differently across Pillow versions: macOS CI vs here)
+        n8 = ImageChops.add(n8, sh)
+        if (dx, dy) in N4:
+            n4 = ImageChops.add(n4, sh)
+    box = (1, 1, w + 1, h + 1)
+    av, v8, v4 = _pixels(a.crop(box)), _pixels(n8.crop(box)), _pixels(n4.crop(box))
     specks = [(i % w, i // w) for i, (o, c) in enumerate(zip(av, v8)) if o and c <= 2]
     corners = [(i % w, i // w) for i, (o, c) in enumerate(zip(av, v4)) if o and c == 2]
     return specks, corners

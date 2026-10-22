@@ -541,3 +541,43 @@ prepared the release; the tag is the owner's.
 - macOS: MAC-5, 8, 13, 17, 18, 20 and 21 in `docs/MAC-HANDOFF.md` are still OPEN (real-Mac checks of the V7.1 and V8 work; the
   Mac session closed MAC-14/15/16/19/22 in `f98889f` while this pass ran).
 - The wheel is 51 MB (36 MB of it the HD sheets); under PyPI's 100 MB default file limit.
+
+## V9 (2026-10-21): fight quality - frame data, no pops, hand polish, arena 30/60 fps, boost, sound
+
+Branch `fight-quality` (Claude, not merged, not tagged; the owner reviews). The owner's bar: "the fighting has to be really
+good - take your time building every frame", then "as good as the best platform fighter, super clean". The research and
+the model are in `docs/ANIMATION-NOTES.md` sections 11-12; the arena numbers in `docs/ARENA.md` (Performance, V9).
+
+### Built
+
+- **Frame data** (`minis_core/framedata.py`, shared by the taskbar timeline and the arena): hitlag that freezes BOTH
+  fighters for floor(d / 3 + 3) frames of 0.75 x the HP damage (floor 100 ms, cap 20 frames); a damage % per round (half
+  the HP taken) shown on the plate during a match (white -> amber -> red) and under the arena HUD names; knockback from
+  damage, % and weight (by weapon family); hitstun 0.4 frames per unit; launch arcs by the move's angle with one bounce,
+  then a tech (half the time) or a missed tech (lies 0.45 s); shieldstun d x 0.45 + 2 frames and 2 + 0.35 d px of pushback;
+  DI up to 18 degrees from the seed. Fights redraw at 60 fps (`fps_fight`); the arena tries 60 and steps down to 30 / 20.
+- **No pops:** heavy blades planted on the spike landing (not flipped up and back), one-shots settle to the idle stance, a
+  recovery key in-betweened along the shortest arc, continuity-aware weapon fitting, still weapons while sleeping, real
+  `air` lift for the high-five, the grapple ultimate, the jumping victories, the launcher and the idle flourish.
+- **Clean pixels:** every built frame loses stray single pixels and doubled outline corners (body only - effects, face ink
+  and real outlines, part id 0 in the rig buffer, are never touched; the neighbour counts are exact integer sums, not a
+  convolution, because Pillow 13 on macOS CI rounded the kernel differently from Pillow 12.3 here); a reviewed hand-polish
+  pass over the idle loops, the signature strike contacts and the KO poses at 64 and 128 px in both facings
+  (`art/hand/`, now tracked; sheets in `qa/v9/hand-polish/`).
+- **Arena:** trimmed sprites, a near-linear dirty-rect merge, fill-based flash frames, warm unarmed sheets, bars marked on
+  the image; the freeze-mode hole's repaint rect now covers the polygon's last row and column (a stale-pixel bug the
+  lockstep test found); the task-finished super through the bus files; the HUD %.
+- **Sound, off by default:** `python minis.py sound on|off`, menu and tray checkmarks, eight original sounds from
+  `art/build_sfx.py` (no recordings), winsound / NSSound, one process plays, rate-limited, quiet when paused or hidden.
+
+### Verified (with the evidence)
+
+| claim | evidence |
+| --- | --- |
+| weapon flips over the roster | `art/qa_fight.py audit` at 64 px: 300 -> 45 (250 -> 18 outside the reactions that snap on purpose and the taunt twirl); cell hops 19 -> 0; the list of what is left is in `qa/v9/frame-data.md` |
+| hitlag symmetric, hitstun = formula, scaling monotonic | `tests/test_framedata.py`: 14 tests over 14 seeded taskbar matches and an arena match, every contact checked |
+| no anchor jitter | `tests/test_art_v9.py` `Anchors`: between consecutive frames of a grounded row the soles stay on one ground row (the two rows that hopped inside the cell now hop on `air`) |
+| arena frames | `tests/arena_harness.py bench --backend winblit --seeds 3`: 1920x1080 max 159.5 -> 58.4 ms, frames over 33 ms 33 -> 17, px written per frame 193 665 -> 170 197, CPU 9.0 -> 8.5 %; 2560x1440 max 109 -> 64.1, p99 37.3 -> 34.6 (`docs/ARENA.md`) |
+| pixel identity | `tests/test_arena_perf.py`: two seeds plus a freeze-backdrop seed, V8 compositor in lockstep, no frame where V8 was right and V9 was not |
+| taskbar at 60 fps | `tools/taskbar_bench.py`: compose 0.17 ms per frame at 128 px, about 1 % of a core per slot at 60 fps |
+| hand polish | 224 frames written and read back by the builder (`tests/test_art.py` `Sigil`, `tests/test_art_v9.py` `HandHookHD`); every target viewed at 4x in `qa/v9/hand-polish/*.png` |

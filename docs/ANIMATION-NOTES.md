@@ -430,10 +430,10 @@ idle): a *flip* is a weapon that turns 100+ degrees with 14+ px of tip travel be
 | | before (v1.0.0) | after (V9) |
 | --- | ---: | ---: |
 | weapon flips, all rows | 300 | 45 |
-| ... outside the rows that snap on purpose (grabbed / spiked / launched reactions, the taunt twirl) | 250 | 17 |
+| ... outside the rows that snap on purpose (grabbed / spiked / launched reactions, the taunt twirl) | 250 | 18 |
 | rows hopping inside the cell | 19 | 0 |
 
-What is left of the 17 is authored: the oni's kanabo dropping into its dragged stance, a dash burst's first frame, the
+What is left of the 18 is authored: the oni's kanabo dropping into its dragged stance, a dash burst's first frame, the
 start of a spin.
 
 **Causes and fixes** (pose data only, `art/moves.py` and `art/ultimates.py`):

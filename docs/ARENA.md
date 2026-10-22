@@ -355,7 +355,46 @@ cost per layer update on a real Mac (V8 makes more, smaller updates); `MINIS_ARE
 (docs/MAC-HANDOFF.md).
 
 The expensive frames are the zoom lens (a 0.45-monitor region, nearest-neighbour mesh) and the few full-screen flash
-frames. The process still drops to 20 fps when it goes over `arena_cpu_budget_pct`.
+frames. The process starts at `arena_fps` (60) and steps down to 30, then 20, while it measures over `arena_cpu_budget_pct`.
+
+**V9 (2026-10-21, "arena 30 fps"):** `python tests/arena_harness.py bench --backend winblit --seeds 3 --size WxH --json`,
+`normal`, forge on, claude vs knight, the Windows premultiply and the layered-window write emulated (tile 128), three seeded
+matches, about 5100 frames each run. Before = the V8 compositor (vendored as `tests/v8_compositor.py`), after = V9.
+
+| 30 fps, ms/frame | mean | p50 | p95 | p99 | max | frames > 33 ms | CPU at 30 fps | px written / frame |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1920x1080 before | 3.01 | 1.57 | 10.52 | 22.38 | 159.5 | 33 | 9.0 % | 193 665 |
+| 1920x1080 V9 | 2.83 | 1.43 | 10.77 | 23.4 | 58.4 | 17 | 8.5 % | 170 197 |
+| 2560x1440 before | 3.63 | 1.48 | 14.15 | 37.3 | 109.0 | 59 | 10.9 % | 277 672 |
+| 2560x1440 V9 | 3.53 | 1.44 | 15.19 | 34.57 | 64.1 | 57 | 10.6 % | 244 604 |
+
+What changed, and what each fixed (every change pixel-identical to V8, or closer to the full recomposition where V8 left a
+stale pixel - `tests/test_arena_perf.py` runs both compositors in lockstep over whole matches and compares every frame):
+
+- sprites are cut to their opaque box once per cached sprite (`_sprite_trim`): a fighter's dirty rect, premultiply and
+  upload shrink from the 256 px cell to the body (12 % fewer pixels written per frame);
+- `_merge` pools small rects per 64 px cell past 64 of them and reduces the excess from a heap of pair costs: a shatter's
+  100+ debris rects cost up to 33 ms in the merge alone, now under 1 ms (the 159 ms max frame was that plus a forge);
+- the forge decodes both fighters' unarmed sheets before the first frame (a 130 ms stall on the first forge);
+- a flash frame is one window fill plus the drawables (no backdrop), and the second and later frames of one steady flash
+  write only what moved under it;
+- the letterbox bars are recognised by a mark on the image, not by `id()` (a freed id was reused by a sprite once).
+
+The frames still over 33 ms are the final-KO focus lines over the whole monitor (a full-screen composite by design) and the
+first morph frame of a forge; at 1440p the lens region alone is 1.6 M px. 60 fps is reached between those frames; the fps
+ladder keeps the CPU under the budget on the frames that are not.
+
+### Task-finished boost, sound, frame data (V9)
+
+- **Boost.** When an agent finishes a task, its slot writes a short-lived marker (`boost`, 20 s) into its bus file. A
+  running arena polls both bus files every 0.5 s and opens the next exchange with that fighter's signature super (the first
+  two exchanges after the marker, once per marker). Nothing else is shared between the processes; `tests/test_boost.py`.
+- **Sound.** Off by default; `python minis.py sound on`. The arena plays its own events (hits by power, clashes, whooshes,
+  the KO, the forge crackle and shatter, the round bell) through `minis_core/sfx.py`; rate-limited, quiet while paused.
+- **Frame data.** The same model as the taskbar (`docs/ANIMATION-NOTES.md` section 12): each hit freezes both fighters for
+  a hitlag that grows with its damage, adds to a damage % shown under the HUD names, knocks back along the move's angle with
+  a speed from damage, % and weight (x 7 px per unit per frame), stuns for 0.4 frames per unit of knockback, knocks down
+  past the tumble line, pushes a blocker back with shieldstun; the shake follows the knockback.
 
 ## Verification
 
@@ -382,6 +421,12 @@ frames. The process still drops to 20 fps when it goes over `arena_cpu_budget_pc
   the synthetic screen, `arena capture` refuses while pixels are held and a `forge off` overlay carries none, and
   `VisualOnly8` (no window API while forging). Every "screen" in those tests is a synthetic image; the real screen is never
   grabbed.
+- V9: `tests/test_arena_perf.py` (the V8 compositor in lockstep: every frame identical or closer to the full recomposition,
+  fewer pixels written, a steady flash written once, sprite trimming is identity, the merge covers every input rect, the
+  unarmed sheets are warm), the freeze-mode hole's repaint rect covering every painted pixel (`tests/test_arena.py`
+  `Destruction`), `tests/test_boost.py` (the marker's lifetime, the poll, one super per marker, a stale marker ignored, no
+  bus read without a config) and `test_arena_hits_use_the_same_model` in `tests/test_framedata.py` (the arena's hitlag,
+  hitstun and knockback equal the shared formulas).
 - Previews are rendered headless onto a RAM surface over a synthetic busy desktop, never a screen grab. The doc images are
   made by `tools/doc_images.py` (`arena_overview()`, `arena_v7_imgs()`, `arena_forge_imgs()`;
   `python tools/doc_images.py --only forge`, with `FORGE_QA_DIR=<folder>` to dump every frame of the forge, swing, crack and

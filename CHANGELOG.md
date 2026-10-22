@@ -14,7 +14,10 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
   roster 300 -> 45, cell hops 19 -> 0 (`art/qa_fight.py audit`).
 - **Clean pixels**: every built frame drops stray single pixels and doubled outline corners; a reviewed hand-polish pass
   (`art/hand_polish.py`) on the idle loops, signature strike contacts and KO poses at 64 and 128 px in both facings
-  (`art/hand/`, now tracked; the builder reads `@2x` and `_l` files).
+  (`art/hand/`, now tracked; the builder reads `@2x` and `_l` files). Real outlines are told from a dark boot by the rig's
+  part buffer, and the neighbour counts are exact sums (a convolution kernel rounded differently on macOS CI's Pillow 13).
+- **Arena fix**: in freeze mode the shattered window's hole was repainted one row and one column short (the jagged edge
+  lands on the window's last row); found by the new lockstep compositor test.
 - **Arena 30 fps work**: sprites trimmed to their opaque pixels, a near-linear dirty-rect merge (a 33 ms worst case -> under
   1 ms), flash frames as a window fill plus the drawables, the forge's unarmed sheets decoded before the first frame (a 130 ms
   stall), letterbox bars marked on the image instead of by id; pixel-identical to v1.0.0 or closer to the full recomposition

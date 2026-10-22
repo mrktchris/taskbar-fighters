@@ -142,6 +142,7 @@ class Destruction(unittest.TestCase):
     def test_three_hits_crack_then_shatter_with_letters_shards_and_a_hole(self):
         st, ar = make(freeze=True)
         before = ar.backdrop.getpixel((700, 500))
+        untouched = ar.backdrop.copy()
         self.knock_into_window(ar, st, heavy=False)
         self.assertEqual([e[0] for e in ar.events][-1], 'crack_small')
         self.assertEqual(ar.letters_spawned, 0)
@@ -152,7 +153,11 @@ class Destruction(unittest.TestCase):
         self.assertTrue(any(p[5] > 0 for p in ar.particles))                # V7: glyph debris are arena particles that fall
         self.assertEqual(ar.backdrop.getpixel((700, 500)), AR.HOLE)        # the hole is in the RAM backdrop
         self.assertNotEqual(before, AR.HOLE)
-        self.assertEqual(ar.holes, [(300, 200, 1200, 800)])
+        self.assertEqual(ar.holes, [(300, 200, 1201, 801)])              # V9: the jagged edge paints row 800 / column 1200 too
+        from PIL import ImageChops
+        bx = ImageChops.difference(untouched, ar.backdrop).getbbox(alpha_only=False)
+        (l, t, r, b), = ar.holes
+        self.assertTrue(l <= bx[0] and t <= bx[1] and bx[2] <= r and bx[3] <= b, (bx, ar.holes))   # every painted pixel is repainted
         self.knock_into_window(ar, st, heavy=True)
         self.assertEqual([e[0] for e in ar.events].count('shatter'), 1)        # a shattered window stays shattered
 

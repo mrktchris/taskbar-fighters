@@ -186,17 +186,17 @@ class HandHookHD(unittest.TestCase):
         rig.set_res(2)
         try:
             mv = M.build_moves(c)['idle']
-            gen = BF.render_move(c, 'idle', mv)
-            hand = gen[0]['r'].copy()
-            hand.putpixel((4, 80), (255, 0, 255, 255))
             old = os.environ.get('MINIS_HAND_DIR')
             with tempfile.TemporaryDirectory() as tmp:
-                os.makedirs(os.path.join(tmp, 'codex'))
-                hand.save(os.path.join(tmp, 'codex', 'idle_0@2x.png'))
-                small = gen[1]['r'].resize((64, 64))
-                small.save(os.path.join(tmp, 'codex', 'idle_1.png'))           # a 64 px file: ignored at RES 2
-                os.environ['MINIS_HAND_DIR'] = tmp
+                os.environ['MINIS_HAND_DIR'] = tmp                # art/hand/ holds this loop: the baseline is the bare rig
                 try:
+                    gen = BF.render_move(c, 'idle', mv)
+                    hand = gen[0]['r'].copy()
+                    hand.putpixel((4, 80), (255, 0, 255, 255))
+                    os.makedirs(os.path.join(tmp, 'codex'))
+                    hand.save(os.path.join(tmp, 'codex', 'idle_0@2x.png'))
+                    small = gen[1]['r'].resize((64, 64))
+                    small.save(os.path.join(tmp, 'codex', 'idle_1.png'))       # a 64 px file: ignored at RES 2
                     out = BF.render_move(c, 'idle', mv)
                 finally:
                     if old is None:
