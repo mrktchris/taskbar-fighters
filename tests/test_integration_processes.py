@@ -22,6 +22,29 @@ DEMO_AT = 20.0
 LINE = re.compile(r' INFO (bout|contact|hit) (\S+) ([0-9.]+) (\S+)$')
 
 
+def _cannot_run():
+    """Why this machine cannot run the process-level suite, or None.  The harness processes drive the Windows backend
+    (minis_win: named mutexes, the headless overlay stands in for the layered windows), so it is Windows-only; a runner
+    where that backend cannot even load says so instead of failing with a stack trace from a child process."""
+    if not os.environ.get('MINIS_INTEGRATION'):
+        return 'slow process-level test: set MINIS_INTEGRATION=1'
+    if sys.platform != 'win32':
+        return f'process-level suite is Windows-only (the harness drives minis_win); this is {sys.platform}'
+    try:
+        from minis_win import shell as real_shell
+        h, _ = real_shell.make_mutex(f'minis-integration-probe-{os.getpid()}')
+        if not h:
+            return 'the Windows backend loaded but could not create a named mutex'
+    except Exception as e:                                       # noqa: BLE001 - any failure here means "cannot run", said loudly
+        return f'the Windows backend cannot load here: {type(e).__name__}: {e}'
+    return None
+
+
+SKIP = _cannot_run()
+if SKIP and os.environ.get('MINIS_INTEGRATION'):
+    print(f'\n*** MINIS_INTEGRATION=1 but the process-level suite is SKIPPED: {SKIP} ***\n', file=sys.stderr, flush=True)
+
+
 def _env(tmp):
     """The child processes' environment: every data path (LOCALAPPDATA on Windows, MINIS_DATA_BASE anywhere, which wins over
     it) points into the temp dir, so nothing reads or writes the real data folder."""
@@ -60,7 +83,7 @@ def _wait_for(cond, timeout, what, procs=()):
     raise AssertionError(f'timed out after {timeout} s waiting for {what}')
 
 
-@unittest.skipUnless(os.environ.get('MINIS_INTEGRATION'), 'slow two-process test: set MINIS_INTEGRATION=1')
+@unittest.skipIf(SKIP, SKIP or '')
 class TwoRealProcesses(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -191,7 +214,7 @@ class TwoRealProcesses(unittest.TestCase):
               f'both scripted in {len(scripted)} samples; closest outside bouts: {min(apart):.1f} px', file=sys.stderr)
 
 
-@unittest.skipUnless(os.environ.get('MINIS_INTEGRATION'), 'slow two-process test: set MINIS_INTEGRATION=1')
+@unittest.skipIf(SKIP, SKIP or '')
 class RivalWithASleepingPartner(unittest.TestCase):
     """V5.1 rival mode with two REAL slot processes: slot a idle (Claude), slot b the sparring bot (its detector sees nothing, so
     it is `sleeping` with no numbers).  With the rival timers at 6 s the awake side must wake the sleeper for a best-of-3, both
@@ -275,7 +298,7 @@ class RivalWithASleepingPartner(unittest.TestCase):
               file=sys.stderr)
 
 
-@unittest.skipUnless(os.environ.get('MINIS_INTEGRATION'), 'slow three-process test: set MINIS_INTEGRATION=1')
+@unittest.skipIf(SKIP, SKIP or '')
 class ArenaWithTwoSlots(unittest.TestCase):
     """Two real slot processes + one real arena process (headless surface, synthetic monitor + windows, synthetic backdrop)
     for ~30 s: the slots hide while the arena heartbeat is fresh, rounds progress, a winner is recorded, nothing is written
