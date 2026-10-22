@@ -160,6 +160,63 @@ def body_front(atlas):
     return v
 
 
+BODY_TOUCH = 2                                   # V9: two idle bodies (no weapons) may touch by this many px, never sink in
+
+
+def body_room(atlas):
+    """V9: px (RES 1) from the hip to the front of the idle BODY - the unarmed frame, guard hands included, no weapon.
+    Two fighters idling closer than the sum of theirs (minus BODY_TOUCH) stand inside each other."""
+    key = '_v9_body'
+    v = getattr(atlas, key, None)
+    if v is None:
+        try:
+            bb = atlas.unarmed_frame('idle', 0, 1).getbbox()
+            v = (bb[2] - atlas.anchor(1)) / float(max(1, atlas.res)) if bb else 14.0
+        except Exception:
+            v = 14.0
+        try:
+            setattr(atlas, key, v)
+        except Exception:
+            pass
+    return v
+
+
+def core_front(atlas):
+    """V9: px (RES 1) from the hip to the front of the TRUNK: the narrowest front of the unarmed idle frame over three
+    bands between the chest and the thighs (the guard hands stick out at one band, a forward knee at another; the
+    trunk is what is left).  A strike may reach into the opponent; its body may not."""
+    key = '_v9_core'
+    v = getattr(atlas, key, None)
+    if v is None:
+        try:
+            fr = atlas.unarmed_frame('idle', 0, 1)
+            r = max(1, int(atlas.res))
+            g, h, px = atlas.ground_y, atlas.anchor(1), fr.load()
+            fronts = []
+            for top in (g - 30 * r, g - 24 * r, g - 18 * r):
+                xs = [x for y in range(max(0, top), min(fr.height, top + 6 * r)) for x in range(fr.width) if px[x, y][3]]
+                if xs:
+                    fronts.append((max(xs) + 1 - h) / float(r))
+            v = max(BODY_FRONT, min(fronts)) if fronts else float(BODY_FRONT)
+        except Exception:
+            v = float(BODY_FRONT)
+        try:
+            setattr(atlas, key, v)
+        except Exception:
+            pass
+    return v
+
+
+def core_room(a1, a2):
+    """V9: the closest two hips may ever be on the ground outside a dash-through or a throw: trunk against trunk."""
+    return max(MIN_APART, core_front(a1) + core_front(a2))
+
+
+def idle_room(a1, a2):
+    """V9: the closest two fighters may stand while neither is striking."""
+    return max(MIN_APART, body_room(a1) + body_room(a2) - BODY_TOUCH)
+
+
 class _Emitter:
     """Per-slot timeline entries with a LAZY return to idle: a chained move (combo, counter) starting before the previous
     move's return cancels that return, so the sorted timeline never idles a fighter mid-combo."""
@@ -210,7 +267,9 @@ class Bout:
         self.pos = {s: float(plan['pos'][s]) for s in (self.left, self.right)}
         self.mid = (self.pos[self.left] + self.pos[self.right]) / 2.0
         # V6: the pair's own room: idle silhouettes (weapons included) overlap by at most STAND_OVERLAP
-        self.apart = max(MIN_APART, body_front(self.A[self.left]) + body_front(self.A[self.right]) - STAND_OVERLAP)
+        self.room = idle_room(self.A[self.left], self.A[self.right])     # V9: bodies never idle inside each other
+        self.core = core_room(self.A[self.left], self.A[self.right])     # V9: ... and never sink trunk into trunk
+        self.apart = max(self.room, body_front(self.A[self.left]) + body_front(self.A[self.right]) - STAND_OVERLAP)
         self.gap = max(self.apart, abs(self.pos[self.right] - self.pos[self.left])) or 24.0
         self.span = float(plan.get('span', SPAN_PX))
         self.facing = {self.left: 1, self.right: -1}
@@ -269,7 +328,24 @@ class Bout:
             x = max(x, self.pos[o] + gap)
         # V7.1: the span wins (it is the zone the brains really move in): a fighter knocked toward the edge stops there,
         # a little closer than `apart`, instead of being planned outside the zone and clamped there by the brain alone
-        return max(lo, min(hi, x))
+        x = max(lo, min(hi, x))
+        if abs(x - self.pos[o]) < self.core - 0.5:
+            # V9: ...but never trunk inside trunk: the span gives way by the few px it takes (the brain's zone is wider)
+            x = self.pos[o] - self.face(s) * self.core
+        return x
+
+    def step_out(self, who, t):
+        """V9: if the pair stands inside `room` (the two idle bodies), `who` walks back out of the other one from t.
+        -> the time it is free again (t when no step was needed)."""
+        if self.dist() >= self.room - 0.5 or 'walk_back' not in self.A[who].anim:
+            return t
+        x = self.clamp(who, self.pos[self.other(who)] - self.face(who) * self.room)
+        if abs(x - self.pos[who]) <= 1:
+            return t
+        dur = self.tot(who, 'walk_back')
+        self.em.play(who, t, 'walk_back', {'to': x, 'slide_ms': int(dur * 1000)}, dur)
+        self.pos[who] = x
+        return t + dur
 
     def travel(self, s, anim, t, x, dur):
         """Slide options for a locomotion row that moves the fighter to x.  V7.1: a row with an `air` curve (a jump) only
@@ -381,7 +457,7 @@ class Bout:
                 if b['dx'] > 0 and nb is not None and nb.get('who') == b['who'] and nb.get('kind') in ('strike', 'counter'):
                     # V7.1: a dash / jump-in lands where the strike that follows it reaches (an air exchange never steps in
                     # again, so a jump-in that landed at the bout gap kicked at nothing)
-                    near = min(self.apart, max(MIN_APART, choreo.reach_of(self.A[who], nb['anim']) + BODY_FRONT))
+                    near = min(self.apart, max(self.core, choreo.reach_of(self.A[who], nb['anim']) + core_front(self.A[tgt])))
                     x = self.pos[tgt] - self.face(who) * near
                 elif b['dx'] > 0:
                     x = self.pos[tgt] - self.face(who) * self.gap
@@ -445,7 +521,7 @@ class Bout:
             elif kind in ('strike', 'counter') and not air and not b.get('pull'):
                 # V7.1: a strike lands from inside its own measured reach (+ the defender's body front), even when that is
                 # closer than the two idle silhouettes (weapons held out) would stand; never closer than MIN_APART (bodies)
-                want = max(MIN_APART, choreo.reach_of(Aw, move) + BODY_FRONT)
+                want = max(self.core, choreo.reach_of(Aw, move) + core_front(self.A[tgt]))   # V9: trunk to trunk at most
                 near = min(self.apart, want)
                 if b.get('throw'):
                     want = near = self.apart + 2               # a throw needs the opponent within arm's reach
@@ -582,6 +658,14 @@ class Bout:
                     t_grab = t + Aw.start_ms(move, Aw.anim[move]['grab_frame']) / 1000.0
                     t_r = t_grab - At.start_ms('thrown', At.anim['thrown']['grab_frame']) / 1000.0
                     ropts.update(stop_at=round(tc, 4), sync='grab')
+                    fr_t = At.anim['thrown']['frames']
+                    into, acc = (tc - t_r) * 1000.0, 0.0
+                    for fi, f in enumerate(fr_t):                 # V9: the slam frame is a short white flash; freeze on
+                        if acc <= into < acc + f['ms']:           # the flat landing after it, not on the flash (it held
+                            if f['ms'] <= 60 and fi + 1 < len(fr_t):  # 250-350 ms as a white blob on the floor)
+                                ropts['stop_at'] = round(t_r + (acc + f['ms']) / 1000.0 + 0.002, 4)
+                            break
+                        acc += f['ms']
                     lift = t_r + At.start_ms('thrown', 1) / 1000.0
                     flip = t_r + At.start_ms('thrown', 3) / 1000.0
                     x_in = self.clamp(tgt, self.pos[who] + self.face(who) * self.apart)       # hoisted in close...
@@ -619,9 +703,13 @@ class Bout:
                         ropts['slide_ms'] = int(span + 60)                # row clock: the flight, then a short skid
                     slow_extra = (air_s - (a1 - a0) / 1000.0)
                 fr0 = (At.anim.get(react) or {}).get('frames') or []
-                if hitstop > LONG_FREEZE_MS and 'stop_at' not in ropts and fr0:
-                    # a long freeze holds the hit POSE, not the one-frame white flash: the flash plays, then the clock stops
-                    ropts['stop_at'] = round(t_r + fr0[0]['ms'] / 1000.0, 4)
+                flash0 = bool(fr0) and fr0[0]['ms'] < hitstop and react in LYING + FLINCH
+                if (hitstop > LONG_FREEZE_MS or flash0) and 'stop_at' not in ropts and fr0:
+                    # a long freeze holds the hit POSE, not the one-frame white flash: the flash plays, then the clock stops.
+                    # V9: any freeze longer than that flash frame does the same - a 200 ms hitlag held on the white flash
+                    # frame read as a white blob (worst on a knockdown, where the body is a flat shape on the floor)
+                    ropts['stop_at'] = round(t_r + fr0[0]['ms'] / 1000.0 + 0.002, 4)   # V9: just INTO frame 1 (on the
+                    # boundary the frozen clock still showed the flash frame)
                     if 'to' in ropts and 'slide_at' not in ropts:
                         ropts['slide_at'] = ropts['stop_at']       # V9: the knockback waits out the freeze, not just its flash
                 airborne = react in AIRBORNE and not ko
@@ -703,6 +791,14 @@ class Bout:
                 t_cancel = t_move + Aw.start_ms(move, cf) / 1000.0 + hs   # V7 string: the next hit cancels this move's recovery
                 em.free[who] = min(em.free[who], t_cancel)
                 t = t_cancel
+            elif (not ko and not air and not through and outcome != 'clash' and self.face(who) * (self.pos[tgt] - self.pos[who]) > 0
+                  and nb is None and self.down_until.get(tgt, 0.0) <= em.free[who]):
+                # (only after the exchange's last beat: a counter or a throw from the defender can start before this
+                # recovery ends, and a step back emitted under it would fight that beat's own slide)
+                # V9: a strike stands at its own reach, inside the two idle bodies; when the attacker is not chaining
+                # straight into another hit it steps back out of the defender after its recovery, so the pair never idles
+                # with one body sunk into the other (the bodies may touch, BODY_TOUCH)
+                self.step_out(who, em.free[who])
             if ko:
                 break
             if b['kind'] == 'counter':
@@ -863,7 +959,8 @@ def make_match(plan, atlases, fx=None):
                 t_end_round = ki['tc']                             # the finisher beat below takes over
             else:
                 tn = choreo._taunt(rng, A[winner])                  # V7: the character's own taunt half the time
-                em.play(winner, max(em.free[winner], ki['down'] + 0.1), tn, {}, tot(winner, tn))
+                t_tn = bout.step_out(winner, max(em.free[winner], ki['down'] + 0.1))     # V9: not on top of the fallen one
+                em.play(winner, t_tn, tn, {}, tot(winner, tn))
                 t_end_round = em.free[winner]
         else:
             if hp[left] == hp[right]:

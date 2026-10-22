@@ -38,6 +38,7 @@ BOUT_KINDS = ('spar', 'clash', 'ranged', 'match')
 MIN_HOLD_MS = 50          # V6: a smear / hit frame shorter than this can fall between two taskbar redraws (30 fps = 33 ms)
 BOOST_WINDOW_S = 20.0     # V6: an agent that finished a task lands its signature super if a bout starts within this
 ARENA_BOOST_S = 20.0      # V9: ... and the bus carries a marker this long, so a running arena opens with that super too
+IMPACT_PHASES = 4         # V9: impact frames on the struck sprite (render.impact_frame phases)
 PULSE_S, PULSE_ON_S, PULSE_ALPHA = 1.0, 0.15, 0.35     # V6: near the context limit / low HP: a short white pulse every second
 LOW_HP = 25
 
@@ -53,7 +54,11 @@ def clock_between(stop, slow, since, now):
     if stop is not None:
         el -= max(0.0, min(now, stop[1]) - max(stop[0], since))
     if slow is not None:
-        el -= max(0.0, min(now, slow[1]) - max(slow[0], since)) * (1.0 - slow[2])
+        s0, s1 = max(slow[0], since), min(now, slow[1])
+        part = max(0.0, s1 - s0)
+        if stop is not None and part > 0:                  # V9: a slow window overlapping the freeze: the frozen part is
+            part -= max(0.0, min(s1, stop[1]) - max(s0, stop[0]))   # already stood still; it must not be taken away twice
+        el -= max(0.0, part) * (1.0 - slow[2])            # (the clock ran BACKWARDS there: a fall jumped to its flash frame)
     return max(0.0, el)
 
 
@@ -368,6 +373,7 @@ class Brain:
         self.banner = None                                    # {'kind', 'until', 'x'} (the left side draws the texts)
         self.last_match = None                                # summary of the last match this side played
         self.eye = (0, 0)                                     # pupil offset toward the cursor while idle (set by the owner)
+        self.impact = None                                    # V9: (t0, seconds) impact frames on this fighter's own sprite
         self.run = run or '%08x' % rng.getrandbits(32)         # a restarted process gets a new run id
         z0, z1 = zone or cfgmod.fight_zone(cfg)              # the roam zone minus the fixed HUD plate strip
         self.zone = (z0, z1)
@@ -644,10 +650,17 @@ class Brain:
         if flashes and self.pulse(now):                         # near the context limit / low HP: a short white pulse
             flash = max(flash, PULSE_ALPHA)
         shake = self.fxp.shake(now)
+        impact = None
+        if self.impact is not None and flashes:
+            t0, dur = self.impact
+            if t0 <= now < t0 + dur:
+                impact = min(IMPACT_PHASES - 1, int((now - t0) / dur * IMPACT_PHASES))
+            elif now >= t0 + dur:
+                self.impact = None
         lift = self.lift(now)                                     # V7.1: the jump / juggle trajectory (RES 1 px)
         v = dict(anim=self.anim, frame=idx, x=self.x, facing=self.facing, dim=dim, proj=None, fx=fxp, banner=banner,
-                 shake=shake, busy=bool(fxp or banner or flash or self.slide or shake != (0, 0) or self.frozen(now) or lift > 0.0),
-                 flash=flash, eye=(self.eye if self.anim == 'idle' and self.mode == 'home' else (0, 0)),
+                 shake=shake, busy=bool(fxp or banner or flash or impact is not None or self.slide or shake != (0, 0) or self.frozen(now) or lift > 0.0),
+                 flash=flash, impact=impact, eye=(self.eye if self.anim == 'idle' and self.mode == 'home' else (0, 0)),
                  lift=lift, headroom=cfgmod.JUMP_HEADROOM, clip=self.band)
         if self.script and self.script['projs']:
             for p in self.script['projs']:
@@ -867,7 +880,8 @@ class Brain:
         if kind in ('spar', 'clash', 'match'):        # V6: never closer than the two silhouettes allow (weapons included)
             try:
                 pc = self.partner.get('character') or self.character
-                gap = max(gap, rounds.MIN_APART, rounds.body_front(self.atlas) + rounds.body_front(self.atlases[pc]) - rounds.STAND_OVERLAP)
+                gap = max(gap, rounds.idle_room(self.atlas, self.atlases[pc]),      # V9: the two idle bodies never overlap
+                          rounds.body_front(self.atlas) + rounds.body_front(self.atlases[pc]) - rounds.STAND_OVERLAP)
             except Exception:
                 pass
         z0, z1 = self.zone
@@ -1094,21 +1108,12 @@ class Brain:
             if now - t_abs <= 0.5 and self.flashes_enabled(now):
                 self.fxp.flash_at(t_abs, float(opts.get('alpha', 0.6)), max(0.1, float(opts.get('ms', 120)) / 1000.0))
         elif name == '@impact':
-            # V6 impact frames: the fx `impact` (silhouette on white, radial lines, inverse, blank) on the struck fighter for
-            # 100-160 ms; without that art a strong white flash on both.  Off with control.json `flashes` off.
-            if now - t_abs <= 0.5 and self.flashes_enabled(now):
+            # Impact frames on the struck fighter for 100-160 ms (dark silhouette, inverse, broken outline, white).  V9: made
+            # from the sprite it is really showing (render.impact_frame); the V6 fx art was one canned standing pose, which
+            # on a fighter going down read as a flat white blob on the floor.  Off with control.json `flashes` off.
+            if now - t_abs <= 0.5 and self.flashes_enabled(now) and opts.get('on', self.slot) == self.slot:
                 ms = max(100.0, min(160.0, float(opts.get('ms', 130))))
-                art = False
-                try:
-                    art = bool(self.fx.has_art('impact'))
-                except Exception:
-                    art = False
-                if art:
-                    if opts.get('on', self.slot) == self.slot:
-                        gy = self.atlas.ground_y - int(round(self.lift(t_abs) * self.atlas.res))
-                        self.fxp.spawn('impact', t_abs, self.x, gy, self.facing, owner=self.slot, anchor='center')   # its own 100-160 ms
-                else:
-                    self.fxp.flash_at(t_abs, 0.85, ms / 1000.0)
+                self.impact = (t_abs, ms / 1000.0)
         elif name == '@armor':                                   # V7: a poke through the armour: HP drops, a short flash, no flinch
             self.hp = (opts.get('hp') or {}).get(self.slot, self.hp)
             self.hit_log.append((t_abs, 'armor'))

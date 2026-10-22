@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from minis_core import choreo, config as cfgmod, sim  # noqa: E402
+from minis_core import choreo, config as cfgmod, rounds, sim  # noqa: E402
 from minis_core.brain import LEFT, RIGHT, Brain, proj_x  # noqa: E402
 
 LIB = sim._LIB
@@ -108,13 +108,13 @@ def play(seed, ca, cb, size=128, secs=70.0, kinds=('match',)):
                 if ahead <= 0:
                     out['proj_behind'] += 1
                 contacts.append(('proj', p, w))
-            # melee contacts: remember them, checked at their contact time below
+            # close-range contacts: remember them, checked at their contact time below
             for t_c, name in list(b.contact_log):
                 ck = (w, round(t_c, 4), name)
                 if ck in projs_seen or t_c < now - 0.5:
                     continue
                 projs_seen.add(ck)
-                contacts.append(('melee', (t_c, name), w))
+                contacts.append(('close', (t_c, name), w))
         # resolve contacts whose time has come
         keep = []
         for c in contacts:
@@ -138,15 +138,15 @@ def play(seed, ca, cb, size=128, secs=70.0, kinds=('match',)):
                 meta = b.atlas.anim.get(name) or {}
                 whiff = o.anim in ('backdash', 'clash')         # a deliberate whiff (the defender is gone) / two blades locked
                 if meta.get('cat') == 'strike' and meta.get('type') not in ('through', 'pull', 'gust') and 'proj_frame' not in meta and not whiff:
-                    out['melee'] += 1
+                    out['close'] += 1
                     dist = abs(o.x - b.x)
-                    reach = choreo.reach_of(b.atlas, name) + 12      # the move's measured reach + the defender's front
+                    reach = choreo.reach_of(b.atlas, name) + max(12, rounds.core_front(o.atlas))   # reach + the defender's trunk (V9)
                     if dist > reach + 3:
-                        out['melee_far'] += 1
+                        out['close_far'] += 1
                         bad.append(('far', seed, b.character, name, round(dist, 1), round(reach, 1), o.anim, b.anim,
                                     getattr(getattr(o, 'track', None), 'slide', None), getattr(getattr(b, 'track', None), 'slide', None), round(now - t_due, 3)))
                     if (o.x - b.x) * b.facing <= 0:
-                        out['melee_backwards'] += 1
+                        out['close_backwards'] += 1
         contacts = keep
         for w, b in br.items():                                  # the timeline never asks for a place the brain cannot go
             lo, hi = b.zone
@@ -175,7 +175,7 @@ class LockOn(unittest.TestCase):
 
     def test_enough_was_played(self):
         self.assertGreater(self.tot['frames'], 13 * 30 * 25, self.tot)
-        self.assertGreater(self.tot['projectiles'] + self.tot['melee'], 100, self.tot)
+        self.assertGreater(self.tot['projectiles'] + self.tot['close'], 100, self.tot)
 
     def test_fighters_face_each_other_on_every_frame_outside_the_whitelist(self):
         self.assertEqual(self.tot['facing'], 0, [b for b in self.bad if len(b) == 9][:10])
@@ -184,9 +184,9 @@ class LockOn(unittest.TestCase):
         self.assertEqual(self.tot['proj_behind'], 0, self.tot)
         self.assertEqual(self.tot['proj_empty'], 0, [b for b in self.bad if b[0] == 'proj'][:10])
 
-    def test_melee_strikes_land_from_inside_their_reach_and_forward(self):
-        self.assertEqual(self.tot['melee_backwards'], 0, self.tot)
-        self.assertEqual(self.tot['melee_far'], 0, [b for b in self.bad if b[0] == 'far'][:10])
+    def test_close_strikes_land_from_inside_their_reach_and_forward(self):
+        self.assertEqual(self.tot['close_backwards'], 0, self.tot)
+        self.assertEqual(self.tot['close_far'], 0, [b for b in self.bad if b[0] == 'far'][:10])
 
     def test_the_replayed_opponent_is_exactly_where_the_real_one_is(self):
         self.assertEqual(self.tot['ghost_off'], 0, self.tot)
@@ -253,7 +253,7 @@ class LockOn64(unittest.TestCase):
             o, b = play(100 + s, ROSTER[s], ROSTER[s + 5], size=64, secs=50.0, kinds=('match', 'spar'))
             tot.update(o)
             bad += b
-        self.assertEqual((tot['facing'], tot['proj_behind'], tot['proj_empty'], tot['melee_backwards']), (0, 0, 0, 0), bad[:10])
+        self.assertEqual((tot['facing'], tot['proj_behind'], tot['proj_empty'], tot['close_backwards']), (0, 0, 0, 0), bad[:10])
 
 
 class HudClear(unittest.TestCase):

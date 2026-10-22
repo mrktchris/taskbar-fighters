@@ -252,6 +252,8 @@ def compose(style, atlas, view, snap, t, cfg, bounds=(0, 4000), show_plate=True)
     if view.get('dim'):
         fr = fr.copy()
         fr.putalpha(fr.getchannel('A').point(lambda v: int(v * 0.55)))
+    if view.get('impact') is not None:            # V9: impact frames made from THIS frame's silhouette
+        fr = impact_frame(fr, int(view['impact']), res)
     hip = int(round(view['x']))
     parts.append((fr, hip - atlas.anchor(view['facing']) + sdx, sdy - lift))
     if view.get('proj') and atlas.proj is not None:
@@ -293,6 +295,43 @@ def compose(style, atlas, view, snap, t, cfg, bounds=(0, 4000), show_plate=True)
     for im, sx, sy in parts[n_fight:]:
         _paste_clipped(canvas, im, sx - x0, sy)
     return canvas, x0
+
+
+IMPACT_INK = (20, 18, 26, 255)
+IMPACT_PHASES = 4
+
+
+def impact_frame(fr, phase, res=1):
+    """V9 impact frames on the struck fighter, built from the frame it is really showing (a lying fighter stays a lying
+    shape - the canned silhouette of a standing pose read as a white blob on the floor): 0 a dark silhouette with a white
+    rim, 1 the white inverse with a dark rim, 2 broken dark outline strokes over a half-white body, 3 a white silhouette.
+    Transparent outside the figure and its 1-px rim, the same size as the frame."""
+    from PIL import ImageChops, ImageFilter
+    a = fr.getchannel('A').point(lambda v: 255 if v else 0)
+    grow = a.filter(ImageFilter.MaxFilter(2 * res + 1))
+    rim = ImageChops.subtract(grow, a)
+    edge = ImageChops.subtract(a, a.filter(ImageFilter.MinFilter(3)))
+    out = Image.new('RGBA', fr.size, (0, 0, 0, 0))
+    white = (255, 255, 255, 255)
+    if phase <= 0:
+        out.paste(IMPACT_INK, (0, 0), a)
+        out.paste(white, (0, 0), rim)
+    elif phase == 1:
+        out.paste(white, (0, 0), a)
+        out.paste(IMPACT_INK, (0, 0), rim)
+    elif phase == 2:
+        out.paste((255, 255, 255, 150), (0, 0), a)
+        dash = Image.new('L', fr.size, 0)                          # broken strokes: every other run of 2 px (x res)
+        dp, ep = dash.load(), edge.load()
+        s = 2 * res
+        for y in range(fr.height):
+            for x in range(fr.width):
+                if ep[x, y] and ((x // s) + (y // s)) % 2 == 0:
+                    dp[x, y] = 255
+        out.paste(IMPACT_INK, (0, 0), dash)
+    else:
+        out.paste(white, (0, 0), a)
+    return out
 
 
 def _flash_mask(canvas, x, size, k):

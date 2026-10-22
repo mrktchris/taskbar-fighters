@@ -1465,8 +1465,11 @@ def r_thrown(body):
         (p(**W_, dy=-1, lean=4, sq=1.04, head=(1, 0), hf=(6, -3), hb=(3, -2), ff=(3, 3), fb=(-3, 2), ang_f=20, face='h'), ms[2]),
         (p(**W_, dy=-1, lean=-46, head=(-2, 0), hf=(4, -6), hb=(0, -5), ff=(6, 9), fb=(0, 8), face='h'), ms[3]),
         (p(**W_, dy=ldy * 0.55, lean=-80, head=(-3, 0), hf=(-1, -4), hb=(-5, -3), ff=(10, 7), fb=(5, 7), face='x', cx=3), ms[4]),
-        (p(**{**lying, 'dy': ldy + 0.5}, flash=True, sq=0.86, fx=(('shock', 'abs', 32, 56), ('dust', 'hip', -4, 5), ('dust', 'hip', 8, 4))), ms[5]),
-        (p(**{**lying, 'dy': ldy - 0.5}, sq=1.0), 80),
+        # V9: the slam is the flat body squashed into the floor with a dust puff either side, not a 210 ms white flash
+        # frame plus a shock wave (held through the hitlag it read as a white blob lying on the taskbar); the
+        # engine's impact frames still flash the real silhouette for 100-160 ms on a heavy throw
+        (p(**{**lying, 'dy': ldy + 0.5}, sq=0.86, fx=(('dust', 'abs', 20, 55), ('dust', 'abs', 44, 55))), ms[5]),
+        (p(**{**lying, 'dy': ldy - 0.5}, sq=1.0, fx=(('dust2', 'abs', 19, 54), ('dust2', 'abs', 45, 54))), 80),
         (p(**lying), 220)],
         cat='reaction', desc='Thrown: grabbed, hoisted overhead and slammed flat.', type='thrown', grab_frame=0, hit_frame=4,
         shake=dict(frames=3, amp=1),

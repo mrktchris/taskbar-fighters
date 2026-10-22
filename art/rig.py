@@ -63,7 +63,7 @@ PART_ORDER = ['swoosh', 'scarf_b', 'scarf_a', 'hood', 'back_b', 'arrow',
               'head', 'ear', 'hair', 'beard', 'cap', 'visor', 'strap', 'band', 'helm', 'helm2', 'horn', 'mask', 'glow',
               'lens', 'sigil', 'eyew', 'eye', 'brow', 'mouth', 'seam',
               'arm_f_up', 'arm_f_fo', 'cuff_f', 'wpn_f', 'hilt_f', 'hand_f', 'pad_f', 'blade_hl',
-              'doc', 'doc_line', 'streak', 'fx_a', 'fx_b', 'fx_w', 'fx_c',
+              'doc', 'doc_line', 'streak', 'fx_a', 'fx_b', 'fx_w', 'fx_c', 'dust_l', 'dust_d',
               'crease']                                   # V7 HD: drawn last; coloured from the material under it
 PID = {n: i + 1 for i, n in enumerate(PART_ORDER)}
 NAME = {v: k for k, v in PID.items()}
@@ -85,8 +85,9 @@ FLAT = {'eye': ('ink', None), 'brow': ('ink', None), 'mouth': ('ink', None), 'ey
         'blade_hl': ('metal', 'hi2'), 'string': ('paper', 'sh'), 'arrow': ('trim', 'hi'),
         'doc': ('paper', None), 'doc_line': ('paper', 'sh'), 'swoosh': ('fx', 'w'), 'streak': ('fx', 'c'),
         'fx_a': ('fx', 'a'), 'fx_b': ('fx', 'b'), 'fx_w': ('fx', 'w'), 'fx_c': ('fx', 'c'),
+        'dust_l': ('shoe', 'hi2'), 'dust_d': ('shoe', 'hi'),           # V9: dust in the fighter's own ground-worn tones
         'crease': ('ink', 'crease')}
-NOLINE = {'fx_a', 'fx_b', 'fx_w', 'fx_c', 'swoosh', 'streak'}
+NOLINE = {'fx_a', 'fx_b', 'fx_w', 'fx_c', 'swoosh', 'streak', 'dust_l', 'dust_d'}
 TEXT_FX = ('bigsigil', 'bigglyph', 'qmark', 'zzz')   # effects that are letters: never mirrored on left-facing frames
 RIM_GROUPS = ('skin', 'hair', 'cloth', 'trim', 'pants', 'shoe', 'helm', 'metal', 'hilt')   # groups that get the HD rim tone
 
@@ -889,9 +890,14 @@ def fx_draw(d, kind, x, y, extra=0, sigil='/'):
     elif kind == 'sweat':
         for (dx, dy, p) in [(0, 0, w_), (0, 1, w_), (-1, 2, c), (0, 2, c), (1, 2, c)]:
             P(dx, dy, p)
-    elif kind == 'dust':
-        for (dx, dy) in [(0, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (2, 1)]:
-            P(dx, dy, w_)
+    elif kind in ('dust', 'dust2'):
+        # V9: a small shaded puff in the fighter's own shoe tones (was a flat white blob): lit on top, darker at the
+        # floor; `dust2` is the same puff a beat later, thinner and wider, about to vanish
+        L_, D_ = PID['dust_l'], PID['dust_d']
+        pts = ([(0, 0, L_), (1, 0, L_), (-1, 1, L_), (0, 1, D_), (1, 1, D_), (2, 1, L_)] if kind == 'dust'
+               else [(-1, 0, L_), (2, 0, L_), (-2, 1, D_), (0, 1, L_), (3, 1, D_)])
+        for (dx, dy, p) in pts:
+            P(dx, dy, p)
     elif kind == 'thumb':
         P(0, 0, PID['hand_f'])
         P(0, -1, PID['hand_f'])

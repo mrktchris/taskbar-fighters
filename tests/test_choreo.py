@@ -545,46 +545,55 @@ class FightFeelV6Brain(unittest.TestCase):
         a._commit('spar', dict(a._plan('spar', 1050.0), t0=1060.0), 1050.0)
         self.assertNotIn(RIGHT, a.finish_due)                                         # consumed
 
-    def test_impact_frames_flash_long_enough_and_obey_the_flashes_switch(self):
+    def test_impact_frames_last_long_enough_and_obey_the_flashes_switch(self):
         for on in (True, False):
-            b = self.brain()
+            b = self.brain()                                                        # LEFT, and the impact lands on LEFT
             b.flashes = on
             b.mode = 'script'
             b.script = dict(kind='match', plan=dict(pos={LEFT: 400.0, RIGHT: 432.0}), t_end=1003.0, projs=[],
-                            tl=[(1000.0, '@impact', {'ms': 130, 'on': RIGHT}), (1000.5, '@flash', {'alpha': 0.7, 'ms': 120})])
+                            tl=[(1000.0, '@impact', {'ms': 130, 'on': LEFT}), (1000.5, '@flash', {'alpha': 0.7, 'ms': 120})])
             b.script_i = -1
             b._tick_script(1000.01)
             b.fxp.tick(1000.01)
-            art = FX.has_art('impact')                                              # with the art: the effect on the struck side, no flash
-            self.assertEqual(b.view(1000.01)['flash'] > 0, on and not art)
-            self.assertEqual(b.view(1000.12)['flash'] > 0, on and not art)              # >= 100 ms, not one 60 ms frame
+            self.assertEqual(b.view(1000.01)['impact'], 0 if on else None)          # V9: phases on the fighter's own sprite
+            self.assertEqual(b.view(1000.12)['impact'], 3 if on else None)          # >= 100 ms, not one 60 ms frame
+            self.assertEqual(b.view(1000.01)['busy'], True if on else b.view(1000.01)['busy'])
+            self.assertIsNone(b.view(1000.2)['impact'])
+            self.assertEqual(len(b.fxp.active), 0)                                  # no canned silhouette effect any more
             b._tick_script(1000.5)
             v = b.view(1000.59)
             self.assertEqual(v['flash'] > 0, on)
             self.assertEqual(v['busy'], on)                                         # a flash forces a redraw
             self.assertEqual(b.view(1000.75)['flash'], 0.0)
 
-    def test_impact_art_spawns_only_on_the_struck_fighter(self):
-        class ArtFx:
-            def __init__(s, base):
-                s.base = base
-            def has_art(s, n):
-                return n == 'impact' or s.base.has_art(n)
-            def get(s, n):
-                return s.base.get('hit_heavy' if n == 'impact' else n)
-            def __getattr__(s, n):
-                return getattr(s.base, n)
-        for slot, n_expected in ((LEFT, 0), (RIGHT, 1)):
+    def test_impact_frames_play_only_on_the_struck_fighter(self):
+        for slot, struck in ((LEFT, False), (RIGHT, True)):
             cfg, atl, brains = sim.make(1, dict(CFG), 1000.0)
             b = brains[slot]
-            b.fx = ArtFx(FX)
-            b.fxp.fx = b.fx
             b.flashes = True
             b.mode = 'script'
             b.script = dict(kind='match', plan=dict(pos={LEFT: 400.0, RIGHT: 432.0}), t_end=1003.0, projs=[], tl=[(1000.0, '@impact', {'ms': 130, 'on': RIGHT})])
             b.script_i = -1
             b._tick_script(1000.01)
-            self.assertEqual(len(b.fxp.active), n_expected)
+            self.assertEqual(b.view(1000.02)['impact'] is not None, struck)
+
+    def test_impact_frames_keep_the_shape_of_the_frame_really_shown(self):
+        """A fighter lying on the floor stays a lying shape in every impact phase (the V6 art drew one standing pose)."""
+        from minis_core import render
+        a = LIB['oni']
+        fr = a.frame_image('knockdown', len(a.anim['knockdown']['frames']) - 1, 1)
+        body = fr.getchannel('A').point(lambda v: 255 if v else 0)
+        bb = body.getbbox()
+        for phase in range(4):
+            im = render.impact_frame(fr, phase, a.res)
+            self.assertEqual(im.size, fr.size)
+            got = im.getchannel('A').point(lambda v: 255 if v else 0).getbbox()
+            self.assertTrue(got[0] >= bb[0] - 2 and got[1] >= bb[1] - 2 and got[2] <= bb[2] + 2 and got[3] <= bb[3] + 2, (phase, got, bb))
+            px, bp = im.load(), body.load()
+            inside = sum(1 for y in range(bb[1], bb[3]) for x in range(bb[0], bb[2]) if bp[x, y] and px[x, y][3])
+            total = sum(1 for y in range(bb[1], bb[3]) for x in range(bb[0], bb[2]) if bp[x, y])
+            if phase != 2:
+                self.assertEqual(inside, total, phase)                              # the whole body is covered
 
     def test_near_the_context_limit_the_fighter_pulses(self):
         b = self.brain()
