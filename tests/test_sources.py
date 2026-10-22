@@ -52,7 +52,7 @@ class Matching(unittest.TestCase):
 
     def test_unknown_programs_never_show(self):
         i = FakeInfo()
-        i.add(10, 1, 'chatgpt.exe', path=r'C:\Users\u\AppData\Local\ChatGPT\ChatGPT.exe')   # plain ChatGPT: not in the table
+        i.add(10, 1, 'chatgpt-helper.exe')                                # not in the table (plain ChatGPT.exe is: growth)
         i.add(11, 1, 'code.exe')                                          # VS Code / Copilot: too ambiguous, skipped
         i.add(12, 1, 'notepad.exe')
         i.add(13, 1, 'node.exe', argv=['node.exe', r'C:\srv\server.js'])

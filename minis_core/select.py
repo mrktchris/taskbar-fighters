@@ -25,7 +25,7 @@ TILE_BG = (34, 34, 44, 255)
 PAD, GAP = 6, 4
 HEAD_H, SECT_H, FOOT_H = 24, 11, 12
 TW, TH, TP = 46, 66, 44                  # program tile: width, height, portrait height (label + state below)
-CW, CH, CP = 40, 50, 37                  # character tile
+CW, CH, CP = 44, 50, 37                  # character tile (44: "Barbarian" and "LM Studio" fit the pixel font whole)
 MAX_WHO_COLS, MAX_LOOK_COLS = 9, 7
 VS_S = 0.9
 VK = dict(left=0x25, up=0x26, right=0x27, down=0x28, enter=0x0D, space=0x20, esc=0x1B, back=0x08, tab=0x09)
@@ -238,9 +238,9 @@ class Model:
             return None
 
     def _draw_auto(self, d, x, y, w, h):
-        f = font(20, True)
         q = '?'
-        d.text((x + (w - int(d.textlength(q, font=f))) // 2, y + h // 2 - 14), q, fill=(200, 200, 215), font=f)
+        qw = int(d.textlength(q, font=font(11, True))) * 2                   # the pixel font, 2x: a 16 px tall '?'
+        text(d, (x + (w - qw) // 2, y + h // 2 - 12), q, (200, 200, 215), 11, True, scale=2)
 
     def render(self, now) -> Image.Image:
         im = Image.new('RGBA', (self.W, self.H), (0, 0, 0, 0))
@@ -355,12 +355,11 @@ class Model:
             name = 'AUTO' if src == AUTO else self.label(src)
             f = font(11, True)
             text(d, (x + (bw - int(d.textlength(name, font=f))) // 2, self.H - 20), name, P_COL[s], 11)
-        f = font(26, True)
         vs = 'VS'
-        x = (self.W - int(d.textlength(vs, font=f))) // 2
+        x = (self.W - int(d.textlength(vs, font=font(11, True))) * 3) // 2   # the pixel font, 3x: a 24 px tall VS
         y = self.H // 2 - 20
-        d.text((x + 2, y + 2), vs, fill=(0, 0, 0), font=f)
-        d.text((x, y), vs, fill=(255, 214, 92), font=f)
+        text(d, (x + 2, y + 2), vs, (0, 0, 0), 11, True, scale=3)
+        text(d, (x, y), vs, (255, 214, 92), 11, True, scale=3)
 
 
 # ---------------------------------------------------------------- portraits from our own sheets
