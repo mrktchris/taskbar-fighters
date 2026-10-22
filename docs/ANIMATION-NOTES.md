@@ -416,3 +416,109 @@ and effect to `config.fight_band` (plate strip end .. scoreboard edge), so a bea
 | projectiles fired with the opponent behind / arriving on empty space | 0 / 0 | 0 / 0 |
 | frames reaching over a plate or the scoreboard at 64 / 96 / 128 px (of 4 050 each) | 91 / 100 / 361 | 0 / 0 / 0 |
 | ghost vs real opponent position (frames off by > 0.5 px) | - | 0 |
+
+## 11. V9: no pops, real lift for every hop, a hand-polish pass (2026-10-21)
+
+Owner: "I want the fighting to be really good - take your time building every frame."  Three known leftovers, then an
+audit of every move of all 13 fighters at 4x, frame by frame (`python art/qa_fight.py strip <character> <move>`: both
+facings, the previous frame as an onion skin, the `air` lift applied, ms / HIT / smear labels, a 1x strip on a taskbar).
+
+**What the audit counts** (`python art/qa_fight.py audit`, 64 px, every row, including the step from a one-shot back into
+idle): a *flip* is a weapon that turns 100+ degrees with 14+ px of tip travel between two keys that are not smears; a
+*cell hop* is a row that rises 4+ px inside the cell instead of using an `air` curve.
+
+| | before (v1.0.0) | after (V9) |
+| --- | ---: | ---: |
+| weapon flips, all rows | 300 | 45 |
+| ... outside the rows that snap on purpose (grabbed / spiked / launched reactions, the taunt twirl) | 250 | 17 |
+| rows hopping inside the cell | 19 | 0 |
+
+What is left of the 17 is authored: the oni's kanabo dropping into its dragged stance, a dash burst's first frame, the
+start of a spin.
+
+**Causes and fixes** (pose data only, `art/moves.py` and `art/ultimates.py`):
+1. *The spike landing flipped heavy blades up and back.*  On the landing squash a greatsword or kanabo pointing down leaves
+   the cell, so the rig turned it about 70 degrees the other way for one frame (knight 80 -> 151 -> 40).  `_plant` brings
+   the hands in and plants the tip on the floor in front at the steepest angle that fits (knight 80 -> 56, oni 80 -> 48).
+2. *Every one-shot ended on `S0`, then snapped into the stance.*  `S0` holds the weapon at the rig's rest angle; the idle
+   stance holds it where the character does (the oni drags its club low, Claude holds the blade at the throat), so the
+   frame after every strike jumped.  `settle_to_stance` ends those rows on the idle's own first key, exactly (no later
+   fit pass may move it).
+3. *Recovery keys left the weapon to the forearm.*  A follow-through pointing down, then a recovery key with no angle,
+   snapped the blade 130+ degrees up in one 100 ms frame.  `inbetween_weapons` re-aims such runs along the shortest arc
+   between the keys either side, spaced by time; `settle_frame` turns the last recovery key half way toward the stance
+   and, where a row ends far from it and has a free column, adds one 90-100 ms settle key (never on the victory poses,
+   which the engine holds on their last frame).
+4. *A weapon that does not fit was turned without memory.*  `_nearest_fit` weighs the previous key's drawn angle and the
+   next key's asked one, so a greatsword at full extension no longer tips up on the contact and down on the
+   follow-through.
+5. *A sleeper's weapon flipped with every breath* (Gemini, Cursor, Monk: 168-174 degrees each 600 ms frame): `pin_weapons`.
+6. *The taunt twirl flicked to the far side of its closing pose* (170 degrees into "rest on the shoulder"): the flick lands
+   70 degrees short of the closing pose instead.
+
+**Real lift for every hop** (section 9's contract): the high-five (the slap meets at the apex, 11 px), the grapple ultimate
+(Cursor's `grapple_strike`, Nomad's `ring_storm`: off the floor on the zip, highest through the spin, the cross slash lands
+on the way down at 10 px, touchdown on the squash) and the jumping victories (`fistpump`, `brawler`: 13 / 12.5 px) keep
+their hips at standing height and carry `air`.  The taskbar lifts them like any jump; the arena lifts an ultimate / emote /
+pair row by its curve while the body stands (`arena.Body.row_lift`), and a forged weapon goes up with the sprite.
+
+**Hand-polish pass** (`python art/hand_polish.py write|check|sheets`): the idle loop of Claude, Codex, Gemini, Cursor and the
+Knight, the four signature strikes' contact frames and the four KO poses (the whole star loop), at 64 and 128 px and in
+BOTH facings - the 128 px build shades after mirroring (light from the top-left on both facings), so a mirrored right frame
+would be lit from the wrong side; the builder now reads `art/hand/<character>/<move>_<i>[@2x][_l].png`.  Each frame is
+corrected on the body only (effects drawn in the cell are never touched): single pixels hanging off the silhouette,
+one-pixel orphans inside a shape and doubled outline corners (the classic "pixel-perfect" pass on soles, cuffs and helm
+rims).  Every colour written already exists in that character's sheet, and `check` refuses a frame that changes more than
+4 % of its pixels: it is a correction, not a redraw.  A loop gets the same rule on every frame, so no fix flickers on and
+off.  The two silhouette rules (stray pixels, doubled corners) then turned out to be safe enough to run on EVERY frame the
+builder makes (`build_fighters.render_move`, both facings, both sizes; `MINIS_NO_CLEAN=1` turns it off), so the whole
+roster is cleaned; the targets above additionally get the orphan rule.  The manual-edit table (`EDITS`) stays empty in
+this pass: the targets' before / after sheets were reviewed at 4x and 2x and nothing needed a hand-placed pixel beyond the
+rules.  Sheets: `qa/v9/hand-polish/`.
+
+**Anchors.** Between two consecutive frames of a grounded row (no `air`, no authored travel, not a reaction) the soles stay
+on the same ground row: two rows broke it, both by hopping inside the cell - the launcher (`uppercut`) and the idle
+flourish - and both now hop on an `air` curve (`tests/test_art_v9.py` `Anchors`).
+
+## 12. V9: platform-fighter frame data (2026-10-21)
+
+Owner: make the fighting "super clean", with the feel of the best platform fighters (startup / active / recovery, both
+fighters freezing on contact, knockback that grows with accumulated damage, real launch arcs, techs).  Researched first
+(community frame-data documentation; formulas quoted, nothing else taken):
+
+- Hitlag freezes attacker and victim alike, floor(floor(d / 3 + 3) x e) x c frames, capped at 20; a 15 % hit freezes 8
+  frames ([frame-data wiki: Hitlag](https://www.ssbwiki.com/Hitlag)).
+- Hitstun is 0.4 frames per unit of knockback, so 100 units stun for 40 frames
+  ([frame-data wiki: Hitstun](https://www.ssbwiki.com/Hitstun)).
+- Knockback = ((((p / 10 + p x d / 20) x 200 / (w + 100) x 1.4) + 18) x s) + b, where p already counts the hit; launch speed
+  is knockback x 0.03 per frame and decays by 0.051 per frame ([frame-data wiki: Knockback](https://www.ssbwiki.com/Knockback)).
+- Shieldstun is about d x 0.45 + 2 frames at full shield, and the attacker still takes the hitlag
+  ([frame-data wiki: Shieldstun](https://www.ssbwiki.com/Shieldstun)).
+- Directional influence leans a launch by at most about 18 degrees
+  ([frame-data wiki: Directional influence](https://www.ssbwiki.com/Directional_influence)).
+- A tech after a tumble is a standing or rolling recovery with a short vulnerable tail; a missed one lies down first
+  ([frame-data wiki: Tech](https://www.ssbwiki.com/Tech)); landing lag after an aerial is its own short animation
+  ([frame-data wiki: Landing lag](https://www.ssbwiki.com/Landing_lag)); startup / active / cool-down / interruptible-as-soon-as
+  is the community's frame-data vocabulary ([frame-data wiki: Interrupt](https://www.ssbwiki.com/Interrupt)).
+
+**Our model** (`minis_core/framedata.py`, used by the taskbar timeline `rounds.Bout.frame_data` and the arena
+`Arena._frame_data`; pure functions of the seed and the art, so both slot processes and the arena agree):
+
+| | rule |
+| --- | --- |
+| frames | 60 per second; a move's startup = everything before `hit_frame`, active = that frame, recovery = the rest, IASA = a string's `cancel_frame` (`framedata.move_frames`) |
+| damage % | each hit adds half the HP it takes to the target's %, per round (a 12-HP jab 6 %, a 36-HP heavy 18 %); shown on the plate during a match in place of the state word (white -> amber -> red), and under the HP bars in the arena |
+| hitlag | floor(d / 3 + 3) frames on 0.75 x the HP damage (100-250 ms), the same freeze for BOTH fighters; two thirds of it on a block |
+| knockback | the formula above with per-power scaling / base (light 70 / 4, medium 95 / 12, heavy 120 / 22), weight by weapon family (heavy 112 ... fans 86) |
+| hitstun | 0.4 frames per unit; the struck fighter holds its reaction until it ends (taskbar: at most 0.9 s, so bouts keep moving) |
+| knockback on the taskbar | the launch distance in px, compressed to the strip (`taskbar_knock_px`: 3 px for a fresh jab, ~45 px for a late medium, never past 64) |
+| tumble | knockback >= 80 on the exchange's last hit: the knockdown row rides a real arc (`tumble_arc`: launch along the move's angle - 30 / 38 / 45 degrees by power, 70 for rising blows, 20 for sweeps - leaned by up to 18 degrees of seeded DI, speed decaying, gravity), its airborne frames stretched over the real airtime, one bounce, then a tech (half the time: up at once) or a missed tech (lies 0.45 s) |
+| block | shieldstun d x 0.45 + 2 frames held in the guard, pushback 2 + 0.35 x d px |
+| arena | the same %, knockback and DI, launch speed x 7 px per unit per frame; hitstun sets how long a fighter is knocked; past the tumble line it is knocked down; the screen shakes with the knockback |
+
+Numbers over 14 taskbar matches (claude / knight, cursor / oni; `tests/test_framedata.py`): hitlag identical on both rows for
+every contact checked, every stun equal to its formula, later hits of the same move on the same fighter always further.
+
+**Frame rate.** A fight script now redraws at 60 fps (`fps_fight`); composing a 128 px frame costs 0.17 ms
+(`python tools/taskbar_bench.py`: ~1 % of a core at 60).  The arena starts at 60 and steps down to 30, then 20, while it
+measures more than `arena_cpu_budget_pct`.

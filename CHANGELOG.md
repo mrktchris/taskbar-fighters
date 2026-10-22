@@ -2,6 +2,28 @@
 
 Taskbar Fighters (internal short name: minis). Summarised from the git history and the build logs in [RESULT.md](RESULT.md).
 
+## Unreleased (V9 - fight quality)
+
+- **Platform-fighter frame data** (`minis_core/framedata.py`): hitlag that freezes both fighters by damage, a damage % per
+  round (on the plate during a match, under the HP bars in the arena), knockback from damage, % and weight, hitstun from
+  knockback, tumbles along a real arc with one bounce and a tech or a missed tech, shieldstun and pushback, DI. Taskbar
+  fights redraw at 60 fps; the arena tries 60 and steps down under its CPU budget.
+- **No pops**: heavy blades planted (not flipped up and back) on the spike landing; one-shots end on the idle stance; recovery
+  keys in-betweened along the shortest arc; continuity-aware weapon fitting; still weapons while sleeping; real `air` lift
+  for the high-five, the grapple ultimate, the jumping victories, the launcher and the idle flourish. Weapon flips over the
+  roster 300 -> 45, cell hops 19 -> 0 (`art/qa_fight.py audit`).
+- **Clean pixels**: every built frame drops stray single pixels and doubled outline corners; a reviewed hand-polish pass
+  (`art/hand_polish.py`) on the idle loops, signature strike contacts and KO poses at 64 and 128 px in both facings
+  (`art/hand/`, now tracked; the builder reads `@2x` and `_l` files).
+- **Arena 30 fps work**: sprites trimmed to their opaque pixels, a near-linear dirty-rect merge (a 33 ms worst case -> under
+  1 ms), flash frames as a window fill plus the drawables, the forge's unarmed sheets decoded before the first frame (a 130 ms
+  stall), letterbox bars marked on the image instead of by id; pixel-identical to v1.0.0 or closer to the full recomposition
+  (`tests/test_arena_perf.py`).
+- **Arena task-finished boost**: a slot whose agent finishes a task publishes a short-lived marker on its bus file; a running
+  arena opens the next exchange with that fighter's signature super.
+- **Optional sound effects, off by default**: `python minis.py sound on|off`, a menu checkmark, eight original sounds generated
+  by `art/build_sfx.py`; winsound on Windows, NSSound on macOS; one process plays, rate-limited, quiet when paused or hidden.
+
 ## v1.0.0 - 2026-10-16 (V6 -> V8)
 
 The first tagged release: a one-click Windows zip, a wheel on PyPI (`pip install taskbar-fighters`) and an experimental,
