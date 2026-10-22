@@ -502,5 +502,53 @@ class Views(Base):
         self.assertIsNone(t.poll(1.0 + L.TOAST_S + 0.1))
 
 
+# ---------------------------------------------------------------- packaged installs (pip / the Windows zip: no art/)
+class Packaged(Base):
+    """A pip or zip install has minis_core but no art/: learning falls back to minis_core.movegen and still learns the
+    remap operators (retime / twin / feint); nothing is ever redrawn or spawned."""
+
+    def setUp(self):
+        super().setUp()
+        from minis_core import paths, movegen
+        self.movegen = movegen
+        p1 = mock.patch.object(paths, 'checkout', lambda: False)
+        p2 = mock.patch.object(L, '_EVOLVE', None)
+        p3 = mock.patch.dict(os.environ, {'MINIS_LEARN_NO_RENDER': ''})       # it must hold without the test switch
+        for p in (p1, p2, p3):
+            p.start()
+            self.addCleanup(p.stop)
+
+    def test_the_packaged_generator_is_used_and_cannot_redraw(self):
+        ev = L.evolve()
+        self.assertIs(ev, self.movegen)
+        self.assertTrue(L.enabled())
+        self.assertFalse(L.redraws())
+        self.assertEqual(ev.eligible_render_ops(LIB['claude'].anim['cross']), ())
+        self.assertNotIn('art', Path(ev.__file__).parts[-2:])
+
+    def test_a_packaged_install_learns_remap_moves_and_spawns_nothing(self):
+        with mock.patch.object(subprocess, 'Popen', side_effect=AssertionError('nothing may be spawned')) as po:
+            out = L.simulate(150, p=self.f)
+        self.assertFalse(po.called)
+        self.assertTrue(all(n > 0 for n in out['kit_sizes'].values()), out['kit_sizes'])
+        doc = L.read(self.f)
+        for prog, e in doc['programs'].items():
+            for mid, rec in e['learned'].items():
+                self.assertIn(rec['spec'][2], self.movegen.REMAP_OPS, (prog, mid))
+            self.assertEqual(e.get('pending') or [], [])
+        self.assertLessEqual(out['max_share'], 0.25)
+
+    def test_the_remap_rows_match_the_checkout_ones(self):
+        """The same spec builds the same row whether the generator came from art/ or from the package."""
+        spec = ['claude', 'iai_slash', 'twin', 77, None, 'mastery']
+        a = L.LearnedAtlas(LIB['claude'])
+        self.assertTrue(L.load_row(a, spec))
+        packaged = a.anim['iai_slash_twin']
+        with mock.patch.object(L, '_EVOLVE', EV):
+            b = L.LearnedAtlas(Library()['claude'])
+            self.assertTrue(L.load_row(b, spec))
+        self.assertEqual(packaged, b.anim['iai_slash_twin'])
+
+
 if __name__ == '__main__':
     unittest.main()

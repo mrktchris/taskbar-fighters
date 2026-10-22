@@ -13,9 +13,10 @@ network, no prompts.  Experience comes from the fights the fighter really has on
 
 A variant is (character, base move, operator, seed[, source character]) - see art/evolve.py - and is regenerated from
 those numbers wherever it is needed, so nothing is shipped and two machines agree.  Remap variants (retime, twin, feint)
-re-sequence the frames the sheet already has; render variants (amplify, spin, mimic) are drawn by the rig into a cache
-under the data folder.  Both need art/evolve.py, so only a checkout learns; in a pip / zip install enabled() is False and
-every hook is a no-op (the fights are exactly the V9 fights).
+re-sequence the frames the sheet already has (minis_core/movegen.py: every install, pip and the Windows zip included);
+render variants (amplify, spin, mimic) are drawn by the rig into a cache under the data folder, and need art/evolve.py,
+so only a source checkout redraws.  A packaged install learns mastery / counters / inventions through the remap
+operators and never learns a borrowed (mimic) move.
 
 Determinism between the two fighter processes: the INVITER reads learning.json at plan time and writes both sides' kits
 INTO THE PLAN (`plan['learn'] = {'v': file version, 'kit': {slot: {move id: {'w', 'kind', 'vs', 'spec'}}}}`); both
@@ -65,22 +66,33 @@ _KNOWN = {}                  # character -> {move id: spec} every row this proce
 
 # ---------------------------------------------------------------- art/evolve.py (the synthesis module, loaded by path)
 def evolve():
-    """The art/evolve.py module, or None when this install has no art/ (then nothing is learned, nothing breaks)."""
+    """The move generator: art/evolve.py in a source checkout (all six operators, the redrawn tier included), else the
+    packaged minis_core.movegen (retime / twin / feint; its `available()` is False, so nothing is ever redrawn)."""
     global _EVOLVE
     if _EVOLVE is None:
         p = _paths.REPO / 'art' / 'evolve.py'
-        try:
-            spec = importlib.util.spec_from_file_location('evolve', p)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            _EVOLVE = mod
-        except Exception:
-            _EVOLVE = False
-    return _EVOLVE or None
+        mod = None
+        if _paths.checkout() and p.is_file():
+            try:
+                spec = importlib.util.spec_from_file_location('evolve', p)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+            except Exception:
+                mod = None
+        if mod is None:
+            from . import movegen as mod
+        _EVOLVE = mod
+    return _EVOLVE
 
 
 def enabled():
     return evolve() is not None
+
+
+def redraws():
+    """True when this install can redraw moves (amplify / spin / mimic): a source checkout with art/."""
+    ev = evolve()
+    return bool(ev is not None and ev.available())
 
 
 # ---------------------------------------------------------------- the file
@@ -1037,7 +1049,7 @@ def lines(doc=None, program=None, label=None):
     out = []
     st = stats(doc)
     out.append(f"learned moves: {st['learned']} across {len([p for p, n in st['programs'].items() if n])} programs"
-               + (f", {st['forgotten']} forgotten" if st['forgotten'] else '') + (' (learning is off: this install has no art/evolve.py)' if not enabled() else ''))
+               + (f", {st['forgotten']} forgotten" if st['forgotten'] else '') + ('' if redraws() else ' (this install learns re-timed / re-sequenced moves; redrawn ones need a source checkout)'))
     for prog, e in sorted(progs.items()):
         if program and prog != program:
             continue
