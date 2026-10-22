@@ -37,7 +37,7 @@ if str(Path(__file__).resolve().parent.parent) not in sys.path:      # minis_cor
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from minis_core.movegen import *  # noqa: F401,F403,E402  (the remap tier, ids, names, timing / silhouette QA, the cache)
 from minis_core.movegen import (_round10, _desc, _mask, _iou, _index_path, _read_index, _write_index,  # noqa: F401,E402
-                                VERSION, REMAP_OPS, RENDER_OPS, OPS, MAX_FRAMES, CACHE_MAX_BYTES, SIZES)
+                                REMAP_OPS, RENDER_OPS, OPS, MAX_FRAMES, CACHE_MAX_BYTES, SIZES)
 
 CAP = {1: 31, 2: 63}                         # colours WITHOUT transparency per RES (art/build_fighters.CAPS minus one)
 _ART = None
@@ -164,21 +164,34 @@ def _pose_variant(character, base, op, seed, src_char=None):
                 ps = replace(ps, hf=(ps.hf[0] * 1.08, ps.hf[1] * 1.08))     # a longer coil
             out.append((ps, ms))
     elif op == 'spin':
+        # a real turn of the whole body: a side-on coil (shoulders square to the camera), then a BACK-TURNED key (the coil
+        # drawn from the other facing: hips and shoulders swapped, the back to the opponent; render_frames swaps that
+        # frame's facings), then the smear sweeps the blade round from behind the back into the contact
+        flip = []
         for i, (ps, ms) in enumerate(frames):
             if i == s0:
                 prev = frames[i - 1][0]
                 wa = (prev.wa if prev.wa is not None else -60.0) + (120.0 if rng.random() < 0.5 else -120.0)
-                spin = replace(prev, turn=0.35, lean=prev.lean - 4, hf=(-prev.hf[0] * 0.8, prev.hf[1]), wa=((wa + 180) % 360) - 180,
-                               face='g', dx=1.0)
-                out.append((spin, 70))
-                ps = replace(ps, smear_f=(spin.hf if ps.smear_f else ps.smear_f), ghost=())
+                side = replace(prev, turn=0.35, lean=prev.lean - 4, hf=(-prev.hf[0] * 0.8, prev.hf[1]), wa=((wa + 180) % 360) - 180,
+                               face='g', dx=1.0, smear_f=(), smear_b=(), smear_ff=(), smear_fb=(), fx=(), ghost=())
+                back = replace(prev, turn=0.7, lean=prev.lean + 2, face='g', dx=1.0, smear_f=(), smear_b=(), smear_ff=(), smear_fb=(),
+                               fx=(), ghost=())
+                out.append((side, 70))
+                flip.append(len(out))
+                out.append((back, 60))
+                if ps.smear_f:                                    # the arc starts far behind the back: a wide crescent
+                    ps = replace(ps, smear_f=(-abs(prev.hf[0]) - 6, prev.hf[1] - 2), ghost=())
+                elif ps.smear_ff:
+                    ps = replace(ps, smear_ff=(-abs(ps.ff[0]) - 4, ps.ff[1]), ghost=())
             out.append((ps, ms))
     else:                                                        # mimic: the poses as the source draws them, this body's weapon
         out = frames
     mv = dict(mv0, frames=out)
     sm2 = [i for i, (ps, _) in enumerate(out) if rig.is_smear(ps)]
     mv['smear_frames'] = sm2
-    mv['hit_frame'] = hf + (1 if op == 'spin' else 0)
+    mv['hit_frame'] = hf + (2 if op == 'spin' else 0)
+    if op == 'spin':
+        mv['flip_frames'] = flip
     ms = [m for _, m in out]
     ms = dedupe(ms, keep=set(sm2))
     mv['frames'] = [(ps, m) for (ps, _), m in zip(out, ms)]
@@ -209,14 +222,28 @@ def _pose_variant(character, base, op, seed, src_char=None):
 
 
 def render_frames(character, mv, res):
-    """The variant's frames through the real builder at `res`: [dict(r, l, buf, pose, ms, meta)]."""
+    """The variant's frames through the real builder at `res`: [dict(r, l, buf, pose, ms, meta)].  A `flip_frames` key
+    (the spin's back-turned frame) is drawn from the other facing: its right and left images swap, shifted so the hip
+    stays on that facing's anchor column, and its part buffer is mirrored the same way (the QA reads it)."""
+    from PIL import Image
     rig, moves, roster, BF = _art()
     ch = roster.get(character)
     rig.set_res(res)
     try:
-        return BF.render_move(ch, '_learned', mv, None)
+        fr = BF.render_move(ch, '_learned', mv, None)
+        cw, hip = rig.cell_px(), rig.hip_x_px()
     finally:
         rig.set_res(1)
+    shift = hip - (cw - 1 - hip)                       # where the left sheet's hip sits, relative to the right sheet's
+    for i in mv.get('flip_frames') or ():
+        f = fr[i]
+        r2, l2 = Image.new('RGBA', f['r'].size, (0, 0, 0, 0)), Image.new('RGBA', f['l'].size, (0, 0, 0, 0))
+        r2.paste(f['l'], (shift, 0))
+        l2.paste(f['r'], (-shift, 0))
+        b2 = Image.new(f['buf'].mode, f['buf'].size, 0)
+        b2.paste(f['buf'].transpose(Image.FLIP_LEFT_RIGHT), (shift, 0))
+        fr[i] = dict(f, r=r2, l=l2, buf=b2, flipped=True)
+    return fr
 
 
 # ---------------------------------------------------------------- QA on rendered frames
@@ -240,7 +267,26 @@ def novelty(frames, base_frames):
     return min(max(_iou(_mask(f['r']), b) for b in bm) for f in frames)
 
 
-def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0, base_frames=None):
+SPIN_TURN_MIN = 0.05          # the spin's back-turned frame must match the base's other facing by this margin
+GHOST_BUDGET = 0              # stray opaque pixels allowed off the body / weapon / effects on a non-smear frame
+
+
+def ghost_pixels(im, buf):
+    """Opaque pixels of a frame that no rig part (body, weapon, cloth, effect) covers and that are not the 1 px outline
+    around one: afterimage copies, smudges.  `buf` is the rig's part-id buffer of the same frame."""
+    a, b = im.getchannel('A').load(), buf.load()
+    w, h = im.size
+    n = 0
+    for y in range(h):
+        for x in range(w):
+            if a[x, y] and not b[x, y]:
+                if not any(0 <= x + dx < w and 0 <= y + dy < h and b[x + dx, y + dy]
+                           for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2)):
+                    n += 1
+    return n
+
+
+def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0, base_frames=None, base_frames_l=None):
     """-> [failures] for one rendered variant at `res` (empty = clean).  `frames` from render_frames; `base_palette` the
     character's own sheet colours (RGB set) at that res; `idle_frame` its idle frame 0 (right-facing) at that res."""
     rig, moves, roster, BF = _art()
@@ -313,6 +359,25 @@ def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0, bas
         nv = novelty(frames, base_frames)
         if nv >= NOVELTY_IOU:
             bad.append(f'no new shape: every frame matches the base move (IoU {nv:.2f})')
+    # a spin must really turn: one frame matches the base move's OTHER-facing frames clearly better than its own-facing ones
+    if mv.get('flip_frames') is not None:
+        turned = 0.0
+        if base_frames_l and base_frames:
+            for f in frames:
+                m = _mask(f['r'])
+                own = max(_iou(m, _mask(b)) for b in base_frames)
+                other = max(_iou(m, _mask(b)) for b in base_frames_l)
+                turned = max(turned, other - own)
+        if turned < SPIN_TURN_MIN:
+            bad.append(f'the spin never turns the body (best turned-frame margin {turned:.2f})')
+    # ghost-pixel budget: outside a smear (and the authored afterimages of a key with `ghost`) nothing may sit off the body
+    for i, f in enumerate(frames):
+        ps = f['pose']
+        if i in set(sm) or ps.ghost or ps.flash or (i and rig.is_smear(frames[i - 1]['pose'])):
+            continue
+        stray = ghost_pixels(f['r'], f['buf'])          # (not `n`: that is the frame count the reach check below reads)
+        if stray > GHOST_BUDGET:
+            bad.append(f'frame {i}: {stray} stray pixels off the body (afterimage outside a smear)')
     # reach, measured from the striking pixels
     reach = None
     if hf is not None and 0 <= hf < n:
@@ -323,6 +388,8 @@ def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0, bas
             rig.set_res(1)
         if reach is None or reach < min_reach * S:
             bad.append(f'reach {reach} under {min_reach * S}')
+    else:
+        bad.append(f'no contact frame to measure the reach on (hit_frame {hf} of {n})')   # a check that cannot run fails
     # colours: inside the cap, and nothing the character's own sheet does not have
     cols = _colours([f[s] for f in frames for s in ('r', 'l')])
     if len(cols) > CAP[res]:
@@ -335,14 +402,14 @@ def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0, bas
 
 
 # ---------------------------------------------------------------- build a render variant into the cache
-def _base_frames(character, base, res):
-    """The character's own row `base` (right-facing) at `res`, or [] when it has none (a borrowed move)."""
+def _base_frames(character, base, res, facing=1):
+    """The character's own row `base` (right-facing, or `facing`) at `res`, or [] when it has none (a borrowed move)."""
     try:
         from minis_core.atlas import Atlas
         a = Atlas(character, hd=(res == 2))
         if base not in a.anim:
             return []
-        return [a.frame_image(base, i, 1) for i in range(len(a.anim[base]['frames']))]
+        return [a.frame_image(base, i, facing) for i in range(len(a.anim[base]['frames']))]
     except Exception:
         return []
 
@@ -374,7 +441,8 @@ def build(data_dir, character, base, op, seed, src_char=None, how='mastery', mov
     for res in sizes:
         frames = render_frames(character, mv, res)
         pal, idle = _sheet_palette(character, res)
-        bad, reach = qa(character, mv, frames, res, pal, idle, base_frames=_base_frames(character, base, res))
+        bad, reach = qa(character, mv, frames, res, pal, idle, base_frames=_base_frames(character, base, res),
+                        base_frames_l=_base_frames(character, base, res, -1))
         if bad:
             failures += [f'res {res}: {b}' for b in bad]
             continue
@@ -416,7 +484,7 @@ def _new_sheet(cw, n):
 
 
 # ---------------------------------------------------------------- review sheets (the owner's bar: every frame clean, at 4x)
-def review_sheet(character, mv, frames_by_res, label):
+def review_sheet(character, mv, frames_by_res, label, onion=False):
     """One PNG: both facings at 4x (RES 1) over an onion skin of the previous frame, ms / HIT / smear labels, the 128 px
     frames at 2x below, and a 1x strip on a taskbar mock."""
     from PIL import Image, ImageDraw, ImageFont
@@ -444,7 +512,7 @@ def review_sheet(character, mv, frames_by_res, label):
             d.text((4, y + cell // 2), f'{side.upper()} {64 * res}px', fill=(230, 230, 230), font=big)
             for i, f in enumerate(fr):
                 x = lab + i * cell
-                if i > 0:
+                if onion and i > 0:                     # review aid only (--onion): the previous frame's silhouette, not in the sprite
                     prev = fr[i - 1][side].resize((cell, cell), Image.NEAREST).getchannel('A')
                     ghost = Image.new('RGB', (cell, cell), (110, 40, 40))
                     im.paste(ghost, (x, y), prev.point(lambda v: 90 if v else 0))
@@ -465,7 +533,8 @@ def review_sheet(character, mv, frames_by_res, label):
             break
         for k, side in enumerate(('r', 'l')):
             im.paste(f[side], (x + k * 64, y), f[side])
-    d.text((6, y + 68), label, fill=(220, 220, 220), font=big)
+    d.text((6, y + 68), label + ('   [dark red = onion skin of the previous frame: a review aid, not in the sprite]' if onion else ''),
+           fill=(220, 220, 220), font=big)
     return im
 
 
@@ -509,6 +578,7 @@ def _cli(argv=None):
     r.add_argument('--seed', type=int, default=1)
     r.add_argument('--mimic-from', default=None)
     r.add_argument('--one-sheet', action='store_true', help='also stack every variant into one tall PNG per character')
+    r.add_argument('--onion', action='store_true', help='draw the previous frame faintly behind each frame (a review aid)')
     b = sub.add_parser('build', help='render ONE variant into the learned-move cache (minis_core.learning spawns this out of process)')
     b.add_argument('character')
     b.add_argument('base')
@@ -564,7 +634,7 @@ def _cli(argv=None):
                     for res in SIZES:
                         at = Atlas(a.character, hd=(res == 2))
                         fbr[res] = [dict(r=at.frame_image(b, f['src'], 1), l=at.frame_image(b, f['src'], -1), ms=f['ms']) for f in got['frames']]
-                    sh = review_sheet(a.character, got, fbr, f'{a.character} {mid} ({op}, remap of {b}: frames {got["remap"]})')
+                    sh = review_sheet(a.character, got, fbr, f'{a.character} {mid} ({op}, remap of {b}: frames {got["remap"]})', onion=a.onion)
                     pth = out / f'{a.character}-{mid}-4x.png'
                     sh.save(pth)
                     sheets.append(sh)
@@ -580,7 +650,8 @@ def _cli(argv=None):
             for res in SIZES:
                 fr = render_frames(a.character, mv, res)
                 pal, idle = _sheet_palette(a.character, res)
-                bad, reach = qa(a.character, mv, fr, res, pal, idle, base_frames=_base_frames(a.character, b, res))
+                bad, reach = qa(a.character, mv, fr, res, pal, idle, base_frames=_base_frames(a.character, b, res),
+                                base_frames_l=_base_frames(a.character, b, res, -1))
                 frames_by_res[res] = fr
                 bad_all += [f'res {res}: {x}' for x in bad]
             mid = variant_id(b, op, a.seed)
@@ -591,7 +662,7 @@ def _cli(argv=None):
             n_pass += 1
             print(f'PASS   {a.character} {mid} ({op}{", from " + sc if sc else ""}): {[m for _, m in mv["frames"]]} hit {mv["hit_frame"]}')
             if a.cmd == 'review':
-                sh = review_sheet(a.character, mv, frames_by_res, f'{a.character} {mid} ({op}{", from " + sc if sc else ""})')
+                sh = review_sheet(a.character, mv, frames_by_res, f'{a.character} {mid} ({op}{", from " + sc if sc else ""})', onion=a.onion)
                 p = out / f'{a.character}-{mid}-4x.png'
                 sh.save(p)
                 sheets.append(sh)

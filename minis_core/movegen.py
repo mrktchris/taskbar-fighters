@@ -17,7 +17,7 @@ from __future__ import annotations
 import json, os, random, time
 from pathlib import Path
 
-VERSION = 1                                  # bump when a variant's frames would change: cached renders are re-made
+VERSION = 2                                  # bump when a variant's frames would change: cached renders are re-made
 REMAP_OPS = ('retime', 'twin', 'feint')
 RENDER_OPS = ('amplify', 'spin', 'mimic')
 OPS = REMAP_OPS + RENDER_OPS

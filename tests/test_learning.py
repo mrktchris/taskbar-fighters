@@ -108,7 +108,8 @@ class Synthesis(unittest.TestCase):
         for res in (1, 2):
             fr = EV.render_frames('claude', mv, res)
             pal, idle = EV._sheet_palette('claude', res)
-            bad, reach = EV.qa('claude', mv, fr, res, pal, idle)
+            bad, reach = EV.qa('claude', mv, fr, res, pal, idle, base_frames=EV._base_frames('claude', 'iai_slash', res),
+                               base_frames_l=EV._base_frames('claude', 'iai_slash', res, -1))
             self.assertEqual(bad, [], res)
             self.assertGreater(reach, 10 * res)
         # a colour the character's sheet does not have, a frame that floats, even timing: all caught
@@ -146,6 +147,40 @@ class Synthesis(unittest.TestCase):
         hd = L.LearnedAtlas(Library(hd=True)['claude'])
         self.assertTrue(L.load_row(hd, ['claude', 'cross', 'amplify', 1, None, 'mastery'], data_dir=d))
         self.assertEqual(hd.frame_image('cross_grand', 2, 1).size, tuple(hd.cell))
+
+    @unittest.skipUnless(EV is not None and EV.available(), 'the rig (art/) is not here')
+    def test_a_spin_must_turn_the_body(self):
+        """Review finding: the first spin was a side-on coil that read as the base move.  A spin now carries a back-turned
+        frame (drawn from the other facing) and must match the base's other facing there; one that never turns is rejected."""
+        mv, _ = EV._pose_variant('claude', 'iai_slash', 'spin', 1)
+        fr = EV.render_frames('claude', mv, 1)
+        self.assertEqual(mv['flip_frames'], [3])
+        self.assertTrue(fr[3].get('flipped'))
+        R, Lf = EV._base_frames('claude', 'iai_slash', 1), EV._base_frames('claude', 'iai_slash', 1, -1)
+        m = EV._mask(fr[3]['r'])
+        self.assertGreater(max(EV._iou(m, EV._mask(b)) for b in Lf), max(EV._iou(m, EV._mask(b)) for b in R) + 0.2)
+        meta, bad = EV.build(str(Path(tempfile.mkdtemp())), 'claude', 'jab', 'spin', 1)        # a near-symmetric coil
+        self.assertIsNone(meta)
+        self.assertTrue(any('never turns' in b for b in bad), bad)
+
+    @unittest.skipUnless(EV is not None and EV.available(), 'the rig (art/) is not here')
+    def test_an_afterimage_smudge_outside_a_smear_is_caught(self):
+        """The ghost-pixel budget: a faded copy of the body left behind on a recovery frame fails QA; the real frames have
+        none (every redrawn variant passes it)."""
+        mv, _ = EV._pose_variant('claude', 'cross', 'amplify', 1)
+        fr = EV.render_frames('claude', mv, 1)
+        for i, f in enumerate(fr):
+            if i not in mv['smear_frames']:
+                self.assertEqual(EV.ghost_pixels(f['r'], f['buf']), 0, i)
+        i = len(fr) - 2
+        im = fr[i]['r'].copy()
+        smudge = fr[i]['r'].copy()
+        smudge.putalpha(smudge.getchannel('A').point(lambda v: 90 if v else 0))
+        im.alpha_composite(smudge, (-12, 0))                      # a translucent copy 12 px behind the body
+        fr[i] = dict(fr[i], r=im)
+        pal, idle = EV._sheet_palette('claude', 1)
+        bad, _ = EV.qa('claude', mv, fr, 1, pal, idle)
+        self.assertTrue(any('stray pixels' in b for b in bad), bad)
 
     def test_names_are_original_and_generic(self):
         self.assertEqual(EV.display_name('iai_slash_ii', 'iai_slash', 'retime'), 'Iai Slash II')
