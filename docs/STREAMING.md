@@ -23,9 +23,9 @@ Options for `stream on` (and `snapshot`):
 | option | default | meaning |
 | --- | --- | --- |
 | `--chroma #RRGGBB` | `#00FF00` | the key colour; `magenta`, `blue`, `black` and `r,g,b` also work. Pick one that is not in the art: green and magenta are safe |
-| `--scale N` | fit | a fixed whole-number scale. Without it the strip is scaled by the largest whole number that fits the window |
+| `--scale N` | fit | a fixed whole-number scale, 1 to 8. Without it the strip is scaled by the largest whole number that fits the window |
 | `--fps F` | `15` | frames per second (2 to 30) |
-| `--width W --height H` | `960 x 300` | the starting size of the window's inside |
+| `--width W --height H` | `960 x 300` | the starting size of the window's inside, 1 to 4096 each. Anything outside these ranges is refused before a window opens, and a frame is never larger than about 4096 x 2304 whatever the window asks |
 | `--no-plates` | off | leave the HUD plates out (they show context % and plan figures; leave them out if you would rather not show those numbers) |
 | `--transparent` | off | an alpha background instead of the key colour (experimental, see below) |
 
@@ -79,6 +79,9 @@ Whether a capture keeps that alpha depends on the capture tool, and **it has not
   was there before; `python minis.py forge on` turns them back on at any time.
 - The window is a normal app window: not topmost, not click-through, in the taskbar and Alt-Tab. Closing it ends the
   stream process; the fighters keep running.
+- **One stream at a time.** `stream on` takes `<data folder>/stream.lock` before it starts anything (an exclusive create;
+  a lock left by a stream that died is reclaimed by exactly one starter), and `stream off` reaches a stream that is still
+  opening its window as well as a running one.
 - `tools/own_capture.py` uses the same dump mechanism. While it runs, the stream reads its folder and leaves its files
   alone.
 - The arena (`minis.py arena`) is a separate full-monitor overlay. The stream window shows the taskbar fight; to stream an

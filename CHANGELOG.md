@@ -35,7 +35,10 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
   spawns, so two quick starts open one stream, and a stream only ever closes out its own state; pack PNGs are capped by
   their header size before decoding (per sheet and 256 MiB per pack); malformed pack metadata is always a plain refusal;
   `tools/make_example_pack.py` validates `--name` before touching any folder; the Win32 stream window passes an owned
-  pixel buffer and is tested by reading back its own pixels.
+  pixel buffer and is tested by reading back its own pixels. Second review: a stale `stream.lock` is reclaimed under a
+  guard so two starters never both take it; `stream off` reaches a stream still opening its window; `--scale`,
+  `--width`, `--height` are capped (8 / 4096) and a frame never exceeds 4096 x 2304; `packs.FIGHTER_ID_RE` is the
+  fighter-id contract for fight codes (pack names may contain hyphens).
 
 ## Unreleased - Windows on strangers' PCs (branch `win-robust`)
 

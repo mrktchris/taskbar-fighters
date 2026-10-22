@@ -14,6 +14,10 @@ python minis.py skin <program> <pack>             wear it, e.g.  skin claude pac
 
 An installed pack also shows up in the fighter-select screen's LOOK grid and in a fighter's right-click *Look* menu.
 
+For code that handles fighter ids (fight codes, replays, the collection book): `minis_core/packs.py` exports
+`FIGHTER_ID_RE`, `is_fighter_id(cid)` and `split_fighter_id(cid)` - a built-in id is `[a-z][a-z0-9_]*`, a pack id is
+`pack-` + the pack name, and the name itself may contain hyphens, so split on the `pack-` prefix, never on `-`.
+
 **Where packs live:** `%LOCALAPPDATA%\minis\packs\<name>\` on Windows, `~/Library/Application Support/minis/packs/<name>/`
 on macOS. A pack named `shadow-ronin` is the character `pack-shadow-ronin`.
 

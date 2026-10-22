@@ -38,6 +38,10 @@ REQ_SPAN_S = 30.0                                                # the request i
 MARGIN = 6
 HEARTBEAT_S = 1.0
 FRESH_S = 4.0
+MAX_DIM = 4096                                                   # window width / height (px) a stream may ask for
+MAX_SCALE = 8                                                    # --scale
+MAX_PIXELS = 4096 * 2304                                         # any frame fit() allocates (a 4K-ish RGBA frame, ~38 MB)
+START_GRACE_S = 8.0                                              # `stream off` waits this long for a stream still starting
 
 
 def state_path() -> Path:
@@ -211,11 +215,16 @@ class Strip:
 def fit(strip, w, h, bg=DEFAULT_CHROMA, transparent=False, scale=None):
     """The strip scaled by a whole number (nearest) to fit w x h, centred on the key colour (alpha 0 when transparent).
     scale: a fixed factor instead of the largest that fits.  -> (RGBA image of w x h, factor used)."""
-    w, h = max(1, int(w)), max(1, int(h))
+    w, h = max(1, min(MAX_DIM, int(w))), max(1, min(MAX_DIM, int(h)))
+    while w * h > MAX_PIXELS:                                      # never allocate past the cap, whatever was asked
+        w, h = max(1, w * 3 // 4), max(1, h * 3 // 4)
     out = Image.new('RGBA', (w, h), (0, 0, 0, 0) if transparent else tuple(bg) + (255,))
     if strip is None:
         return out, 0
     k = int(scale) if scale else max(1, min(w // max(1, strip.width), h // max(1, strip.height)))
+    k = max(1, min(MAX_SCALE, k))
+    while k > 1 and strip.width * strip.height * k * k > MAX_PIXELS:
+        k -= 1
     big = strip.resize((strip.width * k, strip.height * k), Image.NEAREST) if k != 1 else strip
     x, y = (w - big.width) // 2, (h - big.height) // 2
     if transparent:
@@ -289,6 +298,55 @@ def lock_owner(path=None):
         return None
 
 
+def lock_since(path=None):
+    """When the current `stream on` took the lock (wall s) - the threshold a stop request must be newer than."""
+    try:
+        return float(json.loads(Path(path or lock_path()).read_text(encoding='utf-8')).get('since') or 0.0)
+    except (OSError, ValueError, TypeError, AttributeError):
+        return 0.0
+
+
+def _write_excl(lp, payload) -> bool:
+    """O_CREAT | O_EXCL create with the payload written at once.  False when the file exists (on Windows also while a
+    just-deleted one is still pending: PermissionError), so the caller re-reads instead of raising."""
+    try:
+        fd = os.open(str(lp), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except (FileExistsError, PermissionError):
+        return False
+    data = json.dumps(payload).encode('utf-8')
+    try:
+        os.write(fd, data)
+    finally:
+        os.close(fd)
+    return True
+
+
+def _unlink_retry(lp, tries=40, wait=time.sleep) -> bool:
+    """Unlink a file another process may hold open for a moment (Windows: a reader without FILE_SHARE_DELETE makes the
+    unlink fail with PermissionError); retried for ~0.2 s."""
+    for _ in range(tries):
+        try:
+            lp.unlink()
+            return True
+        except FileNotFoundError:
+            return True
+        except OSError:
+            wait(0.005)
+    return False
+
+
+def _rename_away(lp) -> bool:
+    """Atomically move a file out of the way (os.replace to a unique name) and delete it.  Exactly one of several callers
+    wins the rename; the others see FileNotFoundError and return False."""
+    gone = lp.with_name(f'.{lp.name}.{os.getpid()}.{time.monotonic_ns()}.gone')
+    try:
+        os.replace(lp, gone)
+    except OSError:
+        return False
+    _unlink_retry(gone)
+    return True
+
+
 def _default_alive(pid):
     try:
         import minis_platform as plat
@@ -297,37 +355,60 @@ def _default_alive(pid):
         return True                                               # cannot tell: treat the lock as held (never steal it)
 
 
-def acquire_lock(pid, alive=None, path=None) -> bool:
-    """Create stream.lock atomically (O_CREAT | O_EXCL) holding `pid`.  A lock whose pid is no longer alive is stale and
-    is replaced once; a live owner keeps it.  -> True when `pid` now owns the lock."""
+def acquire_lock(pid, alive=None, path=None, now=None, wait=time.sleep) -> bool:
+    """Create stream.lock atomically (O_CREAT | O_EXCL) holding `pid` and the time it was taken.  A live owner keeps it.
+    A lock whose pid is dead is stale and reclaimed under a second O_EXCL guard (stream.lock.reclaim), so only ONE of
+    several starters that read the same dead pid removes it and creates the fresh lock; the guard holder re-reads the
+    lock first, so a lock somebody else already renewed is never removed.  A guard left by a reclaimer that died is
+    moved away atomically (one winner) and retried.  -> True when `pid` now owns the lock."""
     lp = Path(path or lock_path())
+    guard = lp.with_name(lp.name + '.reclaim')
     alive = alive or _default_alive
-    for _ in range(2):
-        try:
-            fd = os.open(str(lp), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
-            other = lock_owner(lp)
-            if other == pid:
-                return True
-            if other is not None and alive(other):
-                return False
-            try:
-                lp.unlink()                                       # stale: its owner is gone (or the file is unreadable)
-            except OSError:
-                return False
+    now = time.time() if now is None else now
+    payload = {'pid': int(pid), 'since': float(now)}
+    unreadable = 0
+    for _ in range(12):
+        if _write_excl(lp, payload):
+            return True
+        other = lock_owner(lp)
+        if other == pid:
+            return True
+        if other is not None and alive(other):
+            return False
+        if other is None and lp.exists():                         # being written this instant, or truly garbage
+            unreadable += 1
+            if unreadable < 6:
+                wait(0.01)                                        # give a live writer its microseconds; then it is stale
+                continue
+        # stale (dead owner, or unreadable for good): reclaim it under the guard
+        if not _write_excl(guard, {'pid': int(pid)}):
+            g = lock_owner(guard)
+            if g is not None and g != pid and alive(g):
+                return False                                      # another starter is reclaiming right now: it wins
+            if g is None and guard.exists():
+                wait(0.01)                                        # its holder is writing it; read again
+                continue
+            _rename_away(guard)                                   # a dead reclaimer's guard; one of us removes it
             continue
-        with os.fdopen(fd, 'w', encoding='utf-8') as fh:
-            fh.write(json.dumps({'pid': int(pid)}))
-        return True
+        try:
+            again = lock_owner(lp)
+            if again is not None and again != other and alive(again):
+                return False                                      # renewed between our read and the guard: theirs
+            if lp.exists() and not _rename_away(lp):
+                continue
+            if _write_excl(lp, payload):
+                return True
+        finally:
+            _unlink_retry(guard)
     return False
 
 
 def hand_lock(from_pid, to_pid, path=None) -> bool:
-    """`stream on` acquires the lock, spawns `stream run`, then hands the lock to the child's pid."""
+    """`stream on` acquires the lock, spawns `stream run`, then hands the lock to the child's pid (its `since` stays)."""
     lp = Path(path or lock_path())
     if lock_owner(lp) != from_pid:
         return False
-    return write_json_atomic(lp, {'pid': int(to_pid)})
+    return write_json_atomic(lp, {'pid': int(to_pid), 'since': lock_since(lp)})
 
 
 def release_lock(pid, path=None) -> bool:
@@ -335,11 +416,7 @@ def release_lock(pid, path=None) -> bool:
     lp = Path(path or lock_path())
     if lock_owner(lp) != pid:
         return False
-    try:
-        lp.unlink()
-        return True
-    except OSError:
-        return False
+    return _unlink_retry(lp)
 
 
 def claim_for_run(pid, parent, alive=None, wait=time.sleep, tries=20):
@@ -373,9 +450,18 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
         import minis_platform as plat
         window_mod = importlib.import_module(plat.package() + '.stream_window')
     me = os.getpid()
+    launched = wall()
     if not claim_for_run(me, os.getppid(), alive=opts.get('alive')):
         log.info('stream: another stream owns stream.lock (pid %s); not starting', lock_owner())
         return 1
+    since = min(launched, lock_since() or launched)               # `stream on` took the lock: a stop after that counts
+    sp = state_path()
+    if stop_requested(since):                                     # `stream off` arrived before we got this far
+        log.info('stream: stop requested during startup; not opening the window')
+        write_json_atomic(sp, dict(pid=me, active=False, ts=wall(), ended='stop'))
+        release_lock(me)
+        _restore_forge(opts)
+        return 0
     roles = tuple(r for r in ROLES if not (opts.get('no_plates') and r in PLATE_ROLES))
     fps = max(2.0, min(30.0, float(opts.get('fps') or DEFAULT_FPS)))
     feed = Feed(every_ms=int(1000 / fps), wall=wall, roles=roles)
@@ -389,7 +475,6 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
         release_lock(me)
         raise
     started = wall()
-    sp = state_path()
     st = dict(pid=os.getpid(), active=True, started=started, ts=started, chroma='#%02X%02X%02X' % bg, transparent=transparent,
               forge_was=opts.get('forge_was'))
     write_json_atomic(sp, st)
@@ -406,7 +491,7 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
             now = wall()
             if now - last_beat >= HEARTBEAT_S:
                 last_beat = now
-                if stop_requested(started):
+                if stop_requested(since):                         # also one that landed while the window was opening
                     log.info('stream: stop requested')
                     ended = 'stop'
                     break
@@ -431,14 +516,19 @@ def run(opts, window_mod=None, wall=time.time, mono=time.monotonic, max_frames=N
         if read_state(sp).get('pid') == me:                         # only our own state is closed out
             write_json_atomic(sp, dict(read_state(sp), active=False, ts=wall(), ended=ended))
         release_lock(me)
-        if opts.get('forge_was') == 'on':                         # closed by its own button: desktop weapons come back too
-            try:
-                from . import control
-                if not control.forge_on():
-                    control.set_forge(True)
-            except Exception:
-                pass
+        _restore_forge(opts)
     return 0
+
+
+def _restore_forge(opts):
+    """Desktop weapons come back when the stream ends, however it ended (its own close button included)."""
+    if opts.get('forge_was') == 'on':
+        try:
+            from . import control
+            if not control.forge_on():
+                control.set_forge(True)
+        except Exception:
+            pass
 
 
 SNAP_ID = 'snapshot'
@@ -484,7 +574,12 @@ def options_from(args):
         o['chroma'] = parse_color(args.chroma)
     for k in ('scale', 'fps', 'width', 'height'):
         v = getattr(args, k, None)
-        if v:
+        if v is not None:                                             # 0 is an answer too: refused below, never ignored
+            cap = MAX_SCALE if k == 'scale' else (30 if k == 'fps' else MAX_DIM)
+            if k != 'fps' and (int(v) != v or v < 1):
+                raise ValueError(f'--{k} must be a whole number of at least 1')
+            if v > cap or v < (2 if k == 'fps' else 1):
+                raise ValueError(f'--{k} {v} is out of range (1..{cap})' if k != 'fps' else f'--fps {v} is out of range (2..30)')
             o[k] = v
     o['transparent'] = bool(getattr(args, 'transparent', False))
     o['no_plates'] = bool(getattr(args, 'no_plates', False))
@@ -548,18 +643,24 @@ def cmd(args, spawn=None, self_argv=None, alive=None, out=print, sleep=time.slee
             + ('  Desktop weapons are off while streaming.' if was else ''))
         return 0
     if act == 'off':
-        if not pid:
+        owner = lock_owner()
+        starting = owner is not None and owner != pid and (alive or _default_alive)(owner)   # locked, no heartbeat yet
+        if not pid and not starting:
             out('stream: not running')
             return 0
-        request_stop()
-        for _ in range(20):
-            if not running(alive=alive):
+        request_stop()                                            # newer than the lock's `since`: the child honours it
+
+        def gone():
+            o = lock_owner()
+            return running(alive=alive) is None and (o is None or not (alive or _default_alive)(o))
+        for _ in range(int(START_GRACE_S / 0.2)):
+            if gone():
                 break
             sleep(0.2)
         d = read_state()
         if d.get('forge_was') == 'on' and not control.forge_on():
             control.set_forge(True)
-        out('stream: stopped' if not running(alive=alive) else f'stream: asked pid {pid} to close; close the window if it stays')
+        out('stream: stopped' if gone() else f'stream: asked pid {pid or owner} to close; close the window if it stays')
         return 0
     if act == 'run':
         o['forge_was'] = getattr(args, 'forge_was', None)

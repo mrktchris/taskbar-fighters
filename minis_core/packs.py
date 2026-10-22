@@ -60,6 +60,24 @@ def is_pack_id(cid) -> bool:
     return isinstance(cid, str) and cid.startswith(PREFIX) and bool(NAME_RE.match(cid[len(PREFIX):]))
 
 
+# A fighter (character) id as it appears in record.json, assign.json and fight codes: a built-in character
+# (`claude`, `lmstudio`: letters, digits, underscores) or an installed pack (`pack-<name>`, NAME_RE).  The one hyphen
+# in a pack id is the one after `pack`; the name may hold more.  Stable: the `ux` branch's fight codes import this.
+FIGHTER_ID_RE = re.compile(r'^(?:[a-z][a-z0-9_]{0,31}|pack-[a-z0-9][a-z0-9_-]{1,31})$')
+
+
+def is_fighter_id(cid) -> bool:
+    """True for any id a fighter can carry (built-in or pack).  Never a path, a slash, a dot or upper case."""
+    return isinstance(cid, str) and bool(FIGHTER_ID_RE.match(cid))
+
+
+def split_fighter_id(cid):
+    """'claude' -> ('builtin', 'claude'); 'pack-shadow-ronin' -> ('pack', 'shadow-ronin'); anything else -> None."""
+    if not is_fighter_id(cid):
+        return None
+    return ('pack', cid[len(PREFIX):]) if cid.startswith(PREFIX) else ('builtin', cid)
+
+
 # ---------------------------------------------------------------- what the engine needs
 _required = None
 

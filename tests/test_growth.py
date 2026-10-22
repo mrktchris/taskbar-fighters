@@ -817,5 +817,178 @@ class RealStreamWindow(Isolated):
             self.assertEqual(px.getpixel(c), want.getpixel(c))                         # the fighter's pixels, scaled
 
 
+# ---------------------------------------------------------------- second Codex review (2026-10-22)
+class StaleLockRace(Isolated):
+    """Review 2, item 1: two starters that both read the same dead pid must not both reclaim the lock."""
+
+    def setUp(self):
+        super().setUp()
+        from minis_core import stream
+        self.S = stream
+        from minis_core.bus import write_json_atomic
+        write_json_atomic(self.S.lock_path(), {'pid': 77, 'since': 1.0})                 # 77 is dead
+
+    def test_a_reclaim_that_lands_between_read_and_remove_is_not_clobbered(self):
+        S = self.S
+        alive = lambda p: p != 77                                                         # noqa: E731
+        real = S.lock_owner
+        calls = []
+
+        def owner_then_b_reclaims(path=None):
+            o = real(path)
+            calls.append(o)
+            if len(calls) == 1:                                                          # A has just read the dead pid...
+                self.assertTrue(S.acquire_lock(200, alive=alive))                       # ...and B reclaims first
+            return o
+        with mock.patch.object(S, 'lock_owner', owner_then_b_reclaims):
+            got_a = S.acquire_lock(100, alive=alive)
+        self.assertFalse(got_a)                                                           # A must not unlink B's fresh lock
+        self.assertEqual(real(), 200)
+
+    def test_many_simultaneous_starters_yield_exactly_one_owner(self):
+        import threading
+        S = self.S
+        alive = lambda p: p != 77                                                         # noqa: E731
+        n = 8
+        start = threading.Barrier(n)
+        wins = []
+
+        def starter(pid):
+            start.wait()
+            if S.acquire_lock(pid, alive=alive):
+                wins.append(pid)
+        ts = [threading.Thread(target=starter, args=(1000 + i,)) for i in range(n)]
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
+        self.assertEqual(len(wins), 1, wins)
+        self.assertEqual(S.lock_owner(), wins[0])
+        self.assertFalse((S.lock_path().with_name('stream.lock.reclaim')).exists())
+        self.assertEqual([p.name for p in self.data.iterdir() if p.name.startswith('.stream.lock')], [])   # nothing left behind
+
+    def test_a_dead_reclaimers_guard_is_cleared(self):
+        S = self.S
+        from minis_core.bus import write_json_atomic
+        write_json_atomic(S.lock_path().with_name('stream.lock.reclaim'), {'pid': 78})
+        self.assertTrue(S.acquire_lock(300, alive=lambda p: p not in (77, 78)))
+        self.assertFalse(S.acquire_lock(301, alive=lambda p: p not in (77, 78)))
+        self.assertEqual(S.lock_owner(), 300)
+        self.assertGreater(S.lock_since(), 0.0)
+
+
+class OffDuringStartup(Isolated):
+    """Review 2, item 2: `stream off` straight after `stream on`, before the child's first heartbeat."""
+
+    def setUp(self):
+        super().setUp()
+        from minis_core import stream
+        self.S = stream
+
+    def test_off_reaches_a_stream_that_has_not_heartbeated_yet(self):
+        S = self.S
+        self.assertTrue(S.acquire_lock(5001, alive=lambda p: True, now=100.0))         # `stream on` holds it, child not up
+        out = []
+        waits = []
+        with mock.patch.dict(os.environ, {'MINIS_TESTING': '1'}):
+            rc = S.cmd(SimpleNamespace(action='off'), alive=lambda p: True, out=out.append, sleep=waits.append)
+        self.assertEqual(rc, 0)
+        self.assertTrue(S.stop_requested(100.0))                                         # a stop was written, not "not running"
+        self.assertIn('asked pid 5001', out[0])
+        self.assertTrue(waits)
+
+    def test_the_child_honours_a_stop_that_arrived_while_it_was_starting(self):
+        S = self.S
+        made = []
+        self.assertTrue(S.acquire_lock(os.getpid(), alive=lambda p: True, now=100.0))   # as `stream on` handed it over
+        S.request_stop(now=150.0)                                                        # `stream off` before the window
+        rc = S.run({'alive': lambda p: True}, window_mod=SimpleNamespace(StreamWindow=lambda *a, **k: made.append(1)),
+                   wall=lambda: 200.0, max_frames=1)
+        self.assertEqual(rc, 0)
+        self.assertEqual(made, [])                                                       # no window was opened
+        self.assertEqual(S.read_state()['ended'], 'stop')
+        self.assertIsNone(S.lock_owner())
+
+    def test_a_stop_from_before_this_start_is_ignored(self):
+        S = self.S
+        S.request_stop(now=50.0)                                                         # an old `off`
+        self.assertTrue(S.acquire_lock(os.getpid(), alive=lambda p: True, now=100.0))
+        frames = []
+
+        class Win:
+            def __init__(self, *a, **k):
+                self.closed = False
+
+            def pump(self):
+                return True
+
+            def client_size(self):
+                return 64, 32
+
+            def present(self, img):
+                frames.append(1)
+
+            def wait(self, s):
+                pass
+
+            def close(self):
+                self.closed = True
+        rc = S.run({'alive': lambda p: True}, window_mod=SimpleNamespace(StreamWindow=Win), wall=lambda: 200.0, max_frames=2)
+        self.assertEqual((rc, len(frames)), (0, 2))
+        self.assertEqual(S.read_state()['ended'], 'frames')
+
+
+class SizeCaps(Isolated):
+    """Review 2, item 3: --scale / --width / --height and fit() never allocate past a cap."""
+
+    def test_absurd_options_are_refused_before_anything_starts(self):
+        from minis_core import stream as S
+        spawned = []
+        for bad in (dict(scale=100000), dict(width=10 ** 6), dict(height=10 ** 9), dict(scale=0), dict(width=-5), dict(fps=1000)):
+            kw = dict(action='on', chroma=None, scale=None, fps=None, width=None, height=None, transparent=False, no_plates=False)
+            kw.update(bad)
+            a = SimpleNamespace(**kw)
+            out = []
+            rc = S.cmd(a, spawn=lambda argv: spawned.append(argv), self_argv=lambda *t: list(t), alive=lambda p: True, out=out.append)
+            self.assertEqual(rc, 2, bad)
+            self.assertTrue('out of range' in out[0] or 'whole number' in out[0], (bad, out))
+        self.assertEqual(spawned, [])
+        ok = SimpleNamespace(action='status', chroma=None, scale=8, fps=30.0, width=4096, height=2160, transparent=False, no_plates=False)
+        self.assertEqual(S.options_from(ok)['scale'], 8)
+
+    def test_fit_clamps_dimensions_and_scale_and_pixel_count(self):
+        from minis_core import stream as S
+        from PIL import Image
+        strip = Image.new('RGBA', (900, 200), (255, 0, 0, 255))
+        with mock.patch.object(Image, 'new', wraps=Image.new) as new:
+            frame, k = S.fit(strip, 10 ** 6, 10 ** 6, scale=100000)
+            for call in new.call_args_list:
+                w, h = call.args[1]
+                self.assertLessEqual(w * h, S.MAX_PIXELS)
+        self.assertLessEqual(frame.width, S.MAX_DIM)
+        self.assertLessEqual(frame.height, S.MAX_DIM)
+        self.assertLessEqual(frame.width * frame.height, S.MAX_PIXELS)
+        self.assertLessEqual(k, S.MAX_SCALE)
+        self.assertLessEqual(strip.width * strip.height * k * k, S.MAX_PIXELS)
+        self.assertEqual(S.fit(None, 50, 20)[0].size, (50, 20))                           # small asks are untouched
+        self.assertEqual(S.fit(strip, 1848, 440)[1], 2)
+
+
+class FighterIds(unittest.TestCase):
+    """The id contract the ux branch's fight codes build on (packs.FIGHTER_ID_RE)."""
+
+    def test_builtin_and_pack_ids_pass_and_nothing_path_like_does(self):
+        from minis_core import atlas, packs
+        for cid in atlas.available():
+            self.assertTrue(packs.is_fighter_id(cid), cid)
+            self.assertEqual(packs.split_fighter_id(cid), ('builtin', cid))
+        self.assertEqual(packs.split_fighter_id('pack-shadow-ronin'), ('pack', 'shadow-ronin'))
+        self.assertEqual(packs.split_fighter_id(packs.char_id('x_1')), ('pack', 'x_1'))
+        for bad in ('', 'Claude', 'pack-', 'pack-..', '../x', 'a/b', 'a\\b', 'claude.png', 'pack-Shadow', ' claude', 'x' * 40, None, 7):
+            self.assertFalse(packs.is_fighter_id(bad), bad)
+            self.assertIsNone(packs.split_fighter_id(bad), bad)
+        self.assertTrue(all(packs.is_fighter_id(packs.char_id(n)) for n in ('a1', 'shadow-ronin', 'x' * 32)))
+
+
 if __name__ == '__main__':
     unittest.main()
