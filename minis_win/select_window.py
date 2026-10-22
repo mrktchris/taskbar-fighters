@@ -10,21 +10,28 @@ from __future__ import annotations
 MARGIN = 8
 
 
-def placement(shell, w, h, scale, centre_x=None):
+def placement(shell, w, h, scale, centre_x=None, area=None):
     """-> (x, y) in screen px for a w x h (logical) popup: just above the taskbar, centred on `centre_x` (screen px), kept
-    on the primary screen."""
-    l, t, r, b, edge = shell.taskbar_rect()
-    sw, sh = shell.screen_size()
-    top = t if edge == 3 else sh
+    on the primary screen.  area=(x0, x1, top[, monitor_top]) (physical px, from minis.select_area: the fighters' band and its
+    monitor) places it above that band instead - any taskbar edge, any monitor, negative coordinates kept (a monitor left of
+    or above the primary): it is clamped to that monitor's own edges, never to the primary's."""
     pw, ph = w * scale, h * scale
-    cx = sw // 2 if centre_x is None else int(centre_x)
-    x = max(MARGIN, min(sw - pw - MARGIN, cx - pw // 2))
-    y = max(MARGIN, top - ph - MARGIN)
+    if area is not None:
+        vals = [int(v) for v in area]
+        x0, x1, top = vals[:3]
+        mtop = vals[3] if len(vals) > 3 else 0
+    else:
+        l, t, r, b, edge = shell.taskbar_rect()
+        sw, sh = shell.screen_size()
+        x0, x1, top, mtop = 0, sw, (t if edge == 3 else sh), 0
+    cx = (x0 + x1) // 2 if centre_x is None else int(centre_x)
+    x = max(x0 + MARGIN, min(x1 - pw - MARGIN, cx - pw // 2))
+    y = max(mtop + MARGIN, top - ph - MARGIN)
     return x, y
 
 
 class SelectWindow:
-    def __init__(self, shell, model, mono, on_done, scale=2, centre_x=None):
+    def __init__(self, shell, model, mono, on_done, scale=2, centre_x=None, area=None):
         """on_done(model) is called once, when the last player confirms (model.phase == 'vs'); the window closes itself
         after the VS card, or at once on cancel."""
         self.shell, self.model, self.mono, self.on_done = shell, model, mono, on_done
@@ -32,7 +39,7 @@ class SelectWindow:
         self.done_called = False
         self.closed = False
         self.last_key = None
-        x, y = placement(shell, model.W, model.H, self.scale, centre_x)
+        x, y = placement(shell, model.W, model.H, self.scale, centre_x, area=area)
         self.ov = shell.Overlay('minis-select', x, y, model.W, model.H, scale=self.scale, on_event=self.on_event,
                                 on_hittest=lambda cx, cy: True, on_key=self.on_key, activatable=True, on_blur=self.on_blur)
         self.ov.present(model.render(mono()), x=x)

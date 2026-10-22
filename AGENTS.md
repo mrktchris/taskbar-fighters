@@ -37,7 +37,7 @@ Run these and check every answer before going on.
 | Python 3.12+ | `python --version` (or `py -3 --version`) | 3.12 or newer. Tested on 3.12 and 3.14. If missing: ask the user to install it from python.org or `winget install Python.Python.3.12` - with their yes |
 | pip | `python -m pip --version` | any |
 | git | `git --version` | any (or download the ZIP from GitHub) |
-| taskbar at the bottom | ask the user, or Settings > Personalization > Taskbar > Taskbar behaviors | bottom; fighters hide when the taskbar is elsewhere or auto-hides |
+| taskbar position | ask the user, or Settings > Personalization > Taskbar > Taskbar behaviors | any edge. Bottom: fighters stand on the taskbar (auto-hide: only while it is shown). Top / left / right: on a strip at the bottom of the screen. `python minis.py doctor` prints what it detected |
 
 Only one third-party package is needed: Pillow (see `requirements.txt`). Everything else is the Python standard library and
 ctypes.
@@ -68,7 +68,7 @@ python minis.py status
 
 `start` launches three windowless processes and after about 3 s prints what is on screen, e.g. `a: Claude Code, b: Sparring bot
 asleep`. `status` should begin with a line saying it is running and who is on which side. Tell the user to look at the empty part
-of their taskbar, left of the icons.
+of their taskbar (left of the icons when they are centred, right of them when they are left-aligned).
 
 Then show them the basics: right-click a fighter for the menu, click a name on the scoreboard to pick fighters,
 `python minis.py demo match` for a bout right now, `python minis.py pause` / `resume`, `python minis.py size 64|96|128` for the
@@ -79,13 +79,19 @@ only; ESC ends it). Tell them the arena forges weapons from ONE picture of that 
 ## 5. Optional - only with the user's yes
 
 - **Start at logon:** `python minis.py print-startup` prints (never runs) a `schtasks` command and a shortcut target. Show the user
-  what it will add, run it only if they say yes, and tell them the matching `schtasks /Delete` line it prints.
+  what it will add, run it only if they say yes, and tell them the matching `schtasks /Delete` line it prints. Or, with their
+  yes, `python minis.py startup on` (one "Taskbar Fighters.lnk" in shell:startup, the same as the Settings checkbox;
+  `startup off` removes it).
 - **Start-menu shortcut:** `python minis.py shortcut` adds "Taskbar Fighters" to the Start menu (`--desktop` also adds one on the
   Desktop). Ask first. Then tell the user to right-click it in Start > **Pin to taskbar** themselves - Windows does not let a
   program pin itself, so do not try. `python minis.py shortcut remove` deletes only the shortcuts it made.
 - **Tray icon** (no action needed): while it runs, an icon sits in the notification area. Left-click opens fighter select;
-  right-click has Pause, Flash effects, Desktop weapons, Plates, Rival mode, arena, Bout now, Restart and Quit. `"tray_icon": false` in `minis.json`
+  right-click has Settings, Move book, What am I looking at?, Pause, Flash effects, Desktop weapons, Plates, Rival mode, arena,
+  Bout now, Replay last K.O., Save last fight as GIF, Restart and Quit. `"tray_icon": false` in `minis.json`
   turns it off.
+- **Streamer mode, stats card, skin packs** (only when the user asks): `python minis.py stream on` opens a window for OBS
+  (docs/STREAMING.md); `python minis.py card` writes a PNG of their record; `python minis.py packs install <zip>` installs a
+  pack file the user gives you - never download one for them (docs/SKIN-PACKS.md).
 - **Restart:** `python minis.py restart` stops everything and starts it again (use it after editing `minis.json`).
 - **Settings:** a `minis.json` next to `minis.py` overrides defaults (see README "Configuration"), e.g. `zone` if the fighters
   overlap the user's taskbar icons, `ignore_sources` to keep a program off the stage.
@@ -153,9 +159,10 @@ login (`print-startup` shows it first; `autostart off` removes it). There is no 
 | symptom | what to do |
 | --- | --- |
 | no fighters on the taskbar | `python minis.py status` (running?), then `python minis.py detect` (which AI programs are seen and how). With nothing detected, nothing is shown. Claude Code and Codex need a session file changed in the last 24 h |
-| fighters cover taskbar icons / sit in the wrong place | set `"zone": [left, right]` in `minis.json` (screen x of the empty stretch), then `python minis.py restart` |
-| nothing visible at all | the taskbar must be at the bottom and not auto-hiding; fullscreen apps hide the fighters |
-| tiny or misplaced on a high-DPI display | only 100% scaling has been observed; integer scaling is untested at 150% / 200%. Tell the user and adjust `zone` |
+| fighters cover taskbar icons / sit in the wrong place | `python minis.py doctor` shows the detected zone. If it is wrong, set `"zone": [left, right]` in `minis.json` (logical px: screen x divided by the sprite scale doctor prints), then `python minis.py restart` |
+| nothing visible at all | an auto-hide taskbar at the bottom: the fighters show only while it is revealed; fullscreen apps hide the fighters |
+| small on a 125-175% display | by design: sprites stay at a whole-number scale (1x) so they are crisp; `python minis.py size 128` is the biggest |
+| fighters on the wrong monitor's taskbar | they use the primary monitor's taskbar; `"monitor": N` in `minis.json` (N from `python minis.py monitors`) picks another |
 | a program is shown that the user does not want | `"ignore_sources": ["<id from detect>"]` in `minis.json` |
 | flashing bothers the user | `python minis.py flash off` |
 | `start` says it is already running | `python minis.py restart` |

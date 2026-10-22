@@ -17,6 +17,73 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
 
 ## OPEN
 
+UX layer (branch `ux`, 2026-10-21): MAC-30 to MAC-37.  Every new window is driven by the shared `minis_win/*_window.py`
+drivers through `minis_mac.shell.Overlay` (the same way the select screen runs on the Mac).  Before testing: `python minis.py
+stop`, then `python minis.py guide --reset` so the first-run cards show, then `python minis.py start`.
+
+- [ ] **MAC-30 (2026-10-21) Settings window (menu-bar icon > Settings...).**
+  - PC change: `minis_core/settings_ui.py` (model), `minis_win/settings_window.py` (driver, activatable NSPanel like the select
+    screen), `minis_mac/startup.py` (Open at login = the LaunchAgent `autostart` writes), host in `minis_core/ux_runtime.py`.
+  - Test: open it from the menu-bar icon (and once with `python minis.py settings`); Up/Down, Left/Right, Enter, Esc; click every
+    row once; toggle **Open at login** on, check `python minis.py autostart status` says on and
+    `~/Library/LaunchAgents/io.github.mrktchris.taskbar-fighters.plist` exists, then off again; Fighter size 96 (restarts),
+    back to 128; click outside the window.
+  - Expected: it sits above the Dock strip, crisp at 2x, takes the keys while open, closes on Esc / Close / a click elsewhere
+    (but NOT in the first second after opening from the command line); the label reads "Open at login"; every change is what
+    `python minis.py settings list` then prints.
+
+- [ ] **MAC-31 (2026-10-21) Fight-zone editor over the Dock strip.**
+  - PC change: `settings_ui.ZoneEdit` + `settings_window.ZoneWindow`: a strip the width of the screen over the "taskbar" band
+    (on a Mac, the Dock strip from `shell.taskbar_rect`) and a 30-pt toolbar above it; press / drag / release events.
+  - Test: Settings > Fight zone > Edit...; drag the right handle, drag the bar, Left/Right arrows; Cancel (Settings comes back);
+    Edit again and Save (the app restarts); `python minis.py zone` shows the saved zone; `python minis.py zone auto`.
+  - Expected: the bar lines up with the Dock strip; dragging is smooth with the button held outside the strip; while editing the
+    Dock band takes no clicks through, the desktop above the toolbar does; the zone lands in `~/Library/Application Support/minis/minis.json` (never in the clone).
+
+- [ ] **MAC-32 (2026-10-21) First-run cards and the legend.**
+  - PC change: `minis_core/guide.py`, `minis_win/guide_window.py` (non-activatable, only the cards take the mouse).
+  - Test: after `guide --reset` and `start`, wait ~5 s; click Next, Next, Got it. Then `python minis.py guide` (the legend) and
+    menu-bar icon > What am I looking at?; once with `python minis.py plates menubar`.
+  - Expected: cards above the Dock strip with arrows ending on the fighter, the plates and the scoreboard; the Dock and windows
+    under the overlay still take clicks except on the cards; it never comes back by itself after Got it / Skip; with plates in
+    the menu bar the plates card says so instead of pointing down.
+
+- [ ] **MAC-33 (2026-10-21) Hover cards beside fading plates.**
+  - PC change: `minis_core/hovercard.py`; each fighter process polls `shell.cursor_pos` every 0.1 s, 0.6 s dwell, card in a
+    click-through `ImagePopup` (`minis_win/ux_window.py`) drawn at the Retina density.
+  - Test: rest the mouse on a fighter, then on its plate (Dock position, then `plates menubar`); move away.
+  - Expected: a crisp card above the fighter / plate (BELOW the plate when the plates are in the menu bar), never under the
+    cursor and never blocking a click; the plate's own fade-on-hover still works; it goes away within ~0.3 s of leaving.
+
+- [ ] **MAC-34 (2026-10-21) Event signals and the rival countdown.**
+  - PC change: `minis_core/signals.py` overlays as front / back effects in the fighter frame; the rival countdown is a new bus
+    field (`rival_in`, `rival_kind`) drawn over the sleeping plate's second line (`ux_runtime._rival_plate`, KDraw at 2x).
+  - Test: let Claude Code finish a task (flag over the fighter until you hover it); leave a tool call unanswered 45 s (amber
+    halo); with one program asleep, read its plate; `python minis.py signals off` / `on`.
+  - Expected: crisp marks moving with the fighter, nothing clipped at the top of the window; the sleeping plate reads "rival
+    match in ~N min" at 2x without overlapping "sleeping".
+
+- [ ] **MAC-35 (2026-10-21) Results strip after a match.**
+  - Test: `python minis.py demo match`; watch the end.
+  - Expected: a 4-second strip right-aligned above the scoreboard (which sits at the right end of the strip on a Mac), winner
+    posing, loser bowing on the Dock too; it fades and never takes a click.
+
+- [ ] **MAC-36 (2026-10-21) Instant replay window and GIF export.**
+  - PC change: `minis_win/replay_window.py` (frames from a worker thread), `minis_core/replay.py` (`exports_dir()` =
+    `~/Library/Application Support/minis/exports`; `reveal()` runs `open -R` on the new file).
+  - Test: after a match, menu-bar icon > Replay last K.O.; click it to close; > Save last fight as GIF; `python minis.py replay
+    code`, then `python minis.py replay <that code> --gif /tmp/f.gif`.
+  - Expected: the replay plays smoothly above the Dock (the K.O. in slow motion) without stalling the scoreboard; the GIF appears
+    in `~/Library/Application Support/minis/exports/`, a toast says so and Finder opens with the file selected; with a PATH it
+    is written there and Finder does not open; no Screen Recording prompt anywhere (nothing is captured).
+
+- [ ] **MAC-37 (2026-10-21) Move book.**
+  - PC change: `minis_core/collection.py`, `minis_win/book_window.py`; `minis_mac/geometry.MAC_KEYS` now maps Page Up / Page
+    Down / Home (116 / 121 / 115).
+  - Test: menu-bar icon > Move book...; arrows, Tab, fn+Up / fn+Down (page), Esc; click a fighter, a tab, a cell;
+    `python minis.py book list`.
+  - Expected: the window takes the keys while open, seen moves animate, unseen are silhouettes; counts match `book list`.
+
 - [ ] **MAC-5 (2026-10-15) Menu-bar menu items.**
   - PC change: the menu is the shared `minis_win/tray.py` logic (Select fighters..., Pause animations, Flash effects,
     Plates, Rival mode, Start/Exit arena, Bout now, Restart Taskbar Fighters, Quit Taskbar Fighters) rendered by
@@ -126,7 +193,44 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
   - Mac 2026-10-16: not run (needs forged weapons, see MAC-13, and watching the full screen, which this session does not
     capture).
 
-- [ ] **MAC-23 (2026-10-21) Optional sound effects through NSSound (off by default).**
+- [ ] **MAC-23 (2026-10-21) Streamer mode window (branch `growth`).**
+  - PC change: `python minis.py stream on` starts `minis.py stream run`, which opens `minis_mac/stream_window.py`: an
+    ordinary titled, closable, resizable NSWindow (normal level) whose layer shows the composited fight strip, and switches
+    that process to a regular app (Dock icon). Frames come from the fighters' own dumps (`minis_core/dump.py`, request id
+    `stream`), never a capture. Written on Windows; never run on a Mac.
+  - Test: `python minis.py start`, `python minis.py stream on`, `python minis.py demo match`; resize the window a few times;
+    `python minis.py stream snapshot /tmp/s.png`; `python minis.py stream on --transparent` (after `stream off`); close
+    the window with its red button; `stream status`. If OBS is installed: macOS Screen Capture > Window Capture > the
+    stream window + Chroma Key.
+  - Expected: no permission prompt from Taskbar Fighters; fighters, plates (Retina HUD images reduced smoothly, readable
+    text) and scoreboard on green at a whole-number scale, crisp (nearest); the window is a normal window (goes behind
+    others, Cmd-Tab lists Python); closing it ends the stream process and `~/Library/Application Support/minis/dump/stream`
+    is gone; `stream off` restores *Desktop weapons* if it was on. Report the snapshot and whether `--transparent` keeps
+    its alpha in OBS.
+
+- [ ] **MAC-24 (2026-10-21) Stats card, achievements toast, careers (branch `growth`).**
+  - PC change: `python minis.py card [--share]` renders a 1200 x 675 PNG (Pillow; fonts via `render.font`, Arial on macOS);
+    the card goes to `~/Library/Application Support/minis/exports/` and `--share` runs `open -R <file>`; the fighter right-click menu and the menu-bar menu have
+    *Share my stats card…*. A new achievement shows as a 3 s toast in the scoreboard's second row (drawn at the HUD
+    density, 2x on Retina).
+  - Test: `python minis.py card --out /tmp/card.png` and open it; the menu item once; `python minis.py achievements`;
+    `python minis.py demo match` until a toast appears (a first KO or a clean sweep on a fresh data folder).
+  - Expected: card text fits its boxes with the macOS fonts (names, "HEAD TO HEAD" lines, badge names under the
+    medallions); Finder opens the exports folder with the card selected; the toast's star and text are sharp at 2x.
+
+- [ ] **MAC-25 (2026-10-21) Skin packs folder and the new process names (branch `growth`).**
+  - PC change: packs install into `~/Library/Application Support/minis/packs/<name>/` and appear in fighter select as
+    `pack-<name>`; new macOS detection names: `Claude.app` is now the *Claude desktop* program (no longer claimed for
+    Claude Code), `ChatGPT.app`, `Zed.app` / `zed`, `junie`, `cline` and `@continuedev/cli` under node, `q` / `qchat` /
+    `Amazon Q.app`, `crush`, `goose` / `Goose.app`, `Jan.app`. All from vendor docs, unverified on a Mac.
+  - Test: `python tools/make_example_pack.py --no-hd --out /tmp/packs`, `python minis.py packs install
+    /tmp/packs/shadow-ronin.zip`, `python minis.py packs list`, open fighter select (the LOOK grid has Shadow Ronin),
+    `python minis.py skin claude "Shadow Ronin"`, `packs remove shadow-ronin`. Then `python minis.py detect` with whichever
+    of those apps are installed open.
+  - Expected: the pack installs, draws (2x upscaled 64 px art at 128) and removes cleanly; `detect` names each running app
+    on its own row, and the Claude desktop app shows as *Claude desktop* while Claude Code keeps its transcript row. Report
+    any app whose real executable name differs (`ps -axo comm | grep -i <app>`), so the PC side can fix `RULES`.
+- [ ] **MAC-26 (2026-10-21) Optional sound effects through NSSound (off by default).**
   - PC change: `python minis.py sound on|off` (control.json `sound`, default off) and a **Sound effects** checkmark in the
     menu-bar menu and the fighter's right-click menu. Eight short original sounds generated by `art/build_sfx.py` into
     `assets/sfx/*.wav` (22050 Hz mono, peak about -12 dBFS). Playback: `minis_core/sfx.py` hands the file to
@@ -140,7 +244,7 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
     on screen. No sound doubles (slot `b` must stay silent). No permission prompt. Report if the first sound of a session
     stalls a frame (a hitch on the first hit) - the PC plays from a worker thread, the Mac on the main thread.
 
-- [ ] **MAC-24 (2026-10-21) V9 fight feel: frame data, 60 fps fights, damage % on the plates, the arena's task-finished super.**
+- [ ] **MAC-27 (2026-10-21) V9 fight feel: frame data, 60 fps fights, damage % on the plates, the arena's task-finished super.**
   - PC change (shared engine): `minis_core/framedata.py` - hitlag that freezes both fighters by damage, knockback that grows
     with an accumulated damage % (shown on the plate during a match, in place of the state word, white -> amber -> red),
     hitstun from knockback, tumbles along a real arc with a tech or a missed tech, shieldstun and pushback. Fights redraw at
@@ -154,7 +258,7 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
     finishing agent's fighter opening the next arena exchange with its super. Report the plate at Retina scale (the % is
     9 px bold) and the arena's fps / cpu from the profile line.
 
-- [ ] **MAC-25 (2026-10-22) Fighters learn: learning.json, the learned-move cache and its out-of-process builds.**
+- [ ] **MAC-28 (2026-10-22) Fighters learn: learning.json, the learned-move cache and its out-of-process builds.**
   - PC change (shared engine + art): `minis_core/learning.py` keeps `~/Library/Application Support/minis/learning.json`
     (ids, counters, seeds; written by both fighter processes under `learning.json.lock`) and a frame cache at
     `~/Library/Application Support/minis/learned/<character>/` (PNG + JSON, at most 24 MB, LRU). Render-tier moves are

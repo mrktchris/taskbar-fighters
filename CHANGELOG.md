@@ -36,6 +36,107 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
 - **Optional sound effects, off by default**: `python minis.py sound on|off`, a menu checkmark, eight original sounds generated
   by `art/build_sfx.py`; winsound on Windows, NSSound on macOS; one process plays, rate-limited, quiet when paused or hidden.
 
+## Unreleased - growth
+
+- **Streamer mode** (`python minis.py stream on|off|status|snapshot`, tray *Streamer mode (OBS window)*): a normal,
+  resizable, non-topmost window "Taskbar Fighters — Stream" with the live fight strip (fighters, plates, scoreboard) on a
+  chroma-key background (default `#00FF00`, `--chroma`), whole-number scaling, `--no-plates`, experimental `--transparent`.
+  Built from the processes' own window images through the existing self-dump (`minis_core/dump.py`), never a screen
+  capture; desktop weapons are switched off while streaming. `minis_core/stream.py`, `minis_win/stream_window.py`,
+  `minis_mac/stream_window.py` (experimental), [docs/STREAMING.md](docs/STREAMING.md), `tools/stream_preview.py`.
+- **Stats card** (`python minis.py card [--out] [--share]`, menus *Share my stats card…*; written to
+  `<data folder>/exports/` unless you name an existing folder or a `.png` in one): a 1200 x 675 PNG with each
+  program's sprite, rank, W-L, win %, streak, favourite move and head-to-head, an identity line ("Your main: CLAUDE ·
+  34-29 vs Codex"), and every achievement badge. `minis_core/stats_card.py`, `tools/card_preview.py`.
+- **Careers, head-to-head and ranks**: lifetime per-program totals and per-pair records in `record.json`
+  (`totals`, `h2h`), ranks by lifetime wins that never demote; `minis.py card` prints them.
+- **Achievements** (`python minis.py achievements`): 22 Fight / Discovery / Partnership badges with open criteria and
+  progress, none for token use, hours or time of day; persisted in `achievements.json`, a 3 s toast on the scoreboard.
+  `minis_core/achievements.py` (a documented public API for the UX layer).
+- **Match log with replay plans**: `record.json` keeps the last 500 matches (`log`) with KO / flawless / comeback /
+  ultimate / set-piece facts and the match's seed and lineup (`replay`), enough for `rounds.make_match` to rebuild the
+  same fight (tested).
+- **More AI programs detected**: Claude desktop (its own program now; `Claude.app` is no longer claimed for Claude Code),
+  ChatGPT desktop, Zed, Junie, Continue CLI, Cline CLI, Amazon Q Developer CLI (macOS), Crush, Goose, Jan; VS Code's
+  extension host is never mistaken for Cline / Continue / Roo. `detect` says when a program has no process name on this OS.
+- **Community skin packs** (`python minis.py packs list|install|remove|check`): a documented, data-only format
+  (`pack.json` + 64 / 128 px sheets), strict validation and safe zip install, shown in fighter select as `pack-<name>`;
+  `tools/make_example_pack.py`. [docs/SKIN-PACKS.md](docs/SKIN-PACKS.md). Codex pet import is documented as future work
+  (its format is not knowable offline).
+
+- **Review fixes (Codex review of `growth`).** Exports (card, stream snapshot) default to `<data folder>/exports/` and
+  only go elsewhere to an existing folder or `.png` path you name; `stream on` takes an O_EXCL `stream.lock` before it
+  spawns, so two quick starts open one stream, and a stream only ever closes out its own state; pack PNGs are capped by
+  their header size before decoding (per sheet and 256 MiB per pack); malformed pack metadata is always a plain refusal;
+  `tools/make_example_pack.py` validates `--name` before touching any folder; the Win32 stream window passes an owned
+  pixel buffer and is tested by reading back its own pixels. Second review: a stale `stream.lock` is reclaimed under a
+  guard so two starters never both take it; `stream off` reaches a stream still opening its window; `--scale`,
+  `--width`, `--height` are capped (8 / 4096) and a frame never exceeds 4096 x 2304; `packs.FIGHTER_ID_RE` is the
+  fighter-id contract for fight codes (pack names may contain hyphens).
+
+## Unreleased - Windows on strangers' PCs (branch `win-robust`)
+
+## Unreleased - UX layer (branch `ux`)
+
+### UX layer - getting around (branch `ux`)
+
+Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.md](docs/RESEARCH-UX.md)), keeping to its
+"do not do" list: no popups that take focus, no network, no new capture, no guilt or streak pressure.
+
+- **Settings window** (tray > *Settings...*, `minis.py settings`): a pixel-art window of its own with fighter size, plates,
+  flash effects, desktop weapons (default unchanged: real pixels; its help line is amber while on), rival mode, who wins,
+  the results strip, hover cards, event signals, **Start with Windows** (one `Taskbar Fighters.lnk` in shell:startup,
+  an existing one for this copy reused, one for another copy left alone) / **Open at login** (the macOS LaunchAgent), and a
+  **drag-to-set fight zone** over the taskbar (Save / Reset to auto; written to the data folder's own `minis.json`, which
+  overrides the hand-written one; the fighters restart). Every row is a command too: `settings list|set`, `startup`, `zone`,
+  `results|cards|signals on|off`. The app writes only under its data folder, or to a path you choose (plus the startup entry
+  you turn on yourself).
+- **The UI has its own pixel font** (`minis_core/pixelfont.py`, generated in code: cap height 7, proportional, regular /
+  bold / tall variants for 8-12 px). FreeType's monochrome hinting of the OS fonts tore 9-10 px words apart ("m inis",
+  "C laude") and macOS drew them with other fonts again; now every small-text surface (plates, scoreboard, select screen and
+  every new window) renders pixel for pixel the same on Windows, macOS and in the frozen bundle, with no OS font involved.
+  OS fonts remain only for the large banners and the arena HUD. No help line, caption or toast is cut with "..." any more:
+  they wrap.
+- **First-run guide + legend**: three cards pointing at the real fighter, plates and scoreboard, once (ux.json); tray >
+  *What am I looking at?* / `minis.py guide` shows a 10-second legend.
+- **Hover cards**: rest the mouse on a fighter or plate for the program, its state in words with how long, context, plan,
+  record and head-to-head against the current opponent. Click-through, no focus, no content.
+- **Event signals**: done flag until hovered; needs-you amber halo pulse and a wave; SECOND WIND on a context compaction with
+  the plate meter refilling; DANGER near the limit and FINISH! with the K.O.  Paused / quiet / flash-off keep them still.
+- **Results moment**: a 4-second strip over the scoreboard ("CODEX WINS 2-1 · 21 hits · best combo 5 · ultimate landed"),
+  the winner poses and the loser bows on the taskbar.
+- **Rival countdown** on a sleeping plate ("rival match in ~6 min") and in its hover card.
+- **Instant replay, GIF export and fight codes**: tray > *Replay last K.O.* plays the deciding exchange (K.O. in slow motion)
+  in a window above the taskbar; *Save last fight as GIF* writes the whole match to `<data folder>\exports` and opens that folder with the file
+  selected (`replay --gif PATH` writes where you say); both are
+  offline renders from the stored plan (`replay.json`, numbers and ids only). `minis.py replay code` prints a short code
+  (`TF2-claude-codex-...`: seed, characters, positions, odds as a ratio, outcome check) that `minis.py replay CODE` plays.
+  Fighter ids in a code are checked against an allowlist (`pack-shadow-ronin` style ids round-trip, a hyphen written as a
+  dot), GIF file names are built from sanitized ids and the default output is refused unless it resolves under `exports`.
+- `ux.json`, `collection.json` and the data folder's `minis.json` are written under a small lock file (`filelock.py`): the
+  CLI, the director and both fighter processes share them, and two read-modify-writes no longer drop each other's change.
+- **Move book** (tray > *Move book...*, `minis.py book`): every move, set piece and finisher per fighter, seen ones animated,
+  unseen as silhouettes; seen move ids in `collection.json`.
+- Tray menu gains Settings..., Move book..., What am I looking at?, Replay last K.O., Save last fight as GIF.
+- New modules: `minis_core/{ux,ux_runtime,ux_cli,settings_ui,guide,hovercard,signals,results,replay,collection}.py`,
+  `minis_win/{ux_window,settings_window,book_window,guide_window,replay_window,startup}.py`, `minis_mac/startup.py`;
+  `tools/ux_previews.py` renders every new window offline; `tests/test_ux.py`.
+- macOS: the same windows through the NSPanel overlay; PgUp/PgDn/Home keys mapped for the book; real-Mac checks are
+  MAC-30 to MAC-37 in docs/MAC-HANDOFF.md.
+
+### Windows on strangers' PCs (branch `win-robust`)
+
+- **Any taskbar edge.** Bottom: on the taskbar as before. Top / left / right: a strip along the bottom of the work area
+  beside the taskbar. Auto-hide at the bottom: shown only while the taskbar is revealed (never over its 2 px reveal strip).
+- **The zone finds itself.** The empty stretch of the taskbar is detected from the RECTS of its elements (UI Automation
+  bounding rects, the shell's `Start` / `MSTaskListWClass` / `TrayNotifyWnd` windows as a fallback; no names or titles),
+  for centred and left-aligned icons, Windows 10 and 11, re-read every 5 s. A `zone` in `minis.json` still wins
+  (`zone_auto`); `monitor` picks another monitor's taskbar.
+- **DPI.** Per-monitor v2 awareness with fallbacks (reported by `doctor`); integer sprite / HUD scale from the band at every
+  DPI; the tray icon reloads at the new size on a DPI change; `monitors` and `doctor` show each monitor's scale.
+- **Live re-layout** on a display change, DPI change, work-area change and an Explorer restart (TaskbarCreated).
+- `doctor` prints the detected edge, DPI, layout and zone.
+
 ## v1.0.0 - 2026-10-16 (V6 -> V8)
 
 The first tagged release: a one-click Windows zip, a wheel on PyPI (`pip install taskbar-fighters`) and an experimental,

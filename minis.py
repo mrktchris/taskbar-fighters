@@ -89,6 +89,9 @@ def load_config(path=None, log=None):
                 cfg = dict(cfgmod.DEFAULTS)
         except (OSError, ValueError) as e:
             problem = f'minis.json could not be read ({type(e).__name__}): ignored, defaults used'
+    if path is None:
+        from minis_core import ux
+        ux.apply_overlay(cfg)                          # what Settings / `minis.py zone` saved, in the data folder
     for k, lo, hi in FPS_KEYS:
         try:
             v = float(cfg.get(k, cfgmod.DEFAULTS.get(k, lo)))
@@ -288,13 +291,20 @@ def on_screen(now=None, taskbar=None):
         if left is not None:
             tail += ' (hidden)' if left == float('inf') else f' (hidden {int(left // 60) + 1}m)'
         parts.append(f"{s}: {a.get('program') or a.get('source')}{tail}")
+    st = None
     if taskbar is None:
         try:
             shell = plat.shell()
-            taskbar = (shell.taskbar_rect(), shell.taskbar_autohide())
+            if getattr(shell, 'taskbar_info', None) is not None:
+                st = taskbar_stage(shell, load_config())        # Windows: every edge and auto-hide is laid out (config.stage)
+            else:
+                taskbar = (shell.taskbar_rect(), shell.taskbar_autohide())
         except Exception:
             taskbar = None
-    if taskbar is not None:
+    if st is not None:
+        if not st['usable']:
+            why.append(f"{st['why']} (fighters hide)")
+    elif taskbar is not None:
         rect, autohide = taskbar
         if rect[4] != 3:
             why.append('the taskbar is not at the bottom (fighters hide)')
@@ -1200,7 +1210,15 @@ def tray_flags(cfg, board):
     return dict(paused=control.paused(), plates=control.plates_on(), arena=control.arena_active(),
                 rival=control.rival_on(default=cfg.get('rival', True)), flash=control.flashes_on(default=cfg.get('flashes', True)),
                 forge=control.forge_on(default=cfg.get('forge', True)), select_ok=board is not None, arena_ok=board is not None,
-                sound=control.sound_on())
+                sound=control.sound_on(), stream=_stream_on(), ux_ok=board is not None)
+
+
+def _stream_on():
+    from minis_core import stream
+    try:
+        return stream.running(alive=pid_alive) is not None
+    except Exception:
+        return False
 
 
 def tray_choice(choice, flags, board, wall=time.time, log=None, quit_fn=None, restart_fn=None):
@@ -1227,12 +1245,35 @@ def tray_choice(choice, flags, board, wall=time.time, log=None, quit_fn=None, re
             board.act('arena')                             # the scoreboard's Arena button: start it, or ask it to leave
     elif choice == T.BOUT:
         control.request_demo('match', now=wall())          # what the scoreboard's bout button asks for
+    elif choice == T.CARD:
+        if not share_card():
+            log.info('stats card: refused (tests)')
+    elif choice == T.STREAM:
+        if os.environ.get('MINIS_TESTING'):
+            log.info('stream: refused (tests)')
+        else:                                              # the same CLI the owner would type, in a child process
+            spawn_detached(self_argv('stream', 'off' if flags.get('stream') else 'on'))
     elif choice == T.RESTART:
         if not (restart_fn or restart_all)():
             log.info('restart: refused (tests)')
     elif choice == T.QUIT:
         if not (quit_fn or quit_all)():
             log.info('quit: refused (tests)')
+    elif choice in T.UX_KINDS:                             # Settings, Move book, legend, replay, GIF: the scoreboard hosts them
+        from minis_core import ux
+        ux.request(T.UX_KINDS[choice], now=wall())
+
+
+def ux_actions():
+    """What the UX windows may do beyond control.json: restart (a new size or zone), and the start-at-sign-in entry
+    (Windows: the Startup-folder shortcut, reused when it is already ours; macOS: the LaunchAgent)."""
+    def startup():
+        if plat.is_mac():
+            from minis_mac.startup import Startup
+            return Startup(sys.executable, ROOT, argv=self_argv('start'))
+        from minis_win.startup import Startup
+        return Startup(read_shortcut, write_shortcut, shortcut_is_ours, shortcut_spec)
+    return dict(restart=restart_all, startup=startup)
 
 
 def director_tray(shell, cfg, board, log, wall=time.time):
@@ -1285,6 +1326,36 @@ class Watchdog:
         return done
 
 
+def taskbar_stage(shell, cfg):
+    """config.stage() for this shell: the Windows backend describes the taskbar with rects (taskbar_info: edge, auto-hide,
+    DPI, monitor, the elements that mark the empty stretch); a shell without it (macOS, the tests' fakes) gives the old
+    rect + edge + autohide and is laid out exactly as before."""
+    fn = getattr(shell, 'taskbar_info', None)
+    if fn is not None:
+        return cfgmod.stage(fn(cfg.get('monitor')), cfg)
+    l, t, r, b, edge = shell.taskbar_rect()
+    info = dict(legacy=True, rect=(l, t, r, b), edge=edge, autohide=shell.taskbar_autohide())
+    if edge != 3:
+        info['screen'] = shell.screen_size()
+    return cfgmod.stage(info, cfg)
+
+
+def select_area(st):
+    """(x0, x1, top, monitor_top) for select_window.placement: above the fighters' band, inside the band's monitor (whose
+    top may be negative: a monitor above the primary)."""
+    mon = st.get('monitor') or (st['span'][0], 0, st['span'][1], st['floor'])
+    return (max(st['span'][0], mon[0]), min(st['span'][1], mon[2]), st['band'][0], mon[1])
+
+
+def layout_epoch(shell):
+    """The backend's layout-change counter (display / DPI / work-area change, Explorer restart), or None without one."""
+    fn = getattr(shell, 'layout_epoch', None)
+    try:
+        return fn() if fn else None
+    except Exception:
+        return None
+
+
 def hud_density(shell):
     """How many times finer the HUD (plates, scoreboard) is drawn: macOS draws it at the screen's backing scale (2 on
     Retina, so the text is sharp); Windows and anything without the call: 1, i.e. unchanged."""
@@ -1319,6 +1390,7 @@ class Scoreboard:
         self.select = None                                # the open SelectWindow, or None
         self.stopper = ArenaStopper()
         self.hud_k = 1                                    # HUD pixel density (2 on a Retina Mac)
+        self.ux = None                                    # minis_core.ux_runtime.Host: Settings, book, guide, replay, results
 
     def left(self):
         """Logical x of the widget.  Windows: left of the icon cluster (SB.left_x).  macOS, unless scoreboard_x is set: the
@@ -1334,19 +1406,18 @@ class Scoreboard:
         return x
 
     def geometry(self):
-        l, t, r, b, edge = self.shell.taskbar_rect()
-        ok = edge == 3 and not self.shell.taskbar_autohide()
-        if edge != 3:
-            _, sh = self.shell.screen_size()
-            b, t = sh, sh - 48
-        band = max(24, b - t)
-        sc = cfgmod.ui_scale(band)
+        st = taskbar_stage(self.shell, self.cfg)
+        cfgmod.apply_stage(self.cfg, st)                  # a detected zone moves the widget with it (left_x reads cfg['zone'])
+        top, b = st['band']
+        band = b - top
+        sc = st['scale']
         y = b - band + max(0, (band - self.SB.H * sc) // 2)
-        return dict(scale=sc, y=y, usable=ok)
+        return dict(scale=sc, y=y, usable=st['usable'], zone=tuple(self.cfg['zone']), autohide=st['autohide'], stage=st)
 
     def setup(self):
         from minis_core import control
         self.g = self.geometry()
+        self.last['epoch'] = layout_epoch(self.shell)
         self.hud_k = hud_density(self.shell)
         self.ov = self.shell.Overlay('minis-scoreboard', self.left() * self.g['scale'], self.g['y'], self.SB.W, self.SB.H,
                                      scale=self.g['scale'], on_event=self.on_event,
@@ -1355,6 +1426,9 @@ class Scoreboard:
         self.ov.show(False)
         req = control.picker_request(now=self.wall())
         self.last['picker'] = req and req.get('id')       # a request from before this process started is not replayed
+        from minis_core import ux_runtime
+        self.ux = ux_runtime.Host(self, ux_actions())
+        self.ux.setup()
 
     def on_event(self, kind, mx, my):
         name = self.SB.hit(mx, my, self.state)
@@ -1414,7 +1488,11 @@ class Scoreboard:
                 centre = int(self.shell.screen_size()[0]) // 2
             except Exception:
                 pass
-        self.select = SelectWindow(self.shell, model, self.mono, self.select_done, scale=sc, centre_x=centre)
+        st = (self.g or {}).get('stage')
+        area = None
+        if st and getattr(self.shell, 'taskbar_info', None) is not None:     # Windows: above the fighters' band, on its monitor
+            area = select_area(st)
+        self.select = SelectWindow(self.shell, model, self.mono, self.select_done, scale=sc, centre_x=centre, area=area)
 
     def select_done(self, model):
         from minis_core import control
@@ -1437,8 +1515,12 @@ class Scoreboard:
         from minis_core import history
         buses = {s: bus.read(s, now=wall) for s in SLOTS}
         hidden = {s: v for s in SLOTS for v in [control.hidden_left(s, now=wall)] if v is not None}
+        if getattr(self, 'toaster', None) is None:                    # growth: achievement toasts (3 s, row 2)
+            from minis_core import achievements
+            self.toaster = achievements.Toaster(wall=self.wall)
         return self.SB.Model.state(assign, buses, records.read(), control.paused(), control.arena_active(now=wall), control.winners(),
-                                   pressed=self.pressed, spark=history.last_days(7, wall), now=wall, hidden=hidden)
+                                   pressed=self.pressed, spark=history.last_days(7, wall), now=wall, hidden=hidden,
+                                   toast=self.toaster.poll(wall))
 
     def step(self):
         """One iteration; None when the window is gone."""
@@ -1453,10 +1535,13 @@ class Scoreboard:
             self.log.info('%s', msg)
         if self.pressed and now - self.press_t > 1.5:
             self.pressed = None
-        if now - self.last['tb'] >= 2.0:
+        ep = layout_epoch(self.shell)
+        if ep != self.last.get('epoch'):                  # display / DPI / taskbar change, Explorer restart: re-lay out now
+            self.last['epoch'], self.last['tb'] = ep, -1e9
+        if now - self.last['tb'] >= (0.25 if self.g.get('autohide') else 2.0):    # an auto-hide bar is followed closely
             self.last['tb'] = now
             g2 = self.geometry()
-            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y']:
+            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y'] or g2.get('zone') != self.g.get('zone'):
                 self.ov.set_scale(g2['scale'])
                 self.ov.move(self.left() * g2['scale'], g2['y'])
                 self.last['sig'] = None
@@ -1486,10 +1571,17 @@ class Scoreboard:
                 self.last['sig'] = sig
         elif not self.ov.visible and now - self.last['read'] >= 0.25:
             self.last['read'] = now
+        if self.ux is not None:
+            try:
+                self.ux.step()
+            except Exception as e:
+                self.log.error('ux\n' + safe_traceback(e))
         return 0.05
 
     def close(self):
         try:
+            if self.ux is not None:
+                self.ux.close()
             if self.select:
                 self.select.close()
             if self.ov:
@@ -1541,21 +1633,41 @@ class Fighter:
         self.flash = True             # control.json `flashes`: off = no white flash frames on this fighter
         self.ctl_hidden = None        # control.hidden_left() for this slot (hide / hide 1 h, undone by `show`)
         self.stopper = ArenaStopper()
+        from minis_core import ux_runtime
+        self.ux = ux_runtime.SlotUx(self)   # event signals, hover card, rival countdown, post-match beat, move book, replays
 
     # -------------------------------------------------- setup
     def geometry(self):
-        l, t, r, b, edge = self.shell.taskbar_rect()
-        ok = edge == 3 and not self.shell.taskbar_autohide()
-        if edge != 3:
-            _, sh = self.shell.screen_size()
-            b, t = sh, sh - 48
-        band = max(24, b - t)
-        sc = cfgmod.ui_scale(band)
+        """Where this side is drawn (config.stage via taskbar_stage): the integer sprite scale, the window's y, the plate's y,
+        whether it may show, and the zone (a detected one is put into cfg, so plates, fight zone and brain follow)."""
+        st = taskbar_stage(self.shell, self.cfg)
+        cfgmod.apply_stage(self.cfg, st)
+        t, b = st['band']
+        band = b - t
+        sc = st['scale']
         py = b - band + max(0, (band - cfgmod.PLATE_H * sc) // 2)          # plate: vertically centred in the taskbar band
         # the window's bottom stays at the taskbar bottom (feet on the same line at every size); a bigger fighter reaches higher.
         # V7.1: the window also reaches headroom_px above the cell, where an airborne fighter (the `air` lift) is drawn
         top = self.cell - cfgmod.feet_drop(self.size) + cfgmod.headroom_px(self.size)
-        return dict(scale=sc, y=b - top * sc, bottom=b, usable=ok, plate_y=py)
+        return dict(scale=sc, y=b - top * sc, bottom=b, usable=st['usable'], plate_y=py, zone=tuple(self.cfg['zone']),
+                    autohide=st['autohide'], stage=st)
+
+    def rezone(self, now):
+        """The zone moved (the icon cluster grew or shrank, the taskbar moved, another DPI): the brain gets the new fight zone
+        and homes - the same split Brain.__init__ makes - a bout in progress is called off (its plan was laid out in the old
+        zone), and a fighter now outside its home walks back.  The plates follow on their own (plate_xy reads cfg['zone'])."""
+        b = self.brain
+        if b is None:
+            return
+        z0, z1 = self.logic_zone() or cfgmod.fight_zone(self.cfg)
+        b.zone = (z0, z1)
+        mid, gap = (z0 + z1) / 2.0, self.cfg['gap_px']
+        b.home = (z0 + 12, mid - gap) if self.slot == 'a' else (mid + gap, z1 - 12)
+        b.home_x = max(b.home[0], min(b.home[1], b.home_x))
+        b.abort(now)                                       # (walks back to the new home_x)
+        if b.mode == 'home':
+            b.x = max(b.home[0], min(b.home[1], b.x))
+        self.log.info('layout: zone %s (%s)', list(self.cfg['zone']), self.g['stage'].get('zone_src') if self.g.get('stage') else '-')
 
     def plate_x(self):
         return cfgmod.plate_left(self.cfg, self.slot) * self.g['scale']
@@ -1609,7 +1721,8 @@ class Fighter:
         from minis_core.brain import Brain
         from minis_core.telemetry import Snapshot
         self.resolve_size()
-        self.g = self.geometry()
+        self.g = self.geometry()                           # before the brain: a detected zone is its zone from the start
+        self.last['epoch'] = layout_epoch(self.shell)
         now = self.mono()
         self._apply_assignment(self._read_assignment(), now, force=True)
         atlas = self.lib[self.assigned['character'] if self.assigned else 'claude']
@@ -1653,6 +1766,7 @@ class Fighter:
         """The brain's match result (it only knows characters), keyed by PROGRAM (V6): the round score says which side
         won; the characters are the fallback.  Written by the left side only (the brain's own rule)."""
         from minis_core import director, records, rounds
+        self.ux.on_record()                               # keep the match for replays / the results strip (numbers + ids)
         mine = (self.assigned or {}).get('source')
         theirs = (director.slot_assignment(director.read_assign(self.assign_path), other(self.slot)) or {}).get('source')
         wins = ((self.brain.round or {}).get('wins') or {}) if self.brain is not None else {}
@@ -1665,7 +1779,10 @@ class Fighter:
             else:
                 return rounds.record_result(winner_char, loser_char)      # cannot tell: the old per-character line
             score = (max(me, op), min(me, op)) if me is not None and op is not None else None
-            return records.record(mine if won else theirs, theirs if won else mine, score=score)
+            from minis_core import achievements                       # growth: numbers about the match, for the badges
+            facts = achievements.match_facts(getattr(self.brain, 'last_match', None), {self.slot: mine, other(self.slot): theirs},
+                                             plan=(getattr(self.brain, 'script', None) or {}).get('plan'))
+            return records.record(mine if won else theirs, theirs if won else mine, score=score, facts=facts)
         return rounds.record_result(winner_char, loser_char)
 
     # -------------------------------------------------- assignment + controls
@@ -1805,6 +1922,8 @@ class Fighter:
             control.set_rival(not flags['rival'], cp)
         elif choice == L.SELECT:
             control.request_picker(SLOTS, cp, now=self.wall())       # the director hosts the select screen
+        elif choice == L.CARD:
+            share_card()
 
     def toggle_arena(self):
         """Menu / scoreboard: start the arena on the configured (or the only other) monitor, or ask it to leave (without
@@ -1830,7 +1949,7 @@ class Fighter:
                 self.gone_written = bus.write_gone(self.slot, root=self.bus_root, now=wall)
             return
         self.gone_written = False
-        pub = self.brain.publish()
+        pub = self.ux.publish_extra(self.brain.publish(), wall)    # + the rival countdown for a sleeping partner's plate
         ev = pub['event'] or {}
         evkey = (ev.get('run'), ev.get('seq'))
         key = (pub['state'], pub['mode'], int(pub['x']), pub['facing'], pub['anim'], pub['ctx'], evkey, pub['paused'], pub['character'])
@@ -1905,6 +2024,7 @@ class Fighter:
             self.last['tele'] = now
             acts = self.detector.poll(wall)
             self.snap = acts[0].snapshot() if acts else Snapshot(b.character, 'sleeping')
+            self.ux.on_snapshot(self.snap, now, wall)      # before the brain consumes the one-shot events
         if now - self.last['pbus'] >= 0.2:
             self.last['pbus'] = now
             self.partner = bus.read(other(self.slot), root=self.bus_root, now=wall)
@@ -1924,13 +2044,19 @@ class Fighter:
             self.snap.events = []                          # events are consumed by the first tick that sees them
             self._log_bout_notes()
         self._publish(wall)
-        if now - self.last['tb'] >= 2.0:
+        ep = layout_epoch(self.shell)
+        if ep != self.last.get('epoch'):                   # display / DPI / taskbar change, Explorer restart: re-lay out now
+            self.last['epoch'], self.last['tb'] = ep, -1e9
+        if now - self.last['tb'] >= (0.25 if self.g.get('autohide') else 2.0):   # an auto-hide bar is followed closely
             self.last['tb'] = now
             g2 = self.geometry()
-            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y'] or g2['plate_y'] != self.g['plate_y']:
+            rezoned = g2.get('zone') != self.g.get('zone')
+            if g2['scale'] != self.g['scale'] or g2['y'] != self.g['y'] or g2['plate_y'] != self.g['plate_y'] or rezoned:
                 ov.set_scale(g2['scale'])
                 ov.move(ov.x, g2['y'])
                 self.g = g2
+                if rezoned:
+                    self.rezone(now)
                 self.pov.set_scale(g2['scale'])
                 self.pov.move(*self.plate_xy())
                 self.last['sig'] = self.last['psig'] = None
@@ -1952,7 +2078,7 @@ class Fighter:
             self.last['top'] = now
         fps = self.cfg.get('fps_fight', 30) if b.mode == 'script' else self.cfg['fps_active']    # V6: 30 fps while a fight script runs
         if ov.visible:
-            v = b.view(now)
+            v = self.ux.decorate(b.view(now), now)
             sig = (v['anim'], v['frame'], int(v['x']), v['facing'], v['dim'], (v['proj'] or {}).get('x', 0) // 2, b.character,
                    int(now * fps) if v.get('busy') else 0, v.get('eye'))       # effects / banners: redraw at the active rate
             quiet = self.paused or (v['anim'] in ('idle', 'sleep', 'wait', 'dizzy', 'rage', 'type', 'work') and b.mode == 'home' and not v.get('busy'))
@@ -1964,6 +2090,7 @@ class Fighter:
                 self.last['sig'], self.last['draw'] = sig, now
         if self.pov.visible:
             self._draw_plate(now)
+        self.ux.step(now, wall)
         return 0.25 if (self.paused or not ov.visible) else min(0.05, 1.0 / fps)
 
     def _show_plate(self):
@@ -1975,12 +2102,13 @@ class Fighter:
     def _draw_plate(self, now):
         """The plate window only redraws when what it shows changes (state, the rounded numbers, the blink phase)."""
         from minis_core import render
-        snap, name = self.snap, self.display_name()
+        snap, name = self.ux.plate_snap(self.snap, now), self.display_name()          # (a second wind refills the meter)
         dmg = getattr(self.brain, 'pct', None)              # V9: the damage % while a match plays
         psig = (name, self.brain.character, snap.state, render.shown_pct(snap.ctx_pct), render.shown_pct(snap.plan_pct), snap.plan_label,
-                render.blink_phase(snap, now), None if dmg is None else int(round(dmg)))
+                render.blink_phase(snap, now), self.ux.plate_key(now, self.wall()), None if dmg is None else int(round(dmg)))
         if psig != self.last['psig']:
-            self.pov.present(render.plate(self.brain.atlas, snap, now, name=name, k=self.hud_k, dmg=dmg), x=self.plate_xy()[0])
+            self.pov.present(self.ux.plate_image(render.plate(self.brain.atlas, snap, now, name=name, k=self.hud_k, dmg=dmg), self.wall()),
+                             x=self.plate_xy()[0])
             self.last['psig'] = psig
 
     def _log_bout_notes(self):
@@ -1993,6 +2121,7 @@ class Fighter:
 
     def close(self):
         from minis_core import bus
+        self.ux.close()
         for w in (self.ov, self.pov):
             try:
                 if w:
@@ -2247,7 +2376,8 @@ def _arena_record(arena, winner, loser, where='arena'):
     side = {v: k for k, v in arena.chars.items()}
     w = getattr(arena, 'wins', {}) or {}
     score = (w.get(side.get(winner), 0), w.get(side.get(loser), 0)) if side.get(winner) and side.get(loser) else None
-    return records.record(winner, loser, where=where, score=score)
+    from minis_core import achievements                               # growth: KO, ultimates, forges (the arena's own counters)
+    return records.record(winner, loser, where=where, score=score, facts=achievements.arena_facts(arena, side.get(winner)))
 
 
 def set_flash_effects(fxp, on):
@@ -2523,6 +2653,21 @@ def cmd_doctor(args=None, shell=None, probe=None, describe=None, out=print):
                 out(f"  dock: {d['dock']}; fighter strip {d['rect']} (fighters stand on y={d['rect'][3]})")
             else:
                 out(f'  taskbar: {(l, t, r, b)} edge={edge} autohide={shell.taskbar_autohide()}')
+            if getattr(shell, 'taskbar_info', None) is not None:
+                cfg = load_config()
+                st = taskbar_stage(shell, cfg)
+                cfgmod.apply_stage(cfg, st)
+                aware = shell.dpi_awareness() if hasattr(shell, 'dpi_awareness') else '?'
+                out(f"  dpi: {st['dpi'] * 100:g}% (awareness {aware}); sprite scale {st['scale']} (integer: crisp)")
+                where = ('taskbar band' if st['layout'] == 'taskbar' else 'strip at the bottom of the work area') + f" y {st['band']}"
+                out(f"  stage: edge={st['edge']}{' auto-hide' + (' (shown now)' if st['revealed'] else ' (hidden now)') if st['autohide'] else ''}; "
+                    f"{where}; {'shown' if st['usable'] else 'hidden: ' + st['why']}")
+                out(f"  zone: {'none - the fighters hide' if st['zone_src'] == 'none' else list(cfg['zone'])} logical px ({st['zone_src']}"
+                    + f"; {st.get('parts_n', 0)} taskbar element rects from {st['parts_src'] or 'nowhere'}"
+                    + f"; screen x {int(cfg['zone'][0]) * st['scale']}-{int(cfg['zone'][1]) * st['scale']})")
+                if st.get('spans'):
+                    out('  taskbar occupied x: ' + ', '.join(f'{a}-{b}' for a, b in st['spans']))
+                b, t = st['band'][1], st['band'][0]
             check('screen geometry', sw > 0 and sh > 0 and b > t, f'band {b - t} high, sprite scale {cfgmod.ui_scale(max(24, b - t))}')
         except Exception as e:
             check('screen geometry', False, f'{type(e).__name__}: {str(e)[:200]}', soft=True)
@@ -2577,6 +2722,39 @@ def add_arena_option_flags(p):
     p.add_argument('--intensity', choices=('calm', 'normal', 'wild'), default=None, help='how much destruction and effects')
     p.add_argument('--no-intro', action='store_true', help='skip the VS card before round 1')
     p.add_argument('--no-outro', action='store_true', help="skip the winner's pose on the highest window")
+
+
+def add_growth_parsers(sub):
+    """growth: `stream`, `card`, `achievements`, `packs` - each module owns its command; this only registers them."""
+    from minis_core import achievements, packs, stats_card, stream
+    st = sub.add_parser('stream', help='streamer mode: an OBS-friendly window with the live fight (docs/STREAMING.md)')
+    st.add_argument('action', nargs='?', default='status', choices=('on', 'off', 'status', 'snapshot', 'run'))
+    st.add_argument('path', nargs='?', default=None, help='snapshot: an existing folder or a .png path (default: <data dir>/exports)')
+    st.add_argument('--chroma', default=None, help='key colour, default #00FF00')
+    st.add_argument('--scale', type=int, default=None, help='a fixed whole-number scale instead of fit-to-window')
+    st.add_argument('--fps', type=float, default=None, help='frames per second (2-30, default 15)')
+    st.add_argument('--width', type=int, default=None)
+    st.add_argument('--height', type=int, default=None)
+    st.add_argument('--transparent', action='store_true', help='alpha background instead of the key colour (experimental)')
+    st.add_argument('--no-plates', action='store_true', help='leave the HUD plates (context numbers) out of the stream')
+    st.add_argument('--forge-was', default=None, help=argparse.SUPPRESS)
+    st.set_defaults(fn=lambda a: stream.cmd(a, spawn=spawn_detached, self_argv=self_argv, alive=pid_alive))
+    cd = sub.add_parser('card', help="render a 1200x675 PNG of your agents' record (numbers and program names only)")
+    cd.add_argument('--out', default=None, help='an existing folder or a .png path in one (default: <data dir>/exports)')
+    cd.add_argument('--share', action='store_true', help='then open its folder with the card selected')
+    cd.set_defaults(fn=stats_card.cmd)
+    sub.add_parser('achievements', help='list every achievement and what it takes').set_defaults(fn=achievements.cmd)
+    pk = sub.add_parser('packs', help='community skin packs: list | install <zip|folder> | remove <name> | check <folder>')
+    pk.add_argument('action', nargs='?', default='list', choices=('list', 'install', 'remove', 'check', 'import-codex'))
+    pk.add_argument('path', nargs='?', default=None)
+    pk.add_argument('--replace', action='store_true', help='install over a pack of the same name')
+    pk.set_defaults(fn=packs.cmd)
+
+
+def share_card():
+    """The menus' "Share my stats card…": a child process renders it (no window loop stalls) and opens the folder."""
+    from minis_core import stats_card
+    return stats_card.share_async(spawn_detached, self_argv)
 
 
 def prog_name():
@@ -2665,6 +2843,9 @@ def main(argv=None):
     au = sub.add_parser('autostart', help='macOS: start at login with a LaunchAgent (on | off | status)')
     au.add_argument('state', choices=('on', 'off', 'status'))
     au.set_defaults(fn=cmd_autostart)
+    add_growth_parsers(sub)
+    from minis_core import ux_cli
+    ux_cli.add_parsers(sub, sys.modules[__name__])        # settings, startup, zone, guide, replay, book, results/cards/signals
     le = sub.add_parser('learned', help='the moves the fighters taught themselves, and how (docs/LEARNING.md)')
     le.add_argument('program', nargs='?', default=None)
     le.set_defaults(fn=lambda a: __import__('minis_core.learning', fromlist=['cmd']).cmd(a))
