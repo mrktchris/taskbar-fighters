@@ -7,12 +7,15 @@ numbers on any machine; nothing it produces is shipped.  Two tiers:
   remap operators   `retime` (faster startup), `twin` (a two-hit string), `feint` (a stutter-step fake, then the real cut).
                     They re-sequence and re-time the FRAMES THE SHEET ALREADY HAS, so they need no rig, no art pipeline and
                     no cache: the engine draws them through minis_core.learning.LearnedAtlas (a learned row whose frames
-                    point back into the base row).  Available in every install (checkout, pip, the Windows zip).
+                    point back into the base row).
   render operators  `amplify` (a bigger arc and reach), `spin` (a torso spin wound into the strike), `mimic` (another
                     weapon family's move drawn with this fighter's own body and weapon: a ninja's crude take on the ronin's
                     iai cut).  They edit the POSE keys and render new frames through the same rig that builds assets/, at
                     64 and 128 px in both facings, into a per-character cache under the data folder (never into the repo),
-                    with a size cap and LRU eviction.  Only in a checkout (the rig lives in art/).
+                    with a size cap and LRU eviction.
+Both tiers live in this file, which only a checkout has: the pip wheel and the Windows zip ship without art/, so there the
+fighters do not learn (minis_core.learning.enabled() is False and every hook is a no-op).  Shipping the remap tier in the
+package is a listed follow-up (docs/LEARNING.md).
 
 Every variant goes through `qa()` before it may be learned: the same bars the art tests hold the shipped sheets to -
 no anchor jitter over one pixel between grounded frames, the weapon attached to the hand on every frame, a readable
@@ -370,7 +373,7 @@ def _pose_variant(character, base, op, seed, src_char=None):
     rng = random.Random(int(seed) * 7919 + hash_str(op) + hash_str(base))
     mv0 = None
     if op == 'mimic':
-        if not src_char or src_char == character:
+        if not src_char or src_char == character or base in base_moves(character):
             return None
         got = _mimic_source(src_char, base)
         if got is None:
@@ -489,7 +492,18 @@ def _colours(ims):
     return out
 
 
-def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0):
+NOVELTY_IOU = 0.87            # a rendered variant needs one frame no base frame matches this closely (else it is not a new move)
+
+
+def novelty(frames, base_frames):
+    """-> the most novel frame's best match against the base row (min over variant frames of max IoU over base frames)."""
+    if not base_frames:
+        return 0.0
+    bm = [_mask(b) for b in base_frames]
+    return min(max(_iou(_mask(f['r']), b) for b in bm) for f in frames)
+
+
+def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0, base_frames=None):
     """-> [failures] for one rendered variant at `res` (empty = clean).  `frames` from render_frames; `base_palette` the
     character's own sheet colours (RGB set) at that res; `idle_frame` its idle frame 0 (right-facing) at that res."""
     rig, moves, roster, BF = _art()
@@ -557,6 +571,11 @@ def qa(character, mv, frames, res, base_palette, idle_frame, min_reach=10.0):
         ps = frames[i]['pose']
         if _is_hand_smear(ps) and frames[i]['buf'].tobytes().count(bytes([rig.PID['swoosh']])) == 0:
             bad.append(f'frame {i}: no crescent on the smear')
+    # novelty: an operator whose edits the fit passes undid (a greatsword pulled back in) is the base move again
+    if base_frames:
+        nv = novelty(frames, base_frames)
+        if nv >= NOVELTY_IOU:
+            bad.append(f'no new shape: every frame matches the base move (IoU {nv:.2f})')
     # reach, measured from the striking pixels
     reach = None
     if hf is not None and 0 <= hf < n:
@@ -600,6 +619,18 @@ def cached(data_dir, character, move_id):
     return meta
 
 
+def _base_frames(character, base, res):
+    """The character's own row `base` (right-facing) at `res`, or [] when it has none (a borrowed move)."""
+    try:
+        from minis_core.atlas import Atlas
+        a = Atlas(character, hd=(res == 2))
+        if base not in a.anim:
+            return []
+        return [a.frame_image(base, i, 1) for i in range(len(a.anim[base]['frames']))]
+    except Exception:
+        return []
+
+
 def _sheet_palette(character, res):
     """The character's built sheet colours at `res` (RGB set), read through minis_core.atlas when it is importable."""
     try:
@@ -627,7 +658,7 @@ def build(data_dir, character, base, op, seed, src_char=None, how='mastery', mov
     for res in sizes:
         frames = render_frames(character, mv, res)
         pal, idle = _sheet_palette(character, res)
-        bad, reach = qa(character, mv, frames, res, pal, idle)
+        bad, reach = qa(character, mv, frames, res, pal, idle, base_frames=_base_frames(character, base, res))
         if bad:
             failures += [f'res {res}: {b}' for b in bad]
             continue
@@ -881,7 +912,7 @@ def _cli(argv=None):
     n_pass = n_rej = 0
     sheets = []
     bases = [n for n, e in atlas.anim.items() if eligible_base(e)]
-    src_bases = [n for n, e in Atlas(src).anim.items() if eligible_base(e) and not e.get('air')
+    src_bases = [n for n, e in Atlas(src).anim.items() if eligible_base(e) and not e.get('air') and n not in atlas.anim
                  and (e.get('type') in ('string', 'gust', 'riposte') or n == Atlas(src).signature()['strike'])]
     for op in ops:
         if op in REMAP_OPS:
@@ -922,7 +953,7 @@ def _cli(argv=None):
             for res in SIZES:
                 fr = render_frames(a.character, mv, res)
                 pal, idle = _sheet_palette(a.character, res)
-                bad, reach = qa(a.character, mv, fr, res, pal, idle)
+                bad, reach = qa(a.character, mv, fr, res, pal, idle, base_frames=_base_frames(a.character, b, res))
                 frames_by_res[res] = fr
                 bad_all += [f'res {res}: {x}' for x in bad]
             mid = variant_id(b, op, a.seed)

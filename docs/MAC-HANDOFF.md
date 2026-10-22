@@ -154,6 +154,20 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
     finishing agent's fighter opening the next arena exchange with its super. Report the plate at Retina scale (the % is
     9 px bold) and the arena's fps / cpu from the profile line.
 
+- [ ] **MAC-25 (2026-10-22) Fighters learn: learning.json, the learned-move cache and its out-of-process builds.**
+  - PC change (shared engine + art): `minis_core/learning.py` keeps `~/Library/Application Support/minis/learning.json`
+    (ids, counters, seeds; written by both fighter processes under `learning.json.lock`) and a frame cache at
+    `~/Library/Application Support/minis/learned/<character>/` (PNG + JSON, at most 24 MB, LRU). Render-tier moves are
+    built by `python art/evolve.py build ...` spawned with `subprocess.Popen` (no window flag on macOS; stdio to /dev/null).
+    A learned move plays once at home under a green `LEARNED: <MOVE>` banner. Files: `minis_core/{learning,brain,choreo,rounds}.py`,
+    `art/evolve.py`, `minis.py` (`learned`, the HD library wrap). docs/LEARNING.md.
+  - Test: from the clone, `MINIS_LEARN_NO_RENDER=1 .venv/bin/python -m unittest tests.test_learning -v`, then without the
+    variable; `python minis.py learned`; leave the fighters running a working day, then `python minis.py learned` again
+    and `ls ~/Library/Application\ Support/minis/learned/`.
+  - Expected: the tests pass; `learned` lists moves with their how-lines; the cache holds `.r1.png` / `.r2.png` pairs and
+    stays under 24 MB; no Dock icon or window flashes when a build is spawned (report if a Python rocket appears in the
+    Dock - the spawn may then need `LSUIElement` / a different interpreter flag); the LEARNED banner reads at Retina scale.
+
 ## DONE
 
 - [x] **MAC-14 (2026-10-15) DONE fdd0803 2026-10-16 Arena CPU (FOUND-2): measure the V8 macOS window.**

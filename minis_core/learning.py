@@ -14,7 +14,8 @@ network, no prompts.  Experience comes from the fights the fighter really has on
 A variant is (character, base move, operator, seed[, source character]) - see art/evolve.py - and is regenerated from
 those numbers wherever it is needed, so nothing is shipped and two machines agree.  Remap variants (retime, twin, feint)
 re-sequence the frames the sheet already has; render variants (amplify, spin, mimic) are drawn by the rig into a cache
-under the data folder (checkout only; a pip / zip install learns the remap tier).
+under the data folder.  Both need art/evolve.py, so only a checkout learns; in a pip / zip install enabled() is False and
+every hook is a no-op (the fights are exactly the V9 fights).
 
 Determinism between the two fighter processes: the INVITER reads learning.json at plan time and writes both sides' kits
 INTO THE PLAN (`plan['learn'] = {'v': file version, 'kit': {slot: {move id: {'w', 'kind', 'vs', 'spec'}}}}`); both
@@ -1036,7 +1037,7 @@ def lines(doc=None, program=None, label=None):
     out = []
     st = stats(doc)
     out.append(f"learned moves: {st['learned']} across {len([p for p, n in st['programs'].items() if n])} programs"
-               + (f", {st['forgotten']} forgotten" if st['forgotten'] else '') + (' (learning off: no art/ in this install)' if not enabled() else ''))
+               + (f", {st['forgotten']} forgotten" if st['forgotten'] else '') + (' (learning is off: this install has no art/evolve.py)' if not enabled() else ''))
     for prog, e in sorted(progs.items()):
         if program and prog != program:
             continue

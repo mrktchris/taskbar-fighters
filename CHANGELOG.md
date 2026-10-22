@@ -4,6 +4,15 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
 
 ## Unreleased (V9 - fight quality)
 
+- **Fighters learn** (`minis_core/learning.py`, `art/evolve.py`, [docs/LEARNING.md](docs/LEARNING.md)): each program's fighter
+  teaches itself new moves - mastery (an evolved variant of a move it throws often), counters (against the hit kind that
+  keeps landing on it), mimicry (a crude borrowed copy of an opponent's move in its own weapon family) and inventions
+  (variations tried out while it shadowboxes). New moves are generated from the pose keyframes by deterministic operators
+  (retime, twin, feint, amplify, spin, mimic), gated by the art QA (anchors, the weapon in hand, silhouette, novelty,
+  reach, colour caps, both facings, 64 + 128 px), shown once under a `LEARNED: <MOVE>` banner and then used in fights.
+  Kits cap at six, grow one move per 15 bouts at most, decay and forget unused moves; both slot processes agree through
+  the shared plan. `learning.json` holds ids, counters and seeds only; `python minis.py learned [program]` lists it all.
+  Checkout installs only for now.
 - **Platform-fighter frame data** (`minis_core/framedata.py`): hitlag that freezes both fighters by damage, a damage % per
   round (on the plate during a match, under the HP bars in the arena), knockback from damage, % and weight, hitstun from
   knockback, tumbles along a real arc with one bounce and a tech or a missed tech, shieldstun and pushback, DI. Taskbar

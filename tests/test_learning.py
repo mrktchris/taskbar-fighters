@@ -128,6 +128,25 @@ class Synthesis(unittest.TestCase):
         bad3, _ = EV.qa('claude', mv, moved, 1, pal, idle)
         self.assertTrue(any('jitter' in b or 'mirror' in b for b in bad3), bad3)
 
+    @unittest.skipUnless(EV is not None and EV.available(), 'the rig (art/) is not here')
+    def test_a_variant_the_fit_passes_undid_is_rejected_as_not_new(self):
+        """Review finding: the knight's amplified cleave rendered as the base cleave (the greatsword's hands are pulled back in
+        by fit_weapons).  The novelty rule rejects it; Claude's amplified cross (a visibly bigger arc) passes."""
+        meta, bad = EV.build(str(Path(tempfile.mkdtemp())), 'knight', 'cleave', 'amplify', 1)
+        self.assertIsNone(meta)
+        self.assertTrue(any('no new shape' in b for b in bad), bad)
+        d = Path(tempfile.mkdtemp())
+        meta, bad = EV.build(str(d), 'claude', 'cross', 'amplify', 1)
+        self.assertEqual(bad, [])
+        self.assertTrue(EV.cached(str(d), 'claude', 'cross_grand'))
+        at = L.LearnedAtlas(LIB['claude'])
+        self.assertTrue(L.load_row(at, ['claude', 'cross', 'amplify', 1, None, 'mastery'], data_dir=d))
+        self.assertEqual(at.frame_image('cross_grand', 2, -1).size, tuple(at.cell))
+        self.assertTrue(at.anim['cross_grand']['reach'] >= LIB['claude'].anim['cross']['reach'])
+        hd = L.LearnedAtlas(Library(hd=True)['claude'])
+        self.assertTrue(L.load_row(hd, ['claude', 'cross', 'amplify', 1, None, 'mastery'], data_dir=d))
+        self.assertEqual(hd.frame_image('cross_grand', 2, 1).size, tuple(hd.cell))
+
     def test_names_are_original_and_generic(self):
         self.assertEqual(EV.display_name('iai_slash_ii', 'iai_slash', 'retime'), 'Iai Slash II')
         self.assertEqual(EV.display_name('cross_twin', 'cross', 'twin'), 'Twin Cross')
