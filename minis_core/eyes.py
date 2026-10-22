@@ -33,13 +33,15 @@ def find_eye(frame, facing=1, res=1):
 
 
 def eye_pixels(atlas, anim, i, facing):
+    # id() is only unique among LIVE objects: once an atlas is freed, a new one (another character, a skin swap) can get
+    # the same id and read the old one's eyes.  The entry keeps its atlas alive and is only used for that same object.
     key = (id(atlas), anim, i, facing >= 0)
-    v = _cache.get(key)
-    if v is None:
+    hit = _cache.get(key)
+    if hit is None or hit[0] is not atlas:
         if len(_cache) > 512:
             _cache.clear()
-        v = _cache[key] = find_eye(atlas.frame_image(anim, i, facing), facing, atlas.res)
-    return v
+        hit = _cache[key] = (atlas, find_eye(atlas.frame_image(anim, i, facing), facing, atlas.res))
+    return hit[1]
 
 
 def shift_eyes(frame, pts, dx, dy):

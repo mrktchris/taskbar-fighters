@@ -1106,13 +1106,15 @@ class CodexReview(Isolated):
         t = threading.Thread(target=slow_writer)
         t.start()
         started.wait(5)
-        other = threading.Thread(target=lambda: collection.merge({'codex': {'m:spiral_orb': 3.0}}, p))
+        got = {}
+        other = threading.Thread(target=lambda: got.update(ok=collection.merge({'codex': {'m:spiral_orb': 3.0}}, p)))
         other.start()                                                            # the second writer must wait for the lock
         other.join(0.3)
         self.assertTrue(other.is_alive())
         go.set()
         t.join(5)
         other.join(5)
+        self.assertIs(got.get('ok'), True, 'the waiting writer gave up on the lock instead of taking it')
         seen = collection.read(p)
         self.assertEqual(set(seen['claude']), {'m:jab', 'm:cross'})
         self.assertEqual(set(seen['codex']), {'m:spiral_orb'})                     # nothing lost, no manual retry
@@ -1150,6 +1152,26 @@ class CodexReview(Isolated):
             self.assertFalse(ok)                                                  # a live one is not
         lock.unlink()
         self.assertFalse(collection.Tracker().flush(0))                           # nothing to write: no lock is needed
+
+    def test_a_lock_file_that_is_still_being_deleted_is_waited_for_not_given_up_on(self):
+        """Windows: a lock its holder just unlinked stays 'delete pending' while a waiter still has a handle on it (its own
+        stat()), and O_EXCL then fails with PermissionError, not FileExistsError.  That is a lock being released: the
+        waiter must retry, not give up at once (it made merge() return False and the move-book test lose a write; a
+        4-thread stress lost 191 of 8000 acquisitions with a 10 s timeout)."""
+        from minis_core import filelock
+        p = self.data / 'x.json'
+        real_open, calls = os.open, []
+
+        def flaky_open(*a, **k):
+            calls.append(1)
+            if len(calls) <= 2:
+                raise PermissionError(13, 'Access is denied')                     # what CreateFile says on a delete-pending file
+            return real_open(*a, **k)
+        with mock.patch.object(filelock.os, 'open', flaky_open):
+            with filelock.locked(p, timeout=5.0) as ok:
+                self.assertTrue(ok)
+        self.assertEqual(len(calls), 3)
+        self.assertFalse(p.with_name('x.json.lock').exists())
 
 
 class Stage(unittest.TestCase):
