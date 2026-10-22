@@ -672,5 +672,235 @@ class Surfaces(Base):
         self.assertIn(('learned', 'Claude: Iai Slash II'), [c for _, c in shown])
 
 
+# ---------------------------------------------------------------- Codex review 3 (do-not-merge findings), each a regression test
+class ReviewHardening(Base):
+    """P1 cache path traversal; P2 unbounded render workers; P2 failed cache writes leaving orphans; P2 a stale lock owner
+    deleting a newer owner's lock; P2 invalid kit weights passing validation and failing after the accept."""
+
+    # ---- P1: no identifier from learning.json or a bus plan can reach outside the cache
+    def test_crafted_identifiers_never_leave_the_cache(self):
+        outside = self.data.parent / ('outside-' + self.data.name)
+        outside.mkdir()
+        self.addCleanup(__import__('shutil').rmtree, outside, True)
+        (outside / 'x_grand.json').write_text('{"code_v": 2}')
+        for ch in ('../' + outside.name, '..', 'a/b', 'C:\\x', 'Claude', 'claude ', ''):
+            with self.assertRaises(ValueError, msg=ch):
+                EV.cache_paths(self.data, ch, 'x_grand')
+            self.assertIsNone(EV.cached(self.data, ch, 'x_grand'), ch)
+            self.assertIsNone(EV.load_sheet(self.data, ch, 'x_grand', 1), ch)
+        for mid in ('../x', 'x/../../y', 'X', 'x.json', ''):
+            with self.assertRaises(ValueError, msg=mid):
+                EV.cache_paths(self.data, 'claude', mid)
+        d, mp, pngs = EV.cache_paths(self.data, 'claude', 'cross_grand')
+        root = EV.cache_root(self.data).resolve()
+        for q in [mp] + list(pngs.values()):
+            self.assertTrue(str(q.resolve()).startswith(str(root)), q)
+
+    def test_prepare_refuses_a_spec_that_does_not_belong_to_the_plans_fighter(self):
+        lib = L.LearnedLibrary(Library())
+        p = plan(5)
+        good = ['claude', 'cross', 'retime', 1, None, 'mastery']
+        p['learn'] = dict(v=1, kit={'a': {'cross_ii': dict(w=0.8, kind='strike', spec=good)}})
+        self.assertTrue(L.prepare(p, lib))
+        for bad_spec in (['codex', 'cross', 'retime', 1, None, 'mastery'],          # not slot a's character
+                         ['../../outside', 'cross', 'retime', 1, None, 'mastery'],
+                         ['claude', '../x', 'retime', 1, None, 'mastery'],
+                         ['claude', 'cross', 'retime', 1, '../src', 'mimic'],
+                         ['claude', 'cross', 'nope', 1, None, 'mastery'],
+                         ['claude', 'cross', 'retime', -1, None, 'mastery'],
+                         ['claude', 'cross', 'retime', 'x', None, 'mastery'],
+                         ['claude', 'cross', 'retime', 1, None, 'gossip'],
+                         ['claude', 'cross', 'retime', 1, None]):
+            p['learn'] = dict(v=1, kit={'a': {'cross_ii': dict(w=0.8, kind='strike', spec=bad_spec)}})
+            self.assertFalse(L.prepare(p, L.LearnedLibrary(Library())), bad_spec)
+        self.assertFalse(L.valid_spec(['../../outside', 'x', 'amplify', 1, None, 'mastery']))
+        self.assertFalse(L.load_row(L.LearnedAtlas(LIB['claude']), ['claude', 'cross', 'amplify', 1, None, 'mastery'],
+                                    data_dir=self.data / '..' / 'elsewhere'))
+
+    def test_a_crafted_learning_json_entry_never_reaches_a_kit(self):
+        def f(doc):
+            e = L._entry(doc, 'claude', 'claude')
+            e['learned']['x_grand'] = dict(how='mastery', spec=['claude', '../../x', 'amplify', 1, None, 'mastery'], kind='strike')
+            e['learned']['y'] = dict(how='mastery', spec=['claude', 'cross', 'retime', 1, None, 'mastery'], kind='strike', level='lots')
+        L.update(f, self.f)
+        kit = L.kit_for('claude', 'claude', L.read(self.f))
+        self.assertNotIn('x_grand', kit)
+        self.assertTrue(all(isinstance(v['w'], float) for v in kit.values()))
+
+    # ---- P2: kit weights are validated before the accept is emitted
+    def test_invalid_kit_weights_are_refused_before_the_accept(self):
+        lib = L.LearnedLibrary(Library())
+        spec = ['claude', 'cross', 'retime', 1, None, 'mastery']
+        for w in ('bad', float('nan'), float('inf'), -1.0, 99.0, None, True):
+            p = plan(5)
+            p['learn'] = dict(v=1, kit={'a': {'cross_ii': dict(w=w, kind='strike', spec=spec)}})
+            self.assertFalse(L.prepare(p, lib), w)
+        p = plan(5)
+        p['learn'] = dict(v=1, kit={'a': {'cross_ii': dict(w=0.7, kind='punch', spec=spec)}})
+        self.assertFalse(L.prepare(p, lib))
+        p['learn'] = dict(v=1, kit={'a': {'cross_ii': dict(w=0.7, kind='counter', vs='spite', spec=spec)}})
+        self.assertFalse(L.prepare(p, lib))
+        p['learn'] = dict(v=1, kit={'a': {f'jab_x{i:03x}': dict(w=0.5, kind='strike', spec=['claude', 'jab', 'retime', i, None, 'invention'])
+                                         for i in range(L.KIT_MAX + 1)}})
+        self.assertFalse(L.prepare(p, lib))                                 # more moves than any kit can hold
+        # the accepting brain never acknowledges such a plan
+        b = Brain(RIGHT, LIB['codex'], LIB, dict(CFG), random.Random(1), 1000.0, run='acc', record=sim.no_record)
+        b.snap = Snapshot('codex', 'idle', 10.0)
+        p = plan(5)
+        p['learn'] = dict(v=1, kit={'a': {'cross_ii': dict(w='bad', kind='strike', spec=spec)}})
+        b._accept(dict(seq=1, run='inv', type='invite', plan=p), 1000.0)
+        self.assertIsNone(b.event)
+        self.assertIsNone(b.script)
+        # and a picker handed a bad weight anyway skips it instead of raising
+        pk = choreo.Picker(random.Random(1), L.LearnedAtlas(LIB['claude']), {'jab': dict(w='bad', kind='strike')})
+        self.assertNotIn('bad', [w for _, w in pk.strikes()])
+
+    # ---- P2: render workers are tracked, deduplicated, capped, timed out and reaped
+    def test_render_builds_are_deduplicated_capped_timed_out_and_reaped(self):
+        made = []
+
+        class FakeProc:
+            def __init__(self, cmd, **kw):
+                self.cmd, self.rc, self.killed = cmd, None, False
+                made.append(self)
+
+            def poll(self):
+                return self.rc
+
+            def kill(self):
+                self.killed, self.rc = True, -9
+
+            def wait(self, timeout=None):
+                return self.rc
+        clock = [1000.0]
+        with mock.patch.object(L, 'redraws', return_value=True), mock.patch.object(EV, 'available', return_value=True), \
+                mock.patch.dict(os.environ, {'MINIS_LEARN_NO_RENDER': ''}), mock.patch.object(subprocess, 'Popen', FakeProc), \
+                mock.patch.object(L, '_mono', lambda: clock[0]):
+            L.reset_builds()
+            a = ['claude', 'cross', 'amplify', 1, None, 'mastery']
+            b = ['claude', 'jab', 'spin', 2, None, 'invention']
+            c = ['claude', 'roundhouse', 'amplify', 3, None, 'mastery']
+            self.assertTrue(L.spawn_build(a))
+            self.assertTrue(L.spawn_build(a))                               # the same build again: deduplicated
+            self.assertEqual(len(made), 1)
+            self.assertTrue(L.spawn_build(b))
+            self.assertFalse(L.spawn_build(c))                              # the cap (MAX_BUILDS) is full: refused, retried later
+            self.assertEqual(len(made), L.MAX_BUILDS)
+            made[0].rc = 0                                                  # the first one finishes...
+            L.reap_builds()
+            self.assertTrue(L.spawn_build(c))                               # ...and frees a place
+            clock[0] += L.BUILD_TIMEOUT_S + 1                               # the others stall past the timeout
+            L.reap_builds()
+            self.assertTrue(made[1].killed and made[2].killed)
+            self.assertEqual(L.active_builds(), [])
+            L.reset_builds()
+
+    def test_a_pending_build_is_respawned_when_its_worker_is_gone(self):
+        with mock.patch.object(L, 'spawn_build', return_value=True) as sp:
+            e = {'bouts': 3, 'pending': [dict(spec=['claude', 'cross', 'amplify', 1, None, 'mastery'], how='mastery', kind='strike',
+                                              vs=None, fallback=None, since=2)], 'learned': {}}
+            self.assertIsNone(L._pending_ready(e, self.data))
+            self.assertTrue(sp.called)                                      # not cached, not rejected, no worker: asked again
+
+    # ---- P2: a build that fails part way leaves nothing behind, and eviction counts everything
+    @unittest.skipUnless(EV is not None and EV.available(), 'the rig (art/) is not here')
+    def test_a_failed_cache_write_leaves_no_files(self):
+        from PIL import Image
+        real = Image.Image.save
+        calls = [0]
+
+        def flaky(im, fp, *a, **k):
+            calls[0] += 1
+            if calls[0] == 2:
+                raise OSError('disk full')
+            return real(im, fp, *a, **k)
+        with mock.patch.object(Image.Image, 'save', flaky):
+            meta, bad = EV.build(str(self.data), 'claude', 'cross', 'amplify', 1)
+        self.assertIsNone(meta)
+        self.assertTrue(any('cache write failed' in b for b in bad), bad)
+        left = list((EV.cache_root(self.data) / 'claude').glob('*')) if (EV.cache_root(self.data) / 'claude').exists() else []
+        self.assertEqual(left, [], left)
+
+    def test_eviction_counts_and_removes_orphans_and_sidecars(self):
+        root = EV.cache_root(self.data) / 'claude'
+        root.mkdir(parents=True)
+        (root / 'ghost_grand.r1.png').write_bytes(b'x' * 4000)                # an orphan: no metadata...
+        (root / 'ghost_grand.rejected.json').write_bytes(b'{}' * 10)
+        os.utime(root / 'ghost_grand.r1.png', (1, 1))                        # ...left behind long ago (a young one is spared)
+        (root / 'old.r2.png.123.tmp').write_bytes(b'x' * 3000)              # a temp left by a crash
+        os.utime(root / 'old.r2.png.123.tmp', (1, 1))
+        for i in range(2):
+            (root / f'm{i}.json').write_text('{}')
+            (root / f'm{i}.r1.png').write_bytes(b'x' * 1000)
+            EV.touch(self.data, 'claude', f'm{i}', now=100 + i)
+        self.assertGreater(EV.cache_size(self.data), 9000)                  # orphans count toward the total
+        gone = EV.evict(self.data, cap=10 ** 9)                             # under any cap: orphans and stale temps still go
+        self.assertFalse((root / 'ghost_grand.r1.png').exists())
+        self.assertFalse((root / 'old.r2.png.123.tmp').exists())
+        self.assertTrue((root / 'm0.json').exists() and (root / 'm1.r1.png').exists())
+        self.assertIn('claude/ghost_grand', gone)
+        EV.evict(self.data, cap=1500)
+        self.assertFalse((root / 'm0.json').exists())                       # then LRU, a whole group at a time
+        self.assertFalse((root / 'm0.r1.png').exists())
+        self.assertLessEqual(EV.cache_size(self.data), 1500)
+
+
+class LockOwnership(Isolated):
+    """P2: a lock taken over as stale is never deleted by the old owner when it finally finishes."""
+
+    def test_a_stale_owner_cannot_delete_the_new_owners_lock(self):
+        """Owner 1 stalls past STALE_S (its lock file still names it), owner 2 reclaims, then owner 1 resumes and runs its
+        release: owner 2's lock must survive, so a third writer still cannot get in."""
+        from minis_core import filelock
+        target = self.data / 'learning.json'
+        lock = target.with_name(target.name + '.lock')
+        tok1 = b'111:owner-one'
+        lock.write_bytes(tok1)
+        os.utime(lock, (1, 1))
+        cm2 = filelock.locked(target, timeout=1.0)
+        self.assertTrue(cm2.__enter__())                                   # owner 2 reclaims the stale lock
+        tok2 = lock.read_bytes()
+        self.assertNotEqual(tok2, tok1)
+        filelock._release(lock, tok1)                                       # owner 1 resumes and leaves its block
+        self.assertTrue(lock.exists(), 'the stale owner deleted a lock it no longer owned')
+        cm3 = filelock.locked(target, timeout=0.2)
+        self.assertFalse(cm3.__enter__())                                   # so a third writer still cannot enter
+        cm3.__exit__(None, None, None)
+        cm2.__exit__(None, None, None)
+        self.assertFalse(lock.exists())                                     # the real owner removes its own lock
+
+    @unittest.skipIf(sys.platform == 'win32', 'Windows cannot delete an open lock file, so a held lock is never reclaimed there')
+    def test_the_real_lock_api_keeps_a_reclaimed_lock(self):
+        """The race end to end through filelock.locked(): owner 1 holds the lock and stalls, owner 2 reclaims it as stale,
+        owner 1 leaves its block - before the fix its unconditional unlink deleted owner 2's lock."""
+        from minis_core import filelock
+        target = self.data / 'learning.json'
+        lock = target.with_name(target.name + '.lock')
+        cm1 = filelock.locked(target)
+        self.assertTrue(cm1.__enter__())
+        os.utime(lock, (1, 1))
+        cm2 = filelock.locked(target, timeout=1.0)
+        self.assertTrue(cm2.__enter__())
+        cm1.__exit__(None, None, None)
+        self.assertTrue(lock.exists(), 'the stale owner deleted a lock it no longer owned')
+        cm3 = filelock.locked(target, timeout=0.2)
+        self.assertFalse(cm3.__enter__())
+        cm3.__exit__(None, None, None)
+        cm2.__exit__(None, None, None)
+        self.assertFalse(lock.exists())
+
+    def test_learning_updates_go_through_the_shared_lock(self):
+        from minis_core import filelock
+        seen = []
+        real = filelock.locked
+
+        def spy(path, *a, **k):
+            seen.append(Path(path).name)
+            return real(path, *a, **k)
+        with mock.patch.object(filelock, 'locked', spy):
+            self.assertTrue(L.update(lambda d: d.setdefault('programs', {}), self.data / 'learning.json'))
+        self.assertEqual(seen, ['learning.json'])
+
+
 if __name__ == '__main__':
     unittest.main()

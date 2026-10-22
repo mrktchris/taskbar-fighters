@@ -28,7 +28,7 @@ Hooks into the engine (all listed in docs/LEARNING.md): choreo.Picker takes the 
 passes it per slot; brain.Brain owns a Learner (plan, prepare, after_bout, practice, home, banner).
 """
 from __future__ import annotations
-import importlib.util, json, os, random, subprocess, sys, time, weakref
+import atexit, importlib.util, json, math, os, random, subprocess, sys, time, weakref
 from collections import Counter
 from pathlib import Path
 
@@ -56,7 +56,10 @@ PARRY_K = 1.6                # a learned counter widens the parry window against
 BANNER_S = 2.8
 TOAST_S = 3.0
 PRACTICE_P = 0.35            # a shadowbox rep plays the trial / a learned move this often (seeded by the brain)
-LOCK_RETRIES, LOCK_STALE_S = 40, 5.0
+LOCK_TIMEOUT_S = 0.5
+MAX_BUILDS = 2               # render builds running at once (each one python process); more wait their turn
+BUILD_TIMEOUT_S = 180.0      # a build still running after this is killed (only our own children) and reaped
+KINDS, HIT_KINDS = ('strike', 'counter'), ('slash', 'blunt', 'pierce')
 HOWS = ('mastery', 'counter', 'mimic', 'invention')
 BOUT_KINDS = ('spar', 'clash', 'match')
 _EVOLVE = None
@@ -95,6 +98,39 @@ def redraws():
     return bool(ev is not None and ev.available())
 
 
+# ---------------------------------------------------------------- validation (everything that arrives from a file or a bus plan)
+def valid_id(x):
+    from .movegen import valid_id as v
+    return v(x)
+
+
+def valid_spec(spec):
+    """[character, base, op, seed, source | None, how] with plain ids, a known operator and how, a bounded int seed."""
+    ev = evolve()
+    if not isinstance(spec, (list, tuple)) or len(spec) != 6 or ev is None:
+        return False
+    ch, base, op, seed, src, how = spec
+    return (valid_id(ch) and valid_id(base) and op in ev.OPS and isinstance(seed, int) and not isinstance(seed, bool)
+            and 0 <= seed < 2 ** 31 and (src is None or valid_id(src)) and how in HOWS)
+
+
+def _num(w, lo, hi):
+    return isinstance(w, (int, float)) and not isinstance(w, bool) and math.isfinite(w) and lo <= w <= hi
+
+
+def valid_kit_entry(mid, v, character):
+    """One kit entry from a plan: its spec belongs to `character` (the plan's fighter on that slot) and derives `mid`, its
+    weight is a finite number in 0..W_MAX, its kind and hit kind are known."""
+    if not valid_id(mid) or not isinstance(v, dict) or not valid_spec(v.get('spec')):
+        return False
+    spec = v['spec']
+    if spec[0] != character or move_id_of(spec) != mid:
+        return False
+    if not _num(v.get('w'), 0.0, W_MAX) or v.get('kind', 'strike') not in KINDS:
+        return False
+    return v.get('vs') is None or v.get('vs') in HIT_KINDS
+
+
 # ---------------------------------------------------------------- the file
 def path(p=None) -> Path:
     return Path(p) if p else cfgmod.data_dir() / FILE
@@ -114,40 +150,20 @@ def read(p=None) -> dict:
 
 
 def update(fn, p=None) -> bool:
-    """Read-modify-write under a lock file (both fighter processes write at the same moment when a bout ends).  `fn(doc)`
-    edits the dict in place; `v` counts every write.  False when the lock could not be taken or the write failed."""
+    """Read-modify-write under the shared lock (minis_core/filelock.py: an O_EXCL lock file carrying its owner's token, so
+    a holder that stalled can never delete a newer owner's lock; Windows delete-pending is retried).  Both fighter
+    processes write when a bout ends.  `fn(doc)` edits the dict in place; `v` counts every write.  False when the lock
+    could not be taken or the write failed."""
+    from . import filelock
     target = path(p)
-    lock = target.with_suffix('.lock')
-    fd = None
-    for _ in range(LOCK_RETRIES):
-        try:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            break
-        except FileExistsError:
-            try:
-                if time.time() - lock.stat().st_mtime > LOCK_STALE_S:
-                    lock.unlink()
-                    continue
-            except OSError:
-                pass
-            time.sleep(0.01)
-        except OSError:
+    with filelock.locked(target, timeout=LOCK_TIMEOUT_S) as ok:
+        if not ok:
             return False
-    if fd is None:
-        return False
-    try:
         doc = read(target)
         fn(doc)
         doc['v'] = int(doc.get('v', 0)) + 1
         doc['version'] = VERSION
         return write_json_atomic(target, doc)
-    finally:
-        os.close(fd)
-        try:
-            lock.unlink()
-        except OSError:
-            pass
 
 
 def program_seed(program) -> int:
@@ -169,12 +185,16 @@ def _entry(doc, program, character=None):
 
 # ---------------------------------------------------------------- the kit a program fights with
 def _idle(rec, bouts):
-    idle = max(0, int(bouts) - int(rec.get('last', bouts)))
+    idle = max(0, _int(bouts) - _int(rec.get('last', bouts), _int(bouts)))
     return idle // COUNTER_DECAY_K if rec.get('kind') == 'counter' else idle
 
 
+def _int(v, default=0):
+    return v if isinstance(v, int) and not isinstance(v, bool) else default
+
+
 def _weight(rec, bouts):
-    lvl = int(rec.get('level', 0))
+    lvl = max(0, _int(rec.get('level', 0)))
     w = min(W_MAX, W_BASE + W_LEVEL * lvl)
     idle = _idle(rec, bouts)
     if idle > DECAY_BOUTS:
@@ -191,10 +211,12 @@ def kit_for(program, character, doc=None):
         return {}
     out = {}
     for mid, rec in (e.get('learned') or {}).items():
-        spec = rec.get('spec')
-        if not isinstance(spec, list) or len(spec) < 6 or spec[0] != character:
-            continue
-        out[mid] = dict(w=_weight(rec, e.get('bouts', 0)), kind=rec.get('kind', 'strike'), vs=rec.get('vs'), spec=list(spec))
+        spec = rec.get('spec') if isinstance(rec, dict) else None
+        if not valid_spec(spec) or spec[0] != character or move_id_of(spec) != mid:
+            continue                                         # a hand-edited or damaged entry never reaches a fight
+        kind = rec.get('kind', 'strike') if rec.get('kind', 'strike') in KINDS else 'strike'
+        vs = rec.get('vs') if rec.get('vs') in HIT_KINDS else None
+        out[mid] = dict(w=float(_weight(rec, e.get('bouts', 0))), kind=kind, vs=vs, spec=list(spec))
     return out
 
 
@@ -341,7 +363,7 @@ def load_row(atlas, spec, data_dir=None):
     """Build the learned row `spec` into a LearnedAtlas (both resolutions pick their own frames).  -> True when the row is
     there, False when it cannot be built here (then the bout must not be played with it)."""
     ev = evolve()
-    if ev is None or not isinstance(atlas, LearnedAtlas):
+    if ev is None or not isinstance(atlas, LearnedAtlas) or not valid_spec(spec) or spec[0] != atlas.character:
         return False
     character, base, op, seed, src, how = list(spec)[:6]
     mid = ev.variant_id(base, op, seed, how)
@@ -382,8 +404,17 @@ def prepare(plan, atlases, data_dir=None):
     if evolve() is None:
         return False
     chars = plan.get('chars') or {}
-    for slot, kit in (learn.get('kit') or {}).items():
-        ch = chars.get(slot, slot)
+    kits = learn.get('kit') if isinstance(learn, dict) else None
+    if not isinstance(kits, dict):
+        return False
+    for slot, kit in kits.items():                          # validate everything before building anything
+        ch = chars.get(slot)
+        if slot not in ('a', 'b') or not valid_id(ch) or not isinstance(kit, dict) or len(kit) > KIT_MAX:
+            return False
+        if not all(valid_kit_entry(mid, v, ch) for mid, v in kit.items()):
+            return False
+    for slot, kit in kits.items():
+        ch = chars.get(slot)
         try:
             atlas = atlases[ch]
         except Exception:
@@ -393,9 +424,9 @@ def prepare(plan, atlases, data_dir=None):
                 atlas = atlases.wrap(atlas)
             else:
                 return False
-        for mid, v in (kit or {}).items():
-            spec = (v or {}).get('spec')
-            if not spec or move_id_of(spec) != mid or not load_row(atlas, spec, data_dir):
+        for mid, v in kit.items():
+            spec = v['spec']
+            if not load_row(atlas, spec, data_dir):
                 return False
             for lib in list(_LIBS):                          # the HD renderer's library draws the same rows
                 try:
@@ -572,6 +603,7 @@ def _pending_ready(e, data_dir=None):
             continue
         if int(e.get('bouts', 0)) - int(pnd.get('since', 0)) > 12:      # a build that never came back: let it go
             continue
+        spawn_build(spec, dd)                                # still wanted: asked again (deduplicated, capped)
         keep.append(pnd)
     e['pending'] = keep
     return got
@@ -719,6 +751,8 @@ def practice(program, character, move, atlas, rng=None, p=None, now=None):
             if ev.cached(cfgmod.data_dir(), character, mid) is None:
                 if int(e.get('practice', 0)) - int(tr.get('since', 0)) > 40:
                     e['trial'] = None                        # a build that never came back
+                else:
+                    spawn_build(spec)                        # asked again if its worker is gone (deduplicated, capped)
                 return
         if not load_row(atlas, spec):
             e['trial'] = None
@@ -771,11 +805,63 @@ def _new_trial(e, atlas):
     return None
 
 
+_BUILDS = {}                  # tuple(spec) -> (Popen, started monotonic): our own render children
+
+
+def _mono():
+    return time.monotonic()
+
+
+def active_builds():
+    return list(_BUILDS)
+
+
+def reap_builds():
+    """Collect finished render children; kill (our own children only) and collect any that ran past BUILD_TIMEOUT_S."""
+    for key, (proc, t0) in list(_BUILDS.items()):
+        try:
+            rc = proc.poll()
+        except Exception:
+            rc = -1
+        if rc is not None:
+            _BUILDS.pop(key, None)
+        elif _mono() - t0 > BUILD_TIMEOUT_S:
+            try:
+                proc.kill()
+                proc.wait(timeout=1.0)
+            except Exception:
+                pass
+            _BUILDS.pop(key, None)
+
+
+def reset_builds():
+    """Stop every render child this process started (at exit, and in tests)."""
+    for key, (proc, t0) in list(_BUILDS.items()):
+        try:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait(timeout=1.0)
+        except Exception:
+            pass
+    _BUILDS.clear()
+
+
+atexit.register(reset_builds)
+
+
 def spawn_build(spec, data_dir=None):
     """Render a variant out of process (art/evolve.py build ...), so the fighter's redraw loop never stalls on the rig.
-    Nothing to spawn when the art pipeline is absent or MINIS_LEARN_NO_RENDER is set."""
+    At most MAX_BUILDS at once, one per spec (asking again while it runs is a no-op that answers True), each killed after
+    BUILD_TIMEOUT_S.  -> True when a build for `spec` is running, False when none could be started (no rig, the switch
+    MINIS_LEARN_NO_RENDER, an invalid spec, or the cap: the caller asks again later)."""
     ev = evolve()
-    if ev is None or not ev.available() or os.environ.get('MINIS_LEARN_NO_RENDER'):
+    if ev is None or not ev.available() or os.environ.get('MINIS_LEARN_NO_RENDER') or not valid_spec(spec):
+        return False
+    reap_builds()
+    key = tuple(spec)
+    if key in _BUILDS:
+        return True
+    if len(_BUILDS) >= MAX_BUILDS:
         return False
     dd = str(data_dir or cfgmod.data_dir())
     character, base, op, seed, src, how = list(spec)[:6]
@@ -786,10 +872,11 @@ def spawn_build(spec, data_dir=None):
         kw = {}
         if sys.platform == 'win32':
             kw['creationflags'] = 0x08000000                 # CREATE_NO_WINDOW
-        subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **kw)
-        return True
+        proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **kw)
     except OSError:
         return False
+    _BUILDS[key] = (proc, _mono())
+    return True
 
 
 # ---------------------------------------------------------------- the brain-side learner
@@ -871,7 +958,10 @@ class Learner:
         return play if play in self.b.atlas.anim else move
 
     def home(self, now):
-        """The learned moment, at home and awake: the fighter plays the new move once under a LEARNED banner."""
+        """The learned moment, at home and awake: the fighter plays the new move once under a LEARNED banner.  (Each home
+        tick also reaps finished or overdue render children.)"""
+        if self.on and _BUILDS:
+            reap_builds()
         if not self.on or not self.queue or self.b.paused or self.b.mode != 'home' or now < getattr(self.b, 'hold_until', 0.0):
             return False
         st = self.b.state()

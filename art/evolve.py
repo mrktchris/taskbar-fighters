@@ -434,7 +434,10 @@ def build(data_dir, character, base, op, seed, src_char=None, how='mastery', mov
         return None, ['operator does not apply']
     mv, info = got
     move_id = move_id or variant_id(base, op, seed, how)
-    d, mp, pngs = cache_paths(data_dir, character, move_id)
+    try:
+        d, mp, pngs = cache_paths(data_dir, character, move_id)
+    except ValueError:
+        return None, ['not an id']
     per_res = {}
     failures = []
     images = {}
@@ -463,15 +466,31 @@ def build(data_dir, character, base, op, seed, src_char=None, how='mastery', mov
         entry['shake'] = dict(frames=int(mv['shake']['frames']), amp=int(mv['shake']['amp']))
     meta = dict(code_v=VERSION, id=move_id, character=character, spec=[character, base, op, int(seed), src_char, how],
                 entry=entry, res=per_res, bytes=0, ts=time.time())
-    try:
-        d.mkdir(parents=True, exist_ok=True)
+    suffix = f'.{os.getpid()}.{random.getrandbits(32):08x}.tmp'
+    staged, placed = [], []
+    try:                                       # every file is written to a temp name, then renamed; the metadata last, so a
+        d.mkdir(parents=True, exist_ok=True)   # variant is in the cache only once all of it is (cached() reads the JSON)
         total = 0
         for res, im in images.items():
-            im.save(pngs[res])
-            total += pngs[res].stat().st_size
+            t = Path(str(pngs[res]) + suffix)
+            staged.append((t, pngs[res]))
+            im.save(t, format='PNG')
+            total += t.stat().st_size
         meta['bytes'] = total
-        mp.write_text(json.dumps(meta, separators=(',', ':')), encoding='utf-8')
+        t = Path(str(mp) + suffix)
+        staged.append((t, mp))
+        t.write_text(json.dumps(meta, separators=(',', ':')), encoding='utf-8')
+        for t, final in staged:
+            os.replace(t, final)
+            placed.append(final)
     except OSError as e:
+        for t, final in staged:                # nothing half-built stays behind, inside or outside the size cap
+            for q in (t, final if final in placed else None):
+                if q is not None:
+                    try:
+                        q.unlink()
+                    except OSError:
+                        pass
         return None, [f'cache write failed: {type(e).__name__}']
     evict(data_dir)
     return meta, []
@@ -547,7 +566,11 @@ def build_cli(a):
     if not available():
         return 2
     mid = variant_id(a.base, a.op, a.seed, a.how)
-    d, mp, pngs = cache_paths(a.data, a.character, mid)
+    try:
+        d, mp, pngs = cache_paths(a.data, a.character, mid)
+    except ValueError:
+        print('REJECT: not an id')
+        return 1
     meta, bad = build(a.data, a.character, a.base, a.op, a.seed, a.src, a.how, mid)
     if meta is None:
         try:

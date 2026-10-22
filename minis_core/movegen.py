@@ -14,8 +14,16 @@ The learned-move cache helpers (a capped, least-recently-used folder under the d
 file operations, and a cached redraw made in a checkout still plays in that same data folder.
 """
 from __future__ import annotations
-import json, os, random, time
+import json, os, random, re, time
 from pathlib import Path
+
+ID_RE = re.compile(r'[a-z0-9_]{1,48}')      # character, move and source ids: the only names that ever reach a path
+
+
+def valid_id(s):
+    """A character / move / program id: 1-48 of [a-z0-9_] (what the art and the generator produce).  Anything else - a
+    path separator, '..', a drive, upper case, a space - is refused before it can name a file."""
+    return isinstance(s, str) and ID_RE.fullmatch(s) is not None
 
 VERSION = 2                                  # bump when a variant's frames would change: cached renders are re-made
 REMAP_OPS = ('retime', 'twin', 'feint')
@@ -294,28 +302,47 @@ def cache_root(data_dir):
     return Path(data_dir) / 'learned'
 
 
+def _inside(path, root):
+    try:
+        return os.path.commonpath([str(Path(path).resolve()), str(root)]) == str(root)
+    except ValueError:                                 # a different drive
+        return False
+
+
 def cache_paths(data_dir, character, move_id):
-    d = cache_root(data_dir) / character
-    return d, d / f'{move_id}.json', {r: d / f'{move_id}.r{r}.png' for r in SIZES}
+    """(folder, metadata JSON, {res: sheet PNG}) of a cached variant.  Raises ValueError for an id that is not a plain
+    id, or for a path that would resolve outside <data dir>/learned (a crafted learning.json or bus plan)."""
+    if not valid_id(character) or not valid_id(move_id):
+        raise ValueError('not an id')
+    root = cache_root(data_dir).resolve()
+    d = root / character
+    mp = d / f'{move_id}.json'
+    pngs = {r: d / f'{move_id}.r{r}.png' for r in SIZES}
+    for q in [d, mp] + list(pngs.values()):
+        if not _inside(q, root):
+            raise ValueError('outside the cache')
+    return d, mp, pngs
 
 
 def cached(data_dir, character, move_id):
-    """The cached variant's metadata when every file of it is there and current, else None."""
-    d, mp, pngs = cache_paths(data_dir, character, move_id)
+    """The cached variant's metadata when every file of it is there and current, else None (also for an invalid id)."""
     try:
+        d, mp, pngs = cache_paths(data_dir, character, move_id)
         meta = json.loads(mp.read_text(encoding='utf-8'))
     except (OSError, ValueError):
         return None
-    if meta.get('code_v') != VERSION or not all(p.is_file() for p in pngs.values()):
+    if not isinstance(meta, dict) or meta.get('code_v') != VERSION or not all(p.is_file() for p in pngs.values()):
         return None
     return meta
-
 
 
 def load_sheet(data_dir, character, move_id, res):
     """The cached sheet image at `res` (R frames in row 0, L frames in row 1), or None."""
     from PIL import Image
-    _, _, pngs = cache_paths(data_dir, character, move_id)
+    try:
+        _, _, pngs = cache_paths(data_dir, character, move_id)
+    except ValueError:
+        return None
     try:
         touch(data_dir, character, move_id)
         return Image.open(pngs[res]).convert('RGBA')
@@ -348,59 +375,100 @@ def _write_index(data_dir, idx):
 
 
 def touch(data_dir, character, move_id, now=None):
+    if not valid_id(character) or not valid_id(move_id):
+        return
     idx = _read_index(data_dir)
     idx[f'{character}/{move_id}'] = float(time.time() if now is None else now)
     _write_index(data_dir, idx)
 
 
-def cache_size(data_dir):
-    total = 0
-    root = cache_root(data_dir)
-    if not root.is_dir():
-        return 0
-    for ch in root.iterdir():
-        if ch.is_dir():
-            for p in ch.iterdir():
-                try:
-                    total += p.stat().st_size
-                except OSError:
-                    pass
-    return total
+TMP_STALE_S = 600.0           # a temp file this old belongs to a build that died: it is removed
+YOUNG_S = 60.0                # an orphan sheet younger than this may be a build between its renames: left alone
 
 
-def evict(data_dir, cap=CACHE_MAX_BYTES, now=None):
-    """Drop the least recently used variants until the cache is under `cap` bytes.  -> [evicted ids]."""
+def _files(data_dir):
+    """{(character, id): [paths]} of every file in the cache (sheets, metadata, rejection sidecars, temps), grouped by the
+    part of the name before its first dot; files whose folder or id is not a plain id are grouped under their own name."""
     root = cache_root(data_dir)
+    out = {}
     if not root.is_dir():
-        return []
-    idx = _read_index(data_dir)
-    items = []
+        return out
     for ch in root.iterdir():
         if not ch.is_dir():
             continue
-        for mp in ch.glob('*.json'):
-            mid = mp.stem
-            key = f'{ch.name}/{mid}'
-            files = [mp] + [p for p in ch.glob(f'{mid}.r*.png')]
-            size = sum(p.stat().st_size for p in files if p.is_file())
-            items.append((idx.get(key, 0.0), key, files, size))
-    total = sum(s for _, _, _, s in items)
+        for f in ch.iterdir():
+            if f.is_file():
+                out.setdefault((ch.name, f.name.split('.', 1)[0]), []).append(f)
+    return out
+
+
+def _size(files):
+    n = 0
+    for f in files:
+        try:
+            n += f.stat().st_size
+        except OSError:
+            pass
+    return n
+
+
+def cache_size(data_dir):
+    """Every byte in the cache: complete variants, orphans, sidecars and temps alike."""
+    return sum(_size(v) for v in _files(data_dir).values())
+
+
+def evict(data_dir, cap=CACHE_MAX_BYTES, now=None):
+    """Remove stale temps and orphans (sheets without their metadata) first, then whole variants least recently used until
+    the cache - every file in it - is under `cap` bytes.  -> [evicted 'character/id' keys]."""
+    wall = time.time() if now is None else now
+    idx = _read_index(data_dir)
+    groups = _files(data_dir)
     gone = []
-    for used, key, files, size in sorted(items):
-        if total <= cap:
-            break
-        for p in files:
+
+    def drop(key, files):
+        for f in files:
             try:
-                p.unlink()
+                f.unlink()
             except OSError:
                 pass
-        idx.pop(key, None)
-        total -= size
-        gone.append(key)
+        idx.pop(f'{key[0]}/{key[1]}', None)
+        gone.append(f'{key[0]}/{key[1]}')
+    for key in list(groups):
+        files = groups[key]
+        stale_tmp = [f for f in files if f.name.endswith('.tmp') and wall - _mtime(f) > TMP_STALE_S]
+        for f in stale_tmp:
+            try:
+                f.unlink()
+            except OSError:
+                pass
+        files = [f for f in files if f not in stale_tmp]
+        meta = [f for f in files if f.name == f'{key[1]}.json']
+        sheets = [f for f in files if f.suffix == '.png']
+        if not meta and sheets and all(wall - _mtime(f) > YOUNG_S for f in sheets):
+            drop(key, files)                                 # an orphan: no metadata will ever claim these sheets
+            groups.pop(key)
+        elif stale_tmp:
+            groups[key] = files
+            if not files:
+                groups.pop(key)
+                gone.append(f'{key[0]}/{key[1]}')
+    total = sum(_size(v) for v in groups.values())
+    order = sorted(groups, key=lambda k: (idx.get(f'{k[0]}/{k[1]}', min((_mtime(f) for f in groups[k]), default=0.0)), k))
+    for key in order:
+        if total <= cap:
+            break
+        total -= _size(groups[key])
+        drop(key, groups[key])
     if gone:
         _write_index(data_dir, idx)
     return gone
 
+
+def _mtime(f):
+    try:
+        return f.stat().st_mtime
+    except OSError:
+        return 0.0
 
 
 # ---------------------------------------------------------------- the redrawn tier is not in the package

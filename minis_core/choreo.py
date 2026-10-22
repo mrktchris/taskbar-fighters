@@ -31,6 +31,7 @@ type, never by name.  New optional beat fields (an engine that does not know the
 New outcome: 'guard_break' (react `guard_crush`): the guard is smashed open, chip damage, and a free follow-up lands.
 """
 from __future__ import annotations
+import math
 from collections import Counter
 
 STRIKES = ('jab', 'cross', 'uppercut', 'low_kick', 'roundhouse')
@@ -175,6 +176,10 @@ def weighted(rng, items):
     return items[-1][0]
 
 
+def _weight_ok(w):
+    return isinstance(w, (int, float)) and not isinstance(w, bool) and math.isfinite(w) and 0.0 <= w <= 2.0
+
+
 class Picker:
     """One fighter's move picker.  `counts` is the per-match tally (tests, previews).  `learned` (learning.py kit,
     {move: {'w', 'kind', 'vs'}}) adds the moves this program taught itself: strikes join the pool at their mastery weight,
@@ -186,7 +191,8 @@ class Picker:
         self.last = None
         self.used = Counter()
         self.counts = Counter()
-        self.learned = {m: dict(v) for m, v in (learned or {}).items() if m in atlas.anim and isinstance(v, dict)}
+        self.learned = {m: dict(v) for m, v in (learned or {}).items() if m in atlas.anim and isinstance(v, dict)
+                        and _weight_ok(v.get('w', 0.6))}         # (learning.prepare validates kits; this never raises either)
 
     def new_round(self):
         self.used = Counter()
