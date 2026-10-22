@@ -533,7 +533,7 @@ class Views(Base):
         t = L.Toaster(self.f, every_s=0.0)
         self.assertIsNone(t.poll(0.0))                                       # the first look seeds silently
         L.update(lambda d: grant(L._entry(d, 'codex', 'codex'), ['codex', 'cross', 'retime', 1, None, 'mastery'], 'mastery'), self.f)
-        self.assertEqual(t.poll(1.0), 'CODEX LEARNED CROSS II')
+        self.assertEqual(t.poll(1.0), 'codex: Cross II')
         self.assertIsNone(t.poll(1.0 + L.TOAST_S + 0.1))
 
 
@@ -583,6 +583,93 @@ class Packaged(Base):
             b = L.LearnedAtlas(Library()['claude'])
             self.assertTrue(L.load_row(b, spec))
         self.assertEqual(packaged, b.anim['iai_slash_twin'])
+
+
+# ---------------------------------------------------------------- the ux / growth surfaces (move book, hover card, badges, toasts)
+class Surfaces(Base):
+    def seed(self):
+        def f(doc):
+            e = L._entry(doc, 'claude', 'claude')
+            e['used'] = {'iai_slash': {'n': 31, 'hit': 9, 'whiff': 2, 'block': 9, 'prac': 0}}
+            grant(e, ['claude', 'iai_slash', 'retime', 2, None, 'mastery'], 'mastery', now=50.0)
+            e['taken'] = {'pierce': 46}
+            grant(e, ['claude', 'riposte', 'retime', 9, None, 'counter'], 'counter', kind='counter', vs='pierce', now=60.0)
+            g = L._entry(doc, 'codex', 'claude')                 # codex wearing the claude skin learned the same move
+            grant(g, ['claude', 'iai_slash', 'retime', 2, None, 'mastery'], 'mastery', now=70.0)
+        L.update(f, self.f)
+
+    def test_the_move_book_has_a_learned_tab_drawn_animated(self):
+        from minis_core import collection, lineup
+        self.seed()
+        self.assertEqual(collection.SECTIONS[-1][0], 'learned')
+        b = collection.Book(lineup.characters(), {}, Library(), start='claude')
+        b.set_section(len(collection.SECTIONS) - 1)
+        vis = b.visible()
+        self.assertEqual(len(vis), 2)                                    # one entry per move, though two programs learned one
+        iai = next(e for e in vis if e['key'] == 'l:iai_slash_ii')
+        self.assertEqual(iai['type'], 'mastered')
+        self.assertIn('Claude mastered iai slash (31 thrown in fights)', iai['desc'])
+        self.assertIn('Codex', iai['desc'])
+        self.assertTrue(b.is_seen(iai))
+        frames = {b.portrait('claude', iai['anim'], t, True).tobytes() for t in (0.0, 0.2, 0.4, 0.6)}
+        self.assertGreater(len(frames), 1)                               # it animates
+        b.render(0.3)
+        got, tot = collection.counts(b.atlas('claude'), set())
+        got2, tot2 = collection.counts(Library()['claude'], set())
+        self.assertEqual(tot, tot2)                                      # the Learned tab never changes "N of M seen"
+        normal = collection.entries(b.atlas('claude'))
+        self.assertFalse(any(e['anim'] == 'iai_slash_ii' for sec in ('attacks', 'defense', 'everyday') for e in normal[sec]))
+
+    def test_the_hover_card_says_how_many_moves_were_learned(self):
+        from minis_core import hovercard
+        self.seed()
+        info = dict(name='Claude', state='idle', record=(3, 2), learned=L.summary_line('claude'))
+        texts = [t for t, _, _ in hovercard.lines(info)]
+        self.assertIn('learned 2 moves', texts)
+        self.assertNotIn('learned', ' '.join(t for t, _, _ in hovercard.lines(dict(name='Codex', state='idle', learned=None))))
+
+    def test_two_learning_badges_with_open_criteria(self):
+        from minis_core import achievements as ACH, records
+        self.assertIn('self_taught', ACH.IDS)
+        self.assertIn('student', ACH.IDS)
+        for aid in ('self_taught', 'student'):
+            a = ACH.BY_ID[aid]
+            self.assertTrue(a.desc)
+            for word in ('token', 'hour', 'usage', 'context'):
+                self.assertNotIn(word, (a.name + a.desc).lower())
+        rec = records.read()
+        self.assertNotIn('self_taught', ACH.evaluate(rec))
+        self.assertEqual(ACH.progress(rec)['self_taught'], (0, 1))
+        self.seed()
+        met = ACH.evaluate(rec)
+        self.assertEqual(met.get('self_taught'), 'claude')
+        self.assertEqual(met.get('student'), 'claude')
+
+    def test_learned_and_unlocked_toasts_share_one_row_without_overlapping(self):
+        from minis_core import achievements as ACH, records, scoreboard
+        records.record('claude', 'codex', now=1.0, score=(2, 1))
+        slot = L.toast_slot(wall=lambda: 0.0, label=lambda s: s.title())
+        slot.every_s = 0.0
+        self.assertIsNone(slot.poll(0.0))                                # the first look seeds both sources silently
+        self.seed()                                                       # two learned moves (+ two badges they earn)
+        shown = []
+        t = 1.0
+        while t < 40.0:
+            cur = slot.poll(t)
+            if cur and (not shown or shown[-1][1] != cur):
+                shown.append((t, cur))
+            t += 0.25
+        kinds = [c[0] for _, c in shown]
+        self.assertEqual(kinds.count('unlocked'), 2)
+        self.assertEqual(kinds.count('learned'), 3)                       # claude x2 + codex (wearing claude)
+        self.assertEqual(kinds[:2], ['unlocked', 'unlocked'])              # in arrival order, one source after the other
+        gaps = [b - a for (a, _), (b, _) in zip(shown, shown[1:])]
+        self.assertTrue(all(g >= L.TOAST_S - 0.01 for g in gaps), gaps)   # each holds its full 3 s: nothing overlaps
+        for kind, txt in [c for _, c in shown]:
+            im = scoreboard.render(dict(names={'a': 'Claude', 'b': 'Codex'}, records={'a': (1, 0), 'b': (0, 1)}, mode='taskbar',
+                                        toast=(kind, txt)))
+            self.assertGreater(im.width, 0)
+        self.assertIn(('learned', 'Claude: Iai Slash II'), [c for _, c in shown])
 
 
 if __name__ == '__main__':

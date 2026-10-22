@@ -1515,9 +1515,9 @@ class Scoreboard:
         from minis_core import history
         buses = {s: bus.read(s, now=wall) for s in SLOTS}
         hidden = {s: v for s in SLOTS for v in [control.hidden_left(s, now=wall)] if v is not None}
-        if getattr(self, 'toaster', None) is None:                    # growth: achievement toasts (3 s, row 2)
-            from minis_core import achievements
-            self.toaster = achievements.Toaster(wall=self.wall)
+        if getattr(self, 'toaster', None) is None:                    # growth: achievement toasts (3 s, row 2), shared with
+            from minis_core import learning                            # learning's LEARNED toasts: one queue, never overlapping
+            self.toaster = learning.toast_slot(wall=self.wall)
         return self.SB.Model.state(assign, buses, records.read(), control.paused(), control.arena_active(now=wall), control.winners(),
                                    pressed=self.pressed, spark=history.last_days(7, wall), now=wall, hidden=hidden,
                                    toast=self.toaster.poll(wall))

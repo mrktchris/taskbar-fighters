@@ -86,6 +86,8 @@ def lines(info) -> list:
         elif opp:
             s += f' · facing {opp}'
         out.append((s, DIM, False))
+    if info.get('learned'):                                   # learning.summary_line: 'learned 3 moves'
+        out.append((str(info['learned']), (150, 236, 160), False))
     return out
 
 

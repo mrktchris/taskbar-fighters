@@ -941,19 +941,48 @@ def summary_line(program, doc=None):
     return None if not n else f'learned {n} move' + ('' if n == 1 else 's')
 
 
-def book_entries(character, doc=None, program=None):
-    """Entries for a 'Learned' tab in the move book (ux collection.entries shape, plus `program` and `how`): every move a
-    program learned while wearing `character`."""
+BOOK_TYPE = {'mastery': 'mastered', 'counter': 'counter', 'mimic': 'borrowed', 'invention': 'invented'}
+
+
+def book_entries(character, doc=None, program=None, label=None):
+    """Entries for the move book's LEARNED tab (collection.learned_entries): every move a program learned while wearing
+    `character`, one entry per move (programs that learned the same one share it), newest first.  Each has the book's
+    shape - key 'l:<id>', name, type (mastered / counter / borrowed / invented: fits a cell), anim, desc (who and how) -
+    plus `programs`, `how` and `spec` (the book builds the row from it)."""
     doc = read() if doc is None else doc
-    out = []
+    if label is None:
+        try:
+            from .sources import short_label as label
+        except Exception:
+            label = str
+    by = {}
     for prog, mid, rec in learned_list(doc, program):
         spec = rec.get('spec') or []
-        if len(spec) < 1 or spec[0] != character:
+        if len(spec) < 6 or spec[0] != character:
             continue
         e = (doc.get('programs') or {}).get(prog) or {}
-        out.append(dict(key='l:' + mid, name=name_of(mid, rec), type='learned ' + str(rec.get('how', '')), anim=mid, desc=how_line(rec, e),
-                        absent=False, program=prog, how=rec.get('how'), spec=list(spec)))
+        if mid not in by:
+            by[mid] = dict(key='l:' + mid, name=name_of(mid, rec), type=BOOK_TYPE.get(rec.get('how'), 'learned'), anim=mid, absent=False,
+                           programs=[], how=rec.get('how'), spec=list(spec), lines=[])
+        by[mid]['programs'].append(prog)
+        by[mid]['lines'].append(f'{label(prog)} {how_line(rec, e)}')
+    out = []
+    for mid, ent in by.items():
+        ent['desc'] = '; '.join(ent.pop('lines'))
+        out.append(ent)
     return out
+
+
+def first_by(how='any', doc=None):
+    """The program that learned the earliest move (of kind `how`, or any), for an achievement's 'by'; None if none."""
+    best = None
+    for prog, mid, rec in learned_list(doc):
+        if how != 'any' and rec.get('how') != how:
+            continue
+        ts = float(rec.get('ts', 0) or 0)
+        if best is None or ts < best[0]:
+            best = (ts, prog)
+    return best[1] if best else None
 
 
 def stats(doc=None):
@@ -970,8 +999,9 @@ def stats(doc=None):
 
 
 class Toaster:
-    """Director side (scoreboard): poll(now) -> 'CLAUDE LEARNED IAI SLASH II' while a new learned move should show, else
-    None.  Re-reads learning.json when its version changes (checked at most every `every_s`)."""
+    """Director side (scoreboard): poll(now) -> 'Claude: Iai Slash II' while a new learned move should show, else None.
+    Re-reads learning.json (checked at most every `every_s`).  The scoreboard shares one toast row between this and the
+    achievement badges through ToastSlot, which calls check() and drains `queue`."""
 
     def __init__(self, p=None, every_s=1.0, wall=time.time, label=None):
         self.p, self.every_s, self.wall = p, every_s, wall
@@ -992,7 +1022,7 @@ class Toaster:
         for prog, mid in new:
             rec = (doc['programs'].get(prog) or {}).get('learned', {}).get(mid) or {}
             lab = self.label(prog) if self.label else prog
-            self.queue.append(f'{str(lab).upper()} LEARNED {name_of(mid, rec).upper()}')
+            self.queue.append(f'{lab}: {name_of(mid, rec)}')
         return new
 
     def poll(self, now=None):
@@ -1008,6 +1038,49 @@ class Toaster:
         if self.showing is None and self.queue:
             self.showing = (self.queue.pop(0), now + TOAST_S)
         return self.showing[0] if self.showing else None
+
+
+class ToastSlot:
+    """The scoreboard's ONE toast row, shared by every source that queues toasts (achievements.Toaster: 'UNLOCKED <badge>',
+    learning.Toaster: 'LEARNED <program>: <move>').  Each source keeps finding new items through its own check(now); this
+    drains them into one FIFO and shows one at a time for TOAST_S seconds, in the order they arrived: two unlocks at once
+    queue, never overlap.  poll(now) -> (kind, text) showing now, or None."""
+
+    def __init__(self, sources, every_s=1.0, wall=time.time):
+        self.sources = list(sources)                         # [(kind, toaster with .check(now) and .queue)]
+        self.every_s, self.wall = every_s, wall
+        self.next = -1e18
+        self.queue = []
+        self.showing = None                                  # (kind, text, until)
+
+    def poll(self, now=None):
+        now = self.wall() if now is None else now
+        if now >= self.next:
+            self.next = now + self.every_s
+            for kind, src in self.sources:
+                try:
+                    src.check(now)
+                except Exception:
+                    pass
+                while getattr(src, 'queue', None):
+                    self.queue.append((kind, src.queue.pop(0)))
+        if self.showing and now >= self.showing[2]:
+            self.showing = None
+        if self.showing is None and self.queue:
+            kind, text = self.queue.pop(0)
+            self.showing = (kind, text, now + TOAST_S)
+        return (self.showing[0], self.showing[1]) if self.showing else None
+
+
+def toast_slot(wall=time.time, label=None):
+    """The director's shared slot: achievements first in the list (a badge and the move that earned it arrive together)."""
+    from . import achievements
+    if label is None:
+        try:
+            from .sources import short_label as label
+        except Exception:
+            label = None
+    return ToastSlot([('unlocked', achievements.Toaster(wall=wall)), ('learned', Toaster(wall=wall, label=label))], wall=wall)
 
 
 # ---------------------------------------------------------------- privacy
