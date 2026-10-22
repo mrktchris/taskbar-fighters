@@ -16,6 +16,8 @@ import logging
 SELECT, PAUSE, FLASH, PLATES, RIVAL, ARENA, BOUT, RESTART, QUIT = range(1, 10)
 FORGE = 10                                       # V8: Desktop weapons (the arena's RAM-only screen grab)
 CARD, STREAM = 11, 12                            # growth: Share my stats card..., Streamer mode
+SETTINGS, BOOK, LEGEND, REPLAY, GIF = range(13, 18)   # UX layer (13+: 11/12 are growth's): windows the scoreboard host opens
+UX_KINDS = {SETTINGS: 'settings', BOOK: 'book', LEGEND: 'legend', REPLAY: 'replay', GIF: 'gif'}
 PRODUCT = 'Taskbar Fighters'                    # the user-visible name; internal names (minis.py, data dir) stay
 TIP_MAX = 127                                         # NOTIFYICONDATAW.szTip is WCHAR[128]
 WM_TRAY = 0x8000 + 0x4D                               # WM_APP + 'M': the icon's callback message
@@ -28,7 +30,11 @@ def tray_menu(flags):
     """-> items for minis_win.shell.Overlay.build_menu.  flags: paused, flash, forge, plates, rival, arena, stream (bools);
     select_ok / arena_ok (False greys the item out: no scoreboard host in this director)."""
     f = flags or {}
+    ux_off = {'disabled': not f.get('ux_ok', True)}
     return [(SELECT, 'Select fighters…', {'disabled': not f.get('select_ok', True)}),
+            (SETTINGS, 'Settings…', ux_off),
+            (BOOK, 'Move book…', ux_off),
+            (LEGEND, 'What am I looking at?', ux_off),
             None,
             (PAUSE, 'Pause animations', {'checked': bool(f.get('paused'))}),
             (FLASH, 'Flash effects', {'checked': bool(f.get('flash', True))}),
@@ -37,6 +43,8 @@ def tray_menu(flags):
             (RIVAL, 'Rival mode', {'checked': bool(f.get('rival', True))}),
             (ARENA, 'Exit arena' if f.get('arena') else 'Start arena', {'disabled': not f.get('arena_ok', True)}),
             (BOUT, 'Bout now'),
+            (REPLAY, 'Replay last K.O.', ux_off),
+            (GIF, 'Save last fight as GIF', ux_off),
             None,
             (CARD, 'Share my stats card…'),
             (STREAM, 'Streamer mode (OBS window)', {'checked': bool(f.get('stream'))}),

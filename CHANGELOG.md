@@ -42,6 +42,56 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
 
 ## Unreleased - Windows on strangers' PCs (branch `win-robust`)
 
+## Unreleased - UX layer (branch `ux`)
+
+### UX layer - getting around (branch `ux`)
+
+Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.md](docs/RESEARCH-UX.md)), keeping to its
+"do not do" list: no popups that take focus, no network, no new capture, no guilt or streak pressure.
+
+- **Settings window** (tray > *Settings...*, `minis.py settings`): a pixel-art window of its own with fighter size, plates,
+  flash effects, desktop weapons (default unchanged: real pixels; its help line is amber while on), rival mode, who wins,
+  the results strip, hover cards, event signals, **Start with Windows** (one `Taskbar Fighters.lnk` in shell:startup,
+  an existing one for this copy reused, one for another copy left alone) / **Open at login** (the macOS LaunchAgent), and a
+  **drag-to-set fight zone** over the taskbar (Save / Reset to auto; written to the data folder's own `minis.json`, which
+  overrides the hand-written one; the fighters restart). Every row is a command too: `settings list|set`, `startup`, `zone`,
+  `results|cards|signals on|off`. The app writes only under its data folder, or to a path you choose (plus the startup entry
+  you turn on yourself).
+- **The UI has its own pixel font** (`minis_core/pixelfont.py`, generated in code: cap height 7, proportional, regular /
+  bold / tall variants for 8-12 px). FreeType's monochrome hinting of the OS fonts tore 9-10 px words apart ("m inis",
+  "C laude") and macOS drew them with other fonts again; now every small-text surface (plates, scoreboard, select screen and
+  every new window) renders pixel for pixel the same on Windows, macOS and in the frozen bundle, with no OS font involved.
+  OS fonts remain only for the large banners and the arena HUD. No help line, caption or toast is cut with "..." any more:
+  they wrap.
+- **First-run guide + legend**: three cards pointing at the real fighter, plates and scoreboard, once (ux.json); tray >
+  *What am I looking at?* / `minis.py guide` shows a 10-second legend.
+- **Hover cards**: rest the mouse on a fighter or plate for the program, its state in words with how long, context, plan,
+  record and head-to-head against the current opponent. Click-through, no focus, no content.
+- **Event signals**: done flag until hovered; needs-you amber halo pulse and a wave; SECOND WIND on a context compaction with
+  the plate meter refilling; DANGER near the limit and FINISH! with the K.O.  Paused / quiet / flash-off keep them still.
+- **Results moment**: a 4-second strip over the scoreboard ("CODEX WINS 2-1 · 21 hits · best combo 5 · ultimate landed"),
+  the winner poses and the loser bows on the taskbar.
+- **Rival countdown** on a sleeping plate ("rival match in ~6 min") and in its hover card.
+- **Instant replay, GIF export and fight codes**: tray > *Replay last K.O.* plays the deciding exchange (K.O. in slow motion)
+  in a window above the taskbar; *Save last fight as GIF* writes the whole match to `<data folder>\exports` and opens that folder with the file
+  selected (`replay --gif PATH` writes where you say); both are
+  offline renders from the stored plan (`replay.json`, numbers and ids only). `minis.py replay code` prints a short code
+  (`TF2-claude-codex-...`: seed, characters, positions, odds as a ratio, outcome check) that `minis.py replay CODE` plays.
+  Fighter ids in a code are checked against an allowlist (`pack-shadow-ronin` style ids round-trip, a hyphen written as a
+  dot), GIF file names are built from sanitized ids and the default output is refused unless it resolves under `exports`.
+- `ux.json`, `collection.json` and the data folder's `minis.json` are written under a small lock file (`filelock.py`): the
+  CLI, the director and both fighter processes share them, and two read-modify-writes no longer drop each other's change.
+- **Move book** (tray > *Move book...*, `minis.py book`): every move, set piece and finisher per fighter, seen ones animated,
+  unseen as silhouettes; seen move ids in `collection.json`.
+- Tray menu gains Settings..., Move book..., What am I looking at?, Replay last K.O., Save last fight as GIF.
+- New modules: `minis_core/{ux,ux_runtime,ux_cli,settings_ui,guide,hovercard,signals,results,replay,collection}.py`,
+  `minis_win/{ux_window,settings_window,book_window,guide_window,replay_window,startup}.py`, `minis_mac/startup.py`;
+  `tools/ux_previews.py` renders every new window offline; `tests/test_ux.py`.
+- macOS: the same windows through the NSPanel overlay; PgUp/PgDn/Home keys mapped for the book; real-Mac checks are
+  MAC-30 to MAC-37 in docs/MAC-HANDOFF.md.
+
+### Windows on strangers' PCs (branch `win-robust`)
+
 - **Any taskbar edge.** Bottom: on the taskbar as before. Top / left / right: a strip along the bottom of the work area
   beside the taskbar. Auto-hide at the bottom: shown only while the taskbar is revealed (never over its 2 px reveal strip).
 - **The zone finds itself.** The empty stretch of the taskbar is detected from the RECTS of its elements (UI Automation

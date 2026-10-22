@@ -23,7 +23,11 @@ REGULAR_FONTS = ('segoeui.ttf', '/System/Library/Fonts/Supplemental/PTSans.ttc',
                  '/Library/Fonts/Arial.ttf')
 
 
-def font(size, bold=True):
+PIXEL_MAX = 12                                    # up to this size the UI's own pixel font (minis_core.pixelfont) is the font
+
+
+def os_font(size, bold=True):
+    """An OS TrueType face (large text only: banners, the arena HUD, the VS card); Pillow's default bitmap when none loads."""
     k = (size, bold)
     if k not in _font_cache:
         f = None
@@ -39,6 +43,19 @@ def font(size, bold=True):
 
 
 _font_key = {}                                    # id(font) -> (size, bold): lets KDraw find the k-times-larger face
+
+
+def font(size, bold=True):
+    """The font for `size` px of UI text: the shipped pixel font up to PIXEL_MAX (identical on every OS; measured by
+    ImageDraw.textlength through its getlength, drawn only by text()), an OS face above it."""
+    if int(size) <= PIXEL_MAX:
+        from . import pixelfont
+        return pixelfont.for_size(size, bold)
+    return os_font(size, bold)
+
+
+def is_pixel(f):
+    return hasattr(f, 'mask') and hasattr(f, 'glyph')
 
 
 class KDraw:
@@ -67,9 +84,14 @@ class KDraw:
         self.d.polygon([(x * self.k, y * self.k) for x, y in xy], fill=fill, outline=outline)
 
     def textlength(self, s, font=None):
+        if is_pixel(font):
+            return font.getlength(s)
         return self.d.textlength(s, font=self._font(font)) / self.k
 
-    def text(self, xy, s, fill=None, font=None):
+    def text(self, xy, s, fill=None, font=None, scale=1):
+        if is_pixel(font):                            # the pixel font at k x scale: crisp on Retina, the same shapes as 1x
+            self.d.bitmap((xy[0] * self.k, xy[1] * self.k), font.mask(s, self.k * scale), fill=fill)
+            return
         self.d.fontmode = 'L'
         self.d.text((xy[0] * self.k, xy[1] * self.k), s, fill=fill, font=self._font(font))
 
@@ -85,9 +107,66 @@ def canvas(w, h, k=1):
     return im, KDraw(im, k)
 
 
-def text(d, xy, s, fill, size=9, bold=True):
-    d.fontmode = '1'                              # crisp, un-antialiased pixels
-    d.text(xy, s, fill=fill, font=font(size, bold))
+TEXT_BOOST = 1.7                                  # coverage gain of the small UI text (see text())
+_BOOST_LUT = [min(255, int(v * TEXT_BOOST)) for v in range(256)]
+_mask_cache = {}
+
+
+def text_mask(s, size=9, bold=True):
+    """-> (L mask, dx): the string's coverage mask, drawn antialiased and then sharpened, and its x offset from the pen."""
+    key = (s, size, bold)
+    m = _mask_cache.get(key)
+    if m is None:
+        f = os_font(size, bold)
+        l, t, r, b = f.getbbox(s)
+        dx = min(0, l)
+        im = Image.new('L', (max(1, r - dx + 1), max(1, b + 1)), 0)
+        dd = ImageDraw.Draw(im)
+        dd.fontmode = 'L'
+        dd.text((-dx, 0), s, fill=255, font=f)
+        m = (im.point(_BOOST_LUT), dx)
+        if len(_mask_cache) > 2048:
+            _mask_cache.clear()
+        _mask_cache[key] = m
+    return m
+
+
+def wrap(s, maxw, size=9, bold=False):
+    """Split `s` into lines no wider than maxw px (on spaces; a single over-long word keeps its own line, never cut)."""
+    import re
+    f = font(size, bold)
+    out, cur = [], ''
+    for tok in re.findall(r'\S+|\s+', str(s)):                     # runs of spaces are kept inside a line
+        if tok.isspace():
+            cur = cur + tok if cur else cur
+            continue
+        nxt = cur + tok
+        if not cur.strip() or f.getlength(nxt) <= maxw:
+            cur = nxt
+        else:
+            out.append(cur.rstrip())
+            cur = tok
+    if cur.strip():
+        out.append(cur.rstrip())
+    return out or ['']
+
+
+def text(d, xy, s, fill, size=9, bold=True, scale=1):
+    """UI text.  Up to PIXEL_MAX px it is the shipped pixel font (minis_core.pixelfont), drawn as a mask at whole-pixel
+    `scale` - identical on Windows, macOS and in a bundle, with no OS font involved.  (FreeType's monochrome hinting of the
+    OS fonts at 8-11 px tore words apart: "m inis", "C laude".)  Above it an OS face, antialiased and sharpened (TEXT_BOOST).
+    KDraw (macOS Retina) draws the pixel font at k x scale and the OS face k times finer."""
+    f = font(size, bold)
+    if isinstance(d, KDraw):
+        d.text(xy, s, fill=fill, font=f, scale=scale)
+        return
+    if is_pixel(f):
+        d.bitmap((int(xy[0]), int(xy[1])), f.mask(s, scale), fill=fill)
+        return
+    mask, dx = text_mask(s, size, bold)
+    if scale > 1:
+        mask = mask.resize((mask.width * scale, mask.height * scale), Image.NEAREST)
+    d.bitmap((int(xy[0]) + dx * scale, int(xy[1])), mask, fill=fill)
 
 
 def style_of(who_or_atlas):

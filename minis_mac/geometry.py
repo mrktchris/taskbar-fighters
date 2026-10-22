@@ -117,7 +117,8 @@ def window_solid_at(mouse, win_rect, scale, alpha=None, on_hittest=None):
 # ------------------------------------------------------------------ keys
 # macOS virtual key codes (Carbon kVK_*) -> the Windows VK codes minis_core.select.Model.key expects
 MAC_KEYS = {123: 0x25, 126: 0x26, 124: 0x27, 125: 0x28,          # arrows: left up right down
-            36: 0x0D, 76: 0x0D, 49: 0x20, 53: 0x1B, 51: 0x08, 117: 0x08, 48: 0x09}   # return, enter, space, esc, delete, fwd-del, tab
+            36: 0x0D, 76: 0x0D, 49: 0x20, 53: 0x1B, 51: 0x08, 117: 0x08, 48: 0x09,   # return, enter, space, esc, delete, fwd-del, tab
+            116: 0x21, 121: 0x22, 115: 0x24}                                       # page up, page down, home (the move book)
 
 
 def vk_from_mac(keycode):
