@@ -37,6 +37,7 @@ NEEDS = {
 BOUT_KINDS = ('spar', 'clash', 'ranged', 'match')
 MIN_HOLD_MS = 50          # V6: a smear / hit frame shorter than this can fall between two taskbar redraws (30 fps = 33 ms)
 BOOST_WINDOW_S = 20.0     # V6: an agent that finished a task lands its signature super if a bout starts within this
+ARENA_BOOST_S = 20.0      # V9: ... and the bus carries a marker this long, so a running arena opens with that super too
 PULSE_S, PULSE_ON_S, PULSE_ALPHA = 1.0, 0.15, 0.35     # V6: near the context limit / low HP: a short white pulse every second
 LOW_HP = 25
 
@@ -56,10 +57,13 @@ def clock_between(stop, slow, since, now):
     return max(0.0, el)
 
 
-def lift_of(atlas, anim, t_anim, carry, clock, now):
+def lift_of(atlas, anim, t_anim, carry, clock, now, air=None):
     """Height of a fighter (RES 1 px) playing `anim` since `t_anim`: the row's `air` curve, else what is left of a fall
-    that started when an airborne row was cut off (`carry` = (t, h)), else 0."""
+    that started when an airborne row was cut off (`carry` = (t, h)), else 0.  V9: `air` (a timeline entry's own curve,
+    a tumble's launch arc) replaces the row's."""
     a = atlas.anim.get(anim) if atlas is not None else None
+    if air:
+        return air_lift({'air': air}, clock(t_anim, now) * 1000.0)
     if a and a.get('air'):
         return air_lift(a, clock(t_anim, now) * 1000.0)
     if carry:
@@ -98,7 +102,7 @@ class Track:
     def lift(self, now):
         if self.t_anim is None:
             return 0.0
-        return lift_of(self.atlas, self.anim, self.t_anim, self.carry, self.clock, now)
+        return lift_of(self.atlas, self.anim, self.t_anim, self.carry, self.clock, now, (self.opts or {}).get('air'))
 
     def frame(self, now):
         """-> (frame index, done) of the row being played (no MIN_HOLD_MS adjustment: used for whitelists, not drawing)."""
@@ -129,7 +133,7 @@ class Track:
         a = self.atlas.anim.get(name)
         if a is None:
             name, a = 'idle', self.atlas.anim.get('idle')
-        self.carry = (t_abs, h) if h > 0.5 and not (a and a.get('air')) else None
+        self.carry = (t_abs, h) if h > 0.5 and not (a and a.get('air')) and not opts.get('air') else None
         self.anim, self.t_anim, self.opts = name, t_abs, opts
         hs = opts.get('hitstop')
         if hs:
@@ -414,6 +418,9 @@ class Brain:
         self.flashes = None          # V6: control.json `flashes` (the owner may set it; None = read it here, throttled)
         self._flash_cache, self._flash_read = True, -1e9
         self.finish_due = {}         # V6: slot -> deadline (monotonic) or 'after' (finished during a bout): boost super
+        self.pct = None              # V9: damage % this round while a match plays (frame data), else None
+        self.boost_mark = None       # V9: (id, deadline monotonic) of this slot's last task finish, published on the bus
+        self.sfx = None              # V9: an sfx.Player when this process plays the fight's sounds (slot a only), else None
         self.shadow_pick = None      # V6: a no-repeat picker for shadowboxing
         self.stun_until = 0.0        # dizzy after a fast drag / a throw landing
         self.throw_state = None      # a Shift-drag throw in flight
@@ -596,7 +603,20 @@ class Brain:
         return dict(state=self.state(), mode=self.mode, x=round(self.x, 1), facing=self.facing, anim=self.anim,
                     ctx=(self.snap.ctx_pct if self.snap else None), event=self.event, character=self.character,
                     run=self.run, paused=self.paused, bout=self.bout, hp=self.hp,
-                    round=(self.round or {}).get('n'), wins=(self.round or {}).get('wins'))
+                    round=(self.round or {}).get('n'), wins=(self.round or {}).get('wins'), boost=self.boost_marker())
+
+    def boost_marker(self, now=None):
+        """V9: {'id', 'left'} while this slot's agent finished a task less than ARENA_BOOST_S ago, else None.  `left` is
+        seconds, relative to the bus payload's own wall-clock `ts`, so another process (the arena) can tell how long it
+        still holds without sharing this process's monotonic clock.  A number and an opaque id: no content."""
+        if self.boost_mark is None:
+            return None
+        now = self.last_now if now is None else now
+        left = self.boost_mark[1] - now
+        if left <= 0:
+            self.boost_mark = None
+            return None
+        return {'id': self.boost_mark[0], 'left': round(left, 2)}
 
     def view(self, now):
         dim = self.snap is not None and self.snap.state == 'sleeping' and self.mode == 'home'   # a rival on its way to a bout is lit
@@ -715,6 +735,7 @@ class Brain:
 
     def _end_match_visuals(self):
         self.hp = self.round = self.banner = None
+        self.pct = None                                         # V9: no damage % outside a match
         self.stop = self.slide = self.slow = None
         if self.track is not None:                              # an airborne fighter whose bout ends mid-air keeps falling
             h = self.track.lift(self.last_now)
@@ -767,6 +788,7 @@ class Brain:
         if ev == 'finished':
             self.note_finish(self.slot, now)
             self._emit('finished', now)
+            self.boost_mark = ('%s:%d' % (self.run, self.seq), now + ARENA_BOOST_S)   # V9: the arena reads it off the bus
         elif ev == 'limit':
             cancels = self.bout
             if self.mode != 'home' or self.bout:
@@ -997,7 +1019,7 @@ class Brain:
         self.stop, self.slow, self.slide = tr.stop, tr.slow, tr.slide
         self.script_i = tr.i
         if self.ghost is not None:
-            self.ghost.advance(now)
+            self.ghost.advance(now, (lambda t_abs, name, opts: self._sound(t_abs, name, opts, now)) if self.sfx else None)
         if now >= sc['t_end']:
             self.script, self.bout = None, None
             self._end_match_visuals()
@@ -1011,12 +1033,16 @@ class Brain:
         tr = self.track
         self.x = tr.x
         self.stop, self.slow = tr.stop, tr.slow
+        if self.sfx is not None:
+            self._sound(t_abs, name, opts, now)
         if name.startswith('@'):
             self._directive(name, t_abs, opts, now)
             return
         self.play(name, t_abs, loop=None, hold=bool(opts.get('hold')))
         if 'hp' in opts and isinstance(opts['hp'], dict):
             self.hp = opts['hp'].get(self.slot)
+        if isinstance(opts.get('pct'), dict):
+            self.pct = opts['pct'].get(self.slot)                # V9: this fighter's damage %, for its plate
         if 'contact' in opts:
             self.contact_log.append((opts['contact'], name))
             self._bout_note('contact', opts['contact'], name)
@@ -1024,11 +1050,29 @@ class Brain:
             self.hit_log.append((t_abs, name))
             self._bout_note('hit', t_abs, name)
 
+    def _sound(self, t_abs, name, opts, now):
+        """V9 sound effects: one entry of either row of the shared timeline (this slot's own, or the opponent's replayed
+        ghost) -> at most one sound.  Reactions sit on the struck fighter's row, a swing starts on the striker's, round /
+        KO banners are directives; so the one playing process (slot a) hears the whole fight exactly once."""
+        from . import sfx
+        snd = None
+        if name == '@banner':
+            snd = sfx.sound_for_banner(opts.get('banner'))
+        elif not name.startswith('@'):
+            if 'react_to' in opts or name in ('ko', 'clash'):
+                snd = sfx.ROW_SOUNDS.get(name)
+            elif 'contact' in opts:
+                snd = 'whoosh'
+        if snd:
+            self.sfx.play(snd, t_abs, now)
+
     def _directive(self, name, t_abs, opts, now):
         """Timeline directives (rounds.py): HP, effects, banner texts, the record.  Every side runs @hp / @fx; only the
         left side of the plan carries @banner and @record, so texts are drawn once and the record is written once."""
         if name == '@hp':
             self.hp = (opts.get('hp') or {}).get(self.slot)
+            if isinstance(opts.get('pct'), dict):
+                self.pct = opts['pct'].get(self.slot)
             self.round = dict(n=opts.get('round'), wins=opts.get('wins') or {})
         elif name == '@fx':
             if now - t_abs <= 0.5:                               # a stale directive (after a hiccup) is skipped, not replayed late

@@ -144,7 +144,7 @@ class Variety(unittest.TestCase):
             downs = [(t, o) for t, n, o in tl[slot] if n == 'knockdown' and o.get('hp', {}).get(slot, 0) > 0]
             getups = [t for t, n, o in tl[slot] if n == 'getup']
             for t, o in downs:
-                self.assertTrue(any(t < g < t + 2.0 for g in getups), (slot, t, getups))
+                self.assertTrue(any(t < g < t + 2.6 for g in getups), (slot, t, getups))     # V9: tumble + a missed tech
             for t, n, o in tl[slot]:
                 if 'contact' in o and o.get('outcome') in ('hit', 'block', 'crouch_block', 'parry'):
                     self.assertGreater(o['hitstop'], 0, (n, o))

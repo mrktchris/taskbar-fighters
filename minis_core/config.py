@@ -22,7 +22,7 @@ DEFAULTS = {
     "plan_feed_max_age_min": 15,
     "limit_pct": 90,
     "fps_active": 10,
-    "fps_fight": 30,                       # V6: redraw rate while a fight script runs (smears, hitstop and flashes need it)
+    "fps_fight": 60,                       # V9: redraw rate while a fight script runs (V6: 30); ~1 % of a core to compose at 60
     "fps_idle": 4,
     "topmost_tick_ms": 250,
     "bout_min_s": 45,                      # neither working: a spar / ranged duel this often
@@ -60,7 +60,7 @@ DEFAULTS = {
     "tray_icon": True,                     # the notification-area icon (director process): left click = select, right click = menu
     "scoreboard_x": None,                  # screen x of the widget; None = just left of the icon cluster (zone end + 36 - width)
     "arena_monitor": None,                 # monitor index for the Arena button / menu item; None = the one non-primary monitor
-    "arena_fps": 30,
+    "arena_fps": 60,                      # V9: tries 60, steps down to 30 then 20 when it costs more than arena_cpu_budget_pct
     "arena_cpu_budget_pct": 10.0,          # of one core; above it the arena drops to 20 fps
     "arena_min_window_px": [160, 100],     # smaller window rects are not platforms
     "fighter_size": 128,                   # taskbar fighter height in px: 64 (V1-V6 look), 96 or 128 (HD art). `minis.py size N`

@@ -232,10 +232,14 @@ class FightFeelV6(unittest.TestCase):
                     if n == 'knockdown' and o.get('hp', {}).get(w, 0) > 0:
                         seen += 1
                         a = LIB[p['chars'][w]]
-                        t_land = t + a.total_ms('knockdown') / 1000.0 + o['hitstop'] / 1000.0
+                        sl = o.get('slow')                                    # V9: a tumble stretches the flight
+                        stretch = (sl[1] - sl[0]) * (1.0 - sl[2]) if sl else 0.0
+                        t_land = t + a.total_ms('knockdown') / 1000.0 + o['hitstop'] / 1000.0 + stretch
                         nxt = steps[i + 1]
                         self.assertEqual(nxt[1], 'getup', (w, t, steps[i:i + 3]))          # never idle in between
-                        self.assertAlmostEqual(nxt[0], t_land, places=6)
+                        # up the moment it lands (a tech), or after lying a moment (V9: a missed tech after a tumble)
+                        self.assertTrue(any(abs(nxt[0] - (t_land + extra)) < 1e-3 for extra in (0.0, rounds.MISSED_TECH_S)),
+                                        (nxt[0], t_land))
         self.assertGreater(seen, 3)
 
     def test_nobody_is_hit_while_on_the_floor(self):
@@ -321,7 +325,8 @@ class FightFeelV6(unittest.TestCase):
                 g = LIB[p['chars'][w]].signature()
                 ko = [o for t, n, o in tl[s['loser']] if (n in rounds.LYING and abs(t - s['final_ko']['tc']) < 1e-6)
                       or (n == 'thrown' and o.get('stop_at') == round(s['final_ko']['tc'], 4))][0]
-                show = (LIB[p['chars'][w]].anim.get(ko['react_to']) or {}).get('type') in ('throw', 'spike', 'through', 'pull')
+                show = ((LIB[p['chars'][w]].anim.get(ko['react_to']) or {}).get('type') in ('throw', 'spike', 'through', 'pull', 'air')
+                        or ko['react_to'] == 'uppercut')                                  # V9: a juggle (launch, air slash) finishes too
                 sig += ko['react_to'] in (g['strike'], g['super'], g['ultimate'], g['special']) or show   # V7 showpieces count
         self.assertGreater(comebacks, 20)
         self.assertGreater(sig / kos, 0.85)

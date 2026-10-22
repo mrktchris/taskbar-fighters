@@ -629,7 +629,7 @@ class Reliability(Isolated):
         good = self.data / 'ok.json'
         good.write_text(json.dumps({'fps_idle': 0, 'fps_active': 500, 'arena_fps': 'x'}))
         cfg = minis.load_config(good, log=log)
-        self.assertEqual((cfg['fps_idle'], cfg['fps_active'], cfg['arena_fps']), (1, 60, 30))
+        self.assertEqual((cfg['fps_idle'], cfg['fps_active'], cfg['arena_fps']), (1, 60, 60))     # V9: arena default 60
         self.assertNotIn('_config_problem', cfg)
 
 

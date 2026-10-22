@@ -12,7 +12,7 @@ heavy recovery.  Eight frames each, the sheet's column budget.
 """
 from __future__ import annotations
 from dataclasses import replace
-from moves import M, p
+from moves import M, p, push_dust
 
 ULT_HITSTOP = 300
 
@@ -99,16 +99,19 @@ def ult_grapple(desc, **_):
         (p(dy=2, lean=4, chest=1.04, hf=(12, -6), hb=(11, -5), fist_f=4, fist_b=4, face='g',
            fx=(('spark_s', 'hf', 3, 0), ('spark_s', 'hb', 3, 0))), 200),
         (p(dy=3, lean=24, sq=0.90, hf=(11, -4), hb=(10, -3), fist_f=4, fist_b=4, ff=(8, 0), fb=(-5, 0), face='g'), 80),
-        (p(dx=16, dy=-8, lean=75, sq=1.10, hf=(10, -2), hb=(8, -1), fist_f=4, fist_b=4, ff=(-2, 8), fb=(-6, 8), ghost=(10, 20, 30), face='g',
-           fx=(('speedlines', 'hip', -8, -4),)), 70),
-        (p(dx=16, dy=-9, lean=80, sq=1.06, hf=(10, -2), hb=(8, -1), fist_f=4, fist_b=4, ff=(-3, 9), fb=(-7, 9), ghost=(10, 20, 30), face='g',
+        (p(dx=16, dy=-1, lean=75, sq=1.10, hf=(10, -2), hb=(8, -1), fist_f=4, fist_b=4, ff=(-2, 8), fb=(-6, 8), ghost=(10, 20, 30), face='g',
+           fx=(('speedlines', 'hip', -8, -4),) + push_dust()), 70),
+        (p(dx=16, dy=-1, lean=80, sq=1.06, hf=(10, -2), hb=(8, -1), fist_f=4, fist_b=4, ff=(-3, 9), fb=(-7, 9), ghost=(10, 20, 30), face='g',
            fx=(('speedlines', 'hip', -8, -4),)), 60),
-        (p(dx=6, dy=-6, lean=10, turn=0.4, face='back', hf=(-8, -6), hb=(10, -6), fist_f=4, fist_b=4, ff=(4, 4), fb=(-4, 4),
+        (p(dx=6, dy=-1, lean=10, turn=0.4, face='back', hf=(-8, -6), hb=(10, -6), fist_f=4, fist_b=4, ff=(4, 4), fb=(-4, 4),
            smear_b=(8, -1), smear_f=(10, -2)), 50),
-        (p(dy=-2, lean=-6, turn=0.8, hf=(10, -8), hb=(-6, -4), fist_f=4, ff=(7, 2), fb=(-6, 1), face='g', fx=(('spark', 'hf', 3, -1), ('spark_s', 'hb', 2, -1))), 150),
-        (p(dy=4, lean=14, sq=0.90, hf=(6, 2), hb=(2, 2), face='g', fx=(('dust', 'ff', 4, 1), ('dust', 'fb', -5, 1))), 220)],
+        (p(dy=-1, lean=-6, turn=0.8, hf=(10, -8), hb=(-6, -4), fist_f=4, ff=(7, 4), fb=(-6, 3), face='g', fx=(('spark', 'hf', 3, -1), ('spark_s', 'hb', 2, -1))), 150),
+        (p(dy=6, lean=14, sq=0.86, head=(2, 2), hf=(6, 2), hb=(2, 2), face='g', fx=(('dust', 'ff', 4, 1), ('dust', 'fb', -5, 1))), 220)],
         cat='ultimate', desc=desc, proj_frame=1, hit_frame=6, hitstop_ms=260, shake=dict(frames=5, amp=2),
-        fx=[{'name': 'grapple_lines', 'at': 1}, {'name': 'grapple_slash', 'at': 6}]), {5: -150, 6: 30})
+        fx=[{'name': 'grapple_lines', 'at': 1}, {'name': 'grapple_slash', 'at': 6}],
+        # V9: the zip is a real flight (the engine lifts it along `air`), not a 4 px rise inside the cell: off the floor on
+        # the first zip key, highest through the spin, the cross slash lands on the way down, touchdown on the squash
+        air_spec=[(3, 0, 0), (4, 0.5, 10, 'o'), (5, 1, 11, 'h'), (6, 0.4, 10, 'h'), (7, 0, 0, 'i')]), {5: -150, 6: 30})
 
 
 def ult_gale_rend(desc, **_):

@@ -93,9 +93,12 @@ def trail_weapons(body, frames, lag=0.35):
     return out
 
 
-def _nearest_fit(body, ps):
+def _nearest_fit(body, ps, prev=None, nxt=None):
     """A key fit_weapons could not fit (a long two-handed blade held up at the top of the cell): instead of letting the
-    rig turn it toward the side it leans (often 70+ degrees), aim it at the NEAREST angle that fits, either way."""
+    rig turn it toward the side it leans (often 70+ degrees), aim it at the NEAREST angle that fits, either way.
+    V9: `prev` = {side: the previous key's drawn angle}; when both ways fit, the cost adds how far each one is from the
+    previous key, so a greatsword at full extension does not tip up on the contact and then down on the follow-through
+    (a 100-degree flip between two held keys)."""
     if not _turned(body, ps):
         return ps
     sk = rig.skeleton(body, ps)
@@ -105,18 +108,41 @@ def _nearest_fit(body, ps):
         if spec is None or want is None or sk['w' + side] is None:
             continue
         hand = sk['h' + side]
-        for k in range(1, 31):
-            hit = None
-            for sgn in (1, -1):
+        best = []
+        for sgn in (1, -1):
+            for k in range(1, 31):
                 a = want + sgn * 3 * k
                 b_, t_ = rig._wends(spec, hand, a, spec.grip)
                 if rig._wfits(b_, t_):
-                    hit = a
+                    best.append(a)
                     break
-            if hit is not None:
-                kw[field_] = hit
-                break
+        if not best:
+            continue
+        pa, na = (prev or {}).get(side), (nxt or {}).get(side)
+
+        def cost(a):
+            c = abs(_angdiff(a, want))
+            c += 0.75 * abs(_angdiff(a, pa)) if pa is not None else 0.0
+            return c + (0.4 * abs(_angdiff(a, na)) if na is not None else 0.0)
+        kw[field_] = min(best, key=cost)           # min keeps the first (+) on a tie, as before
     return replace(ps, **kw) if kw else ps
+
+
+def _drawn(body, ps):
+    sk = rig.skeleton(body, ps)
+    return {s_: sk['w' + s_]['a'] for s_ in ('f', 'b') if sk['w' + s_] is not None}
+
+
+def _fit_chain(body, frames):
+    """_nearest_fit over a row in order, each key aware of the angle the key before it was drawn at."""
+    out, prev = [], {}
+    for i, (ps, m) in enumerate(frames):
+        nx = frames[i + 1][0] if i + 1 < len(frames) else None
+        nxt = {} if nx is None else {k: v for k, v in (('f', nx.wa), ('b', nx.wb)) if v is not None}
+        ps = _nearest_fit(body, ps, prev, nxt)
+        prev = _drawn(body, ps)
+        out.append((ps, m))
+    return out
 
 
 def resolve_air(body, mv):
@@ -124,7 +150,7 @@ def resolve_air(body, mv):
     previous frame, so the hanging bits trail the trajectory the engine draws).  Weapons trail and are fitted first."""
     mv['frames'] = trail_weapons(body, mv['frames'])
     fit_weapons(body, mv)
-    mv['frames'] = [(_nearest_fit(body, ps), m) for ps, m in mv['frames']]
+    mv['frames'] = _fit_chain(body, mv['frames'])
     ms = [m for _, m in mv['frames']]
     st = [sum(ms[:i]) for i in range(len(ms))]
     keys = []
@@ -323,14 +349,17 @@ def _vic(keys, desc):
 
 
 def vic_fistpump():
-    return _vic([
+    m = _vic([
         (dict(dy=4, lean=10, sq=0.88, hf=(5, 3), hb=(3, 3), face='w'), 120),
-        (dict(dy=-6, lean=0, sq=1.12, hf=(5, -12), hb=(3, 2), ff=(5, 3), fb=(-4, 2), face='w', fx=(('star', 'head', -8, -7),)), 50),
-        (dict(dy=-10, lean=-4, sq=1.0, hf=(6, -13), hb=(2, 3), ff=(5, 5), fb=(-4, 4), face='w', fx=(('star', 'head', -9, -6), ('star', 'head', 8, -8))), 140),
-        (dict(dy=-4, lean=-2, sq=1.05, hf=(6, -13), hb=(2, 3), ff=(5, 3), fb=(-4, 2), face='w'), 60),
+        (dict(dy=-1, lean=0, sq=1.12, hf=(5, -12), hb=(3, 2), ff=(5, 0), fb=(-4, 1), ang_f=22, ang_b=22, face='w',
+              fx=(('star', 'head', -8, -7),) + push_dust()), 60),
+        (dict(dy=-1, lean=-4, sq=1.0, hf=(6, -13), hb=(2, 3), ff=(5, 5), fb=(-4, 4), face='w', fx=(('star', 'head', -9, -6), ('star', 'head', 8, -8))), 160),
+        (dict(dy=-1, lean=-2, sq=1.05, hf=(6, -13), hb=(2, 3), ff=(5, 3), fb=(-4, 2), face='w'), 80),
         (dict(dy=4, lean=4, sq=0.88, hf=(5, -12), hb=(3, 2), face='w', fx=(('dust', 'ff', 5, 1), ('dust', 'fb', -6, 1))), 70),
         (dict(dy=0, lean=0, sq=1.03, hf=(5, -13), hb=(4, 3), face='w'), 80),
         (dict(dy=1, lean=0, hf=(5, -12), hb=(4, 3), face='w'), 300)], 'Fist pump. Played when a task finishes.')
+    m['air_spec'] = [(1, 0.4, 0), (2, 0.35, 13, 'o'), (2, 0.8, 13.5, 'h'), (4, 0, 0, 'i')]     # V9: a real jump
+    return m
 
 
 def vic_monk():
@@ -392,18 +421,20 @@ def vic_pointer():
 
 def vic_brawler():
     """Ollama: a ground-shaking stomp, a double-arm flex, then a jump with both fists in the air."""
-    return _vic([
+    m = _vic([
         (dict(dy=-3, lean=6, sq=1.06, hf=(5, -3), hb=(3, -3), fist_f=4, fist_b=4, ff=(6, 6), fb=(-6, 0), face='g'), 110),
         (dict(dy=5, lean=10, sq=0.86, hf=(6, 2), hb=(3, 2), fist_f=4, fist_b=4, ff=(8, 0), fb=(-7, 0), face='g',
               fx=(('dust', 'ff', 5, 1), ('shock', 'abs', 38, 56))), 130),
         (dict(dy=2, lean=0, chest=1.10, hf=(6, -8), hb=(2, -8), eb_f='up', eb_b='up', fist_f=4, fist_b=4, ff=(7, 0), fb=(-7, 0), face='g'), 260),
         (dict(dy=4, lean=4, sq=0.90, chest=1.04, hf=(5, 3), hb=(2, 3), fist_f=4, fist_b=4, ff=(7, 0), fb=(-7, 0), face='w'), 90),
-        (dict(dy=-9, lean=0, sq=1.12, hf=(6, -13), hb=(2, -13), eb_f='up', eb_b='up', fist_f=4, fist_b=4, ff=(5, 4), fb=(-4, 3), face='w',
-              fx=(('star', 'head', -9, -8), ('star', 'head', 9, -8))), 170),
+        (dict(dy=-1, lean=0, sq=1.08, hf=(6, -13), hb=(2, -13), eb_f='up', eb_b='up', fist_f=4, fist_b=4, ff=(5, 4), fb=(-4, 3), face='w',
+              fx=(('star', 'head', -9, -8), ('star', 'head', 9, -8))), 220),
         (dict(dy=4, lean=6, sq=0.88, hf=(5, -8), hb=(2, -8), eb_f='up', eb_b='up', fist_f=4, fist_b=4, ff=(7, 0), fb=(-7, 0), face='w',
               fx=(('dust', 'ff', 5, 1), ('dust', 'fb', -6, 1))), 80),
         (dict(dy=1, lean=2, chest=1.06, hf=(6, -10), hb=(2, -10), eb_f='up', eb_b='up', fist_f=4, fist_b=4, ff=(7, 0), fb=(-7, 0), face='w'), 300)],
         'Stomp, flex, and a two-fist jump.')
+    m['air_spec'] = [(4, 0, 0), (4, 0.4, 12, 'o'), (4, 0.6, 12.5, 'h'), (5, 0, 0, 'i')]          # V9: a real jump
+    return m
 
 
 def vic_agent():
@@ -436,10 +467,11 @@ def build_moves(character):
     mv['idle_flourish'] = M([
         (p(dy=3, lean=16, sq=0.94, hf=(5, 3), hb=(2, 3), ff=(8, 0), fb=(-7, 0)), 100),
         (p(dy=-1, lean=4, sq=1.06, hf=(9, -5), hb=(6, -6), ff=(6, 2), fb=(-5, 1), face='g'), 80),
-        (p(dy=0, lean=6, hf=(10, -3), hb=(7, -4), face='g'), 100),
-        (p(dy=2, lean=14, sq=0.97, hf=(5, -3), hb=(8, -1), face='g'), 110),
+        (p(dy=-1, lean=6, hf=(10, -3), hb=(7, -4), face='g'), 100),
+        (p(dy=3, lean=14, sq=0.94, hf=(5, -3), hb=(8, -1), face='g'), 110),
         (p(dy=1, lean=10, hf=(8, -3), hb=(5, -4), face='g'), 110),
-        (S0, 120)], cat='locomotion', desc='Shoulder roll and hop; plays every 6-10 s while idle.')
+        (S0, 120)], cat='locomotion', desc='Shoulder roll and hop; plays every 6-10 s while idle.',
+        air_spec=[(1, 0, 0), (1, 0.5, 3, 'o'), (2, 0.4, 3, 'h'), (3, 0, 0, 'i')])          # V9: the hop is a real one
     # walk: contact / down / passing, twice.  Head lowest on the down frames, highest on passing; arms counter the legs.
     fa = [(6, 0), (2, 0), (-2, 0), (-6, 0), (0, 3), (4, 1)]
     wdy = [1, 2, 0, 1, 2, 0]
@@ -513,11 +545,13 @@ def build_moves(character):
     mv['uppercut'] = M([
         (p(dy=4, lean=14, hf=(3, 8), wa=130, ff=(8, 0), fb=(-7, 0)), 120),
         (p(dy=7, lean=18, sq=0.90, hf=(4, 9), wa=140, ff=(9, 0), fb=(-8, 0)), 80),
-        (p(dy=-2, lean=0, sq=1.08, hf=(6, -12), wa=-92, ff=(8, 1), fb=(-6, 0), fist_f=4, dx=2, smear_f=(4, 9)), 40),
-        (p(dy=-3, lean=0, sq=1.06, hf=(6, -13), wa=-94, ff=(7, 3), fb=(-5, 2), fist_f=4, fx=(('spark', 'hf', 0, -4),)), 150),
+        (p(dy=-1, lean=0, sq=1.08, hf=(6, -12), wa=-92, ff=(8, 0), fb=(-6, 0), fist_f=4, dx=2, smear_f=(4, 9)), 40),
+        (p(dy=-1, lean=0, sq=1.06, hf=(6, -13), wa=-94, ff=(7, 3), fb=(-5, 2), fist_f=4, fx=(('spark', 'hf', 0, -4),)), 150),
         (p(dy=-1, lean=-4, sq=1.03, hf=(5, -14), wa=-104, ff=(7, 2), fb=(-5, 1), fist_f=4), 220),
-        (p(dy=2, lean=8, hf=(7, -2)), 100),
-        (S0, 90)], cat='strike', desc='Rising launcher slash. Pops the opponent up.', hit_frame=3, power=2)
+        (p(dy=3, lean=8, sq=0.94, hf=(7, -2), fx=land_dust()), 100),
+        (S0, 90)], cat='strike', desc='Rising launcher slash. Pops the opponent up.', hit_frame=3, power=2,
+        # V9: the rise is a real little hop off the floor (the engine's lift), not the hips jumping inside the cell
+        air_spec=[(2, 0, 0), (3, 0, 4, 'o'), (4, 0.4, 4.5, 'h'), (5, 0, 0, 'i')])
     mv['low_kick'] = M([
         (p(dy=3, lean=6, hf=(2, 3), wa=-120), 110),
         (p(dy=7, lean=-6, sq=0.94, turn=0.7, hf=(-3, 4), wa=-140, ff=(3, 1), fb=(-9, 0)), 70),
@@ -626,11 +660,14 @@ def build_moves(character):
                         (p(lean=12, hf=(12, 0), fist_f=4, fx=(('spark_s', 'hf', 3, -1),), face='w'), 160),
                         (p(lean=10, hf=(7, 0), face='w'), 100)],
                        cat='pair', desc='Fist bump. Ends every bout.', hit_frame=2)
-    mv['highfive'] = M([(p(dy=3, lean=10, sq=0.92, hf=(5, 2)), 100),
-                        (p(dy=-3, lean=4, sq=1.08, hf=(9, -10), open_f=True, ff=(6, 3), fb=(-5, 2), face='w'), 70),
-                        (p(dy=-5, lean=2, hf=(11, -11), open_f=True, ff=(6, 4), fb=(-5, 3), face='w', fx=(('spark', 'hf', 3, -2),)), 140),
-                        (p(dy=2, lean=8, sq=0.94, hf=(8, -8), open_f=True, face='w'), 90), (S0, 100)],
-                       cat='pair', desc='Jump high-five. Both finished at the same time.', hit_frame=2)
+    # V9: a real hop (the engine lifts it along `air`), not a 2 px rise inside the cell; the slap meets at the apex
+    mv['highfive'] = M([(p(dy=3, lean=10, sq=0.92, hf=(5, 2), ff=(7, 0), fb=(-6, 0)), 100),
+                        (p(dy=-1, lean=4, sq=1.08, hf=(9, -10), open_f=True, ff=(6, 3), fb=(-5, 2), ang_f=20, ang_b=20, face='w'), 70),
+                        (p(dy=-1, lean=2, hf=(11, -11), open_f=True, ff=(6, 5), fb=(-4, 4), face='w', fx=(('spark', 'hf', 3, -2),)), 180),
+                        (p(dy=5, lean=8, sq=0.88, head=(2, 1), hf=(8, -8), open_f=True, face='w', fx=land_dust()), 90),
+                        (p(dy=2, lean=6, sq=1.02, hf=(7, -2), face='w'), 90), (S0, 100)],
+                       cat='pair', desc='Jump high-five. Both finished at the same time.', hit_frame=2,
+                       air_spec=[(1, 0.2, 0), (2, 0, 10, 'o'), (2, 0.35, 11, 'h'), (3, 0, 0, 'i')])
     mv['wave'] = M([(p(lean=2, hf=(7, -11), open_f=True, face='w'), 120), (p(lean=2, hf=(9, -12), open_f=True, face='w'), 120),
                     (p(lean=2, hf=(7, -11), open_f=True, face='w'), 120), (p(lean=2, hf=(5, -12), open_f=True, face='w'), 120)],
                    cat='emote', desc='Greeting wave.')
@@ -707,10 +744,164 @@ def build_moves(character):
     import ultimates
     ultimates.add_ultimate(mv, ch)
     mv.update(weapon_moves(ch))                    # V7 rows come after every older row, so no row index ever moves
+    stance = mv['idle']['frames'][0][0]
+    for m in mv.values():                          # V9: a one-shot that goes back to idle ends on idle's own first pose
+        settle_to_stance(m, stance)
+    pin_weapons(body, mv['sleep'])                 # V9: a weapon lying by a sleeper does not flip with each breath
+    st_a = _wangle(body, stance)
+    if st_a is not None and mv['turn']['frames'][0][0].wa is None:     # V9: a pivot keeps the weapon where the stance holds it
+        ps0, ms0 = mv['turn']['frames'][0]
+        mv['turn']['frames'][0] = (_nearest_fit(body, replace(ps0, wa=round(st_a, 1))), ms0)
     for m in mv.values():                          # V8: airborne rows get their `air` keys on the final timings
         if 'air_spec' in m:
             resolve_air(body, m)
+        elif not m['loop']:
+            inbetween_weapons(body, m)             # V9: ground rows: a weapon never snaps between two held keys
+    for m in mv.values():                          # the fit passes may pull the hands in on that last key: put the
+        if m.pop('_stance_end', False):            # stance back exactly as idle draws it, or the step into idle pops
+            m['frames'][-1] = (stance, m['frames'][-1][1])
+    for name_, m in mv.items():                    # V9: the recovery turns toward the stance; a far end gets a settle key
+        if name_ not in HELD_LAST:
+            settle_frame(body, m, stance)
     return annotate_contact(ch, mv)
+
+
+# ---------------------------------------------------------------------- V9: no pops (docs/ANIMATION-NOTES.md section 11)
+def settle_to_stance(mv, stance):
+    """A one-shot whose last key is the neutral pose S0 ends on the character's idle stance instead (its first idle key),
+    so the step into idle after it is not a pop: a kanabo dragged low, a katana at the throat, a spear held level all came
+    back up to the rig's rest angle for one frame and then snapped down into the stance."""
+    if mv['loop'] or not mv['frames']:
+        return mv
+    ps, ms = mv['frames'][-1]
+    if ps == S0:
+        mv['frames'][-1] = (stance, ms)
+        mv['_stance_end'] = True
+    return mv
+
+
+HELD_LAST = ('victory', 'victory2')      # the engine holds these on their last frame (the winner's pose): never add a settle
+SETTLE_TIP = 14.0             # design px: a weapon tip that would jump further than this into idle gets a settle key
+SETTLE_CATS = ('strike', 'special', 'super', 'ultimate', 'defense', 'emote', 'pair', 'throw', 'reaction', 'state')
+
+
+def _wangle(body, ps, side='f'):
+    w = rig.skeleton(body, ps)['w' + side]
+    return None if w is None else w['a']
+
+
+def settle_frame(body, mv, stance):
+    """A one-shot that ends far from the stance (a wave with the weapon overhead, a taunt's closing pose) gets one settle
+    key half way back to the stance before the engine cuts to idle, with the weapon aimed half way along the shortest arc,
+    so the step into idle is two small moves instead of one pop.  Only rows that end standing (not lying, not in the
+    air), with a free column, and only where the weapon tip would really jump."""
+    fr = mv['frames']
+    if mv['loop'] or len(fr) < 2 or mv.get('cat') not in SETTLE_CATS:
+        return mv
+    if mv.get('air_spec') and mv['air_spec'][-1][2] > 0:
+        return mv
+    n = len(fr)
+    ends_on_stance = fr[-1][0] == stance
+    r = n - 2 if ends_on_stance else n - 1         # the recovery key: the last one before the stance
+    rec = fr[r][0] if r >= 1 else None
+    if rec is not None and rec.lean >= -45 and r not in (mv.get('smear_frames') or ()) and r != mv.get('hit_frame'):
+        kw = {}                                    # the recovery key turns the weapon half way toward the stance
+        for side, field_ in (('f', 'wa'), ('b', 'wb')):
+            al, ast = _wangle(body, rec, side), _wangle(body, stance, side)
+            ap = _wangle(body, fr[r - 1][0], side)
+            if al is None or ast is None or ap is None:
+                continue
+            if abs(_angdiff(al, ap)) > INBETWEEN_DEG or (abs(_angdiff(ast, al)) > INBETWEEN_DEG and (ends_on_stance or n >= 8)):
+                if getattr(rec, field_) is None or ends_on_stance or n >= 8:
+                    kw[field_] = round(ap + _angdiff(ast, ap) * 0.5, 1)
+        if kw:
+            fr[r] = (_nearest_fit(body, replace(rec, **kw), _drawn(body, fr[r - 1][0])), fr[r][1])
+    last = fr[-1][0]
+    if n >= 8 or ends_on_stance or last.lean < -45 or last.lean > 60:
+        return mv
+    ta, tb = _tip_of(body, last), _tip_of(body, stance)
+    if ta is None or tb is None or math.hypot(tb[0] - ta[0], tb[1] - ta[1]) < SETTLE_TIP:
+        return mv
+    import build_fighters as _BF                   # lerp_pose lives with the afterimage code
+    mid = _BF.lerp_pose(last, stance, 0.5)
+    kw = {}
+    for side, field_ in (('f', 'wa'), ('b', 'wb')):
+        a0, a1 = _wangle(body, last, side), _wangle(body, stance, side)
+        if a0 is not None and a1 is not None:
+            kw[field_] = round(a0 + _angdiff(a1, a0) * 0.5, 1)
+    mid = replace(mid, face=last.face, fist_f=last.fist_f, fist_b=last.fist_b, open_f=False, free_b=last.free_b, **kw)
+    fr.append((mid, 100 if fr[-1][1] == 90 else 90))        # never the same duration as the key before it
+    mv['frames'] = fr
+    return mv
+
+
+def _tip_of(body, ps):
+    w = rig.skeleton(body, ps)['wf']
+    return None if w is None else rig.weapon_point(w, 1.0)
+
+
+def pin_weapons(body, mv):
+    """Every key that leaves the weapon to the rig gets the first key's angle (a weapon lying still)."""
+    a0, b0 = _wangle(body, mv['frames'][0][0], 'f'), _wangle(body, mv['frames'][0][0], 'b')
+    out = []
+    for ps, ms in mv['frames']:
+        kw = {}
+        if ps.wa is None and a0 is not None:
+            kw['wa'] = round(a0, 1)
+        if ps.wb is None and b0 is not None:
+            kw['wb'] = round(b0, 1)
+        out.append((replace(ps, **kw) if kw else ps, ms))
+    mv['frames'] = _fit_chain(body, out)           # a key where that angle does not fit takes the nearest one that does
+    return mv
+
+
+INBETWEEN_DEG = 60.0          # a weapon that turns more than this between two drawn keys is in-betweened
+
+
+def inbetween_weapons(body, mv):
+    """Ground rows: a run of keys that leaves the weapon to the rig (wa / wb None) between two keys, where the weapon would
+    turn more than INBETWEEN_DEG in one step (a follow-through pointing down, then the recovery with the blade snapped
+    up to its rest angle), is re-aimed along the shortest arc between the keys either side of the run, spaced by time.
+    Smear frames, the first and the last key stay exactly as authored (the last one meets idle)."""
+    frames = mv['frames']
+    n = len(frames)
+    if n < 3:
+        return mv
+    smear = set(mv.get('smear_frames') or [])
+    ms = [m for _, m in frames]
+    mid = [sum(ms[:i]) + ms[i] / 2.0 for i in range(n)]
+    for side, field_, spec in (('f', 'wa', body.weapon), ('b', 'wb', body.weapon_b)):
+        if spec is None:
+            continue
+        ang = []
+        for ps, _ in frames:
+            w = rig.skeleton(body, ps)['w' + side]
+            ang.append(None if w is None else w['a'])
+        i = 1
+        while i < n - 1:
+            ps = frames[i][0]
+            if getattr(ps, field_) is not None or i in smear or ang[i] is None:
+                i += 1
+                continue
+            j = i
+            while j + 1 < n - 1 and getattr(frames[j + 1][0], field_) is None and (j + 1) not in smear and ang[j + 1] is not None:
+                j += 1
+            a0, a1 = ang[i - 1], ang[j + 1]
+            if a0 is None or a1 is None:
+                i = j + 1
+                continue
+            chain = [a0] + ang[i:j + 1] + [a1]
+            if max(abs(_angdiff(b, a)) for a, b in zip(chain, chain[1:])) > INBETWEEN_DEG:
+                span = _angdiff(a1, a0)
+                t0, t1 = mid[i - 1], mid[j + 1]
+                for k in range(i, j + 1):
+                    u = (mid[k] - t0) / max(1e-6, t1 - t0)
+                    frames[k] = (replace(frames[k][0], **{field_: round(a0 + span * u, 1)}), frames[k][1])
+            i = j + 1
+    mv['frames'] = frames
+    fit_weapons(body, mv)
+    mv['frames'] = _fit_chain(body, mv['frames'])
+    return mv
 
 
 # ====================================================================== V7: weapon move families
@@ -1207,7 +1398,10 @@ def taunt_twirl(desc, end, spins=(80, 170, -100)):
     keys = [(p(dy=2, lean=8, hf=(8, 1), wa=0, face='g'), 140)]
     for a, ms in zip(spins, (70, 60, 70)):
         keys.append((p(dy=2, lean=8, hf=(8, 1), wa=a, face='g'), ms))
-    keys += [(p(dy=2, lean=10, hf=(9, 3), wa=40, face='w', fx=(('spark_s', 'hf', 3, 1),)), 160),
+    fa = 40.0                                      # V9: the flick ends near the closing pose (no 170-degree flip into it)
+    if end.get('wa') is not None and abs(_angdiff(end['wa'], fa)) > 100:
+        fa = (end['wa'] + 70 + 180) % 360 - 180
+    keys += [(p(dy=2, lean=10, hf=(9, 3), wa=fa, face='w', fx=(('spark_s', 'hf', 3, 1),)), 160),
              (p(**end), 360), (p(**dict(end, dy=end.get('dy', 2) + 1)), 150), (S0, 120)]
     return W(keys, cat='emote', desc=desc, type='taunt', input='Taunt')
 
@@ -1451,6 +1645,20 @@ SHARED_NAMES = {'codex': {'dash_slash': 'shadow_step'}}
 GUARD_BREAK = {'bow': bow_bash}
 
 
+def _plant(body, ps, lo=24.0):
+    """A downward key (a spike's landing squash) whose weapon does not fit pointing down: instead of the rig turning a
+    long blade up and back behind the body (the knight's greatsword, the oni's kanabo flipped 70 degrees for one frame),
+    bring the hands in and plant the tip on the floor in front, at the steepest angle from `ps.wa` down to `lo` that fits."""
+    if ps.wa is None or not _turned(body, ps):
+        return ps
+    for a in range(int(ps.wa), int(lo) - 1, -2):
+        for k in [1.0 - 0.04 * i for i in range(16)]:
+            cand = replace(ps, hf=(ps.hf[0] * k, ps.hf[1] * k), hb=(ps.hb[0] * k, ps.hb[1] * k), wa=float(a))
+            if not _turned(body, cand):
+                return cand
+    return ps
+
+
 def heavier(mv, wind=1.25, follow=1.15):
     """The same keys with the weight of a heavy weapon: every frame before the smear and after the contact is held longer
     (rounded to 10 ms); the smear and the contact frame keep their timing."""
@@ -1479,6 +1687,8 @@ def weapon_moves(ch):
         name = SHARED_NAMES.get(ch.name, {}).get(name, name)
         out[name] = fn(desc)
         out[name]['family'] = fam
+        if fn is t_spike:                              # V9: the landing plants the weapon in front, never flips it behind
+            out[name]['frames'][6] = (_plant(ch.body, out[name]['frames'][6][0]), out[name]['frames'][6][1])
         if fam == 'heavy' and fn is not t_throw:       # a heavy weapon winds up longer and follows through longer
             air = 'air_spec' in out[name]              # V8: a leap stays inside ~1.1 s (its rise is already slow)
             out[name] = heavier(out[name], *((1.15, 1.1) if air else ()))

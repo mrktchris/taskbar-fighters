@@ -132,19 +132,32 @@ def filled_segments(ctx):
 _plate_cache = {}
 
 
-def plate(style, snap, t, width=PLATE_W, name=None, k=1):
-    """k: pixel density (1 everywhere but a macOS Retina screen, where the plate is drawn 2x and nearly opaque)."""
+def plate(style, snap, t, width=PLATE_W, name=None, k=1, dmg=None):
+    """k: pixel density (1 everywhere but a macOS Retina screen, where the plate is drawn 2x and nearly opaque).
+    dmg: V9, the fighter's damage % while a match plays (None otherwise): it takes the state word's place, small, in a
+    colour that warms with the damage; a `waiting?` state still wins (it needs the user)."""
     tag, accent = style_of(style)
     tag = name or tag
+    dmg = None if dmg is None else int(round(float(dmg)))
     key = (tag, accent, snap.state if snap else None, shown_pct(snap.ctx_pct) if snap else None,
            shown_pct(snap.plan_pct) if snap else None, snap.plan_label if snap else '', getattr(snap, 'resets_in', '') if snap else '',
-           blink_phase(snap, t), width) + ((k,) if k > 1 else ())
+           blink_phase(snap, t), width, dmg) + ((k,) if k > 1 else ())
     im = _plate_cache.get(key)
     if im is None:
         if len(_plate_cache) > 96:
             _plate_cache.clear()
-        im = _plate_cache[key] = _plate(tag, accent, snap, blink_phase(snap, t), width, k)
+        im = _plate_cache[key] = _plate(tag, accent, snap, blink_phase(snap, t), width, k, dmg)
     return im
+
+
+def dmg_colour(dmg):
+    """White at 0 %, through amber, to red at 60 % and over (the damage meter's warmth)."""
+    k = max(0.0, min(1.0, dmg / 60.0))
+    if k < 0.5:
+        u = k / 0.5
+        return tuple(int(a + (b - a) * u) for a, b in zip((235, 235, 240), AMBER))
+    u = (k - 0.5) / 0.5
+    return tuple(int(a + (b - a) * u) for a, b in zip(AMBER, RED))
 
 
 def _fit(d, s, maxw, size, bold):
@@ -157,7 +170,7 @@ def _fit(d, s, maxw, size, bold):
     return s + '.'
 
 
-def _plate(tag, accent, snap, phase, width=PLATE_W, k=1):
+def _plate(tag, accent, snap, phase, width=PLATE_W, k=1, dmg=None):
     """Fighting-game HUD plate, two lines.  Shows state + numbers only, never titles or content."""
     h = PLATE_H
     im, d = canvas(width, h, k)
@@ -167,8 +180,13 @@ def _plate(tag, accent, snap, phase, width=PLATE_W, k=1):
     d.rounded_rectangle([0, 0, width - 1, h - 1], 4, fill=(18, 18, 22, 200 if k == 1 else 242), outline=(AMBER + (255,)) if waiting else accent + (150,),
                         width=2 if waiting else 1)
     sw = STATE_WORD.get(state, state)
-    sww = int(d.textlength(sw, font=font(9, False)))
-    text(d, (width - 5 - sww, 2), sw, AMBER if waiting else ((190, 190, 205) if state != 'limit' else RED), 9, False)
+    if dmg is not None and not waiting:                    # V9: during a match the damage % takes the state word's place
+        sw = f'{dmg}%'
+        sww = int(d.textlength(sw, font=font(9, True)))
+        text(d, (width - 5 - sww, 2), sw, dmg_colour(dmg), 9, True)
+    else:
+        sww = int(d.textlength(sw, font=font(9, False)))
+        text(d, (width - 5 - sww, 2), sw, AMBER if waiting else ((190, 190, 205) if state != 'limit' else RED), 9, False)
     text(d, (5, 1), _fit(d, tag, width - 5 - sww - 5 - 4, 10, True), accent, 10)
     ctx = snap.ctx_pct if snap else None
     x0, y0 = 5, 15

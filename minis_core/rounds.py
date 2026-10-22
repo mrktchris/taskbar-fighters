@@ -41,7 +41,7 @@ from __future__ import annotations
 import json, random, time
 from pathlib import Path
 
-from . import choreo, config as cfgmod, setpieces
+from . import choreo, config as cfgmod, framedata as F, setpieces
 from .choreo import air_window
 from .bus import write_json_atomic
 from .effects import EffectPlayer
@@ -135,6 +135,11 @@ LONG_FREEZE_MS = 250                  # V7: above this the defender freezes on i
 LYING = ('knockdown', 'spiked', 'thrown')         # V7: reactions that end on the floor (a get-up follows, or the KO)
 AIRBORNE = ('launched', 'air_hit')                # V7: juggle reactions that hang in the air until the next hit
 V7_SPECIAL = ('juggle', 'throw', 'through', 'pull')     # beats a KO must not turn into the signature strike
+FLINCH = ('hit', 'hit_heavy', 'hit_high', 'hit_low', 'hit_back')      # V9: reactions whose length the hitstun sets
+TUMBLE_FROM = FLINCH + ('knockdown',)            # V9: a hit that tumbles plays the knockdown row along a real arc
+HITSTUN_CAP_S = 0.9                              # V9: the taskbar's bouts keep moving: a stun never holds longer than this
+TUMBLE_AIR_MS = (50, 210)                        # V9: the knockdown row's airborne frames (after the flash, before it lands)
+MISSED_TECH_S = 0.45                             # V9: a fighter that misses its tech lies this long before getting up
 
 
 def body_front(atlas):
@@ -219,6 +224,9 @@ class Bout:
         self.final = False                                  # set by make_match: a KO in this exchange ends the match
         self.ko_info = None                                 # (tc, hitstop s, slow window) of the last KO hit
         self.down_until = {}                                # slot -> when its get-up ends (no hits on a fighter on the floor)
+        self.pct = {self.left: 0.0, self.right: 0.0}        # V9: accumulated damage this round (later hits launch further)
+        self.fd_rng = random.Random((int(plan['seed']) * 7919 + 101) & 0xFFFFFFFF)   # V9: DI / tech draws, its own stream
+        self.fd_log = []                                    # V9: every landed hit's frame data (tests, the QA log)
         self.wins = {self.left: 0, self.right: 0}
         self.projs = []
         self.beats = {self.left: [], self.right: []}        # every beat played, by the fighter that played it (tests, previews)
@@ -288,6 +296,41 @@ class Bout:
 
     def fx_lead(self, name):
         return _fx_hit_s(self.fx.get(name)) if self.fx is not None else 0.0
+
+    def frame_data(self, who, tgt, b, move, kind, outcome, dmg, react, ko, last_hit):
+        """V9 platform-fighter frame data for one contact (framedata.py): -> dict(hitlag ms (both fighters), knock px,
+        stun s, react, tumble arc or None, tech) or None when nothing landed.  The target's percentage grows by the hit
+        first, so the hit counts itself, and later hits in a round launch further."""
+        if outcome not in ('hit', 'guard_break', 'block', 'crouch_block', 'parry'):
+            return None
+        Aw, At = self.A[who], self.A[tgt]
+        a = Aw.anim.get(move) or {}
+        d = dmg * F.PCT_PER_HP
+        if outcome in ('block', 'crouch_block', 'parry'):
+            d = choreo.damage_of(Aw, move, kind) * F.PCT_PER_HP if not d else d
+            lag = max(int(b.get('hitstop') or 0), int(F.hitlag_ms(d * F.HITLAG_DMG_K * F.BLOCK_LAG_K)))
+            push = 0.0 if outcome == 'parry' else F.shield_push_px(d)
+            return dict(hitlag=lag, knock=push, stun=F.ms(F.shieldstun_frames(d)) / 1000.0, react=react, arc=None,
+                        kb=0.0, block=True)
+        if not self.friendly:
+            self.pct[tgt] += d
+        pct = self.pct[tgt] if not self.friendly else d
+        s, base, ang = F.move_kb(Aw.power(move, 1), a.get('height'), kind)
+        if a.get('type') == 'spike' or b.get('spike'):
+            ang = F.SPIKE_ANGLE
+        ang = F.di(ang, self.fd_rng)
+        kb = F.knockback(pct, d, F.weight_of(At.meta.get('family') or (At.anim.get('riposte') or {}).get('family')), s, base)
+        lag = int(F.hitlag_ms(d * 2.0 * F.HITLAG_DMG_K))
+        lag = max(choreo.HITSTOP_FLOOR_MS, lag, int(b.get('hitstop') or 0) if kind in ('super', 'ultimate') else 0)
+        out = dict(hitlag=lag, kb=round(kb, 2), angle=round(ang, 1), pct=round(pct, 2), react=react, arc=None,
+                   knock=F.taskbar_knock_px(kb), stun=min(HITSTUN_CAP_S, F.hitstun_ms(kb) / 1000.0), block=False)
+        if (F.tumbles(kb) and not ko and not self.friendly and last_hit and react in TUMBLE_FROM and ang > 5
+                and not any(b.get(f) for f in ('juggle', 'throw', 'pull', 'through', 'launch')) and 'knockdown' in At.anim):
+            keys, airtime, px = F.tumble_arc(kb, ang)
+            out.update(react='knockdown', arc=dict(keys=keys, airtime=airtime), knock=px, tech=self.fd_rng.random() < F.TECH_P)
+        self.fd_log.append(dict(who=who, tgt=tgt, move=move, kind=kind, dmg=dmg, pct=out['pct'], kb=out['kb'], hitlag=lag,
+                                stun=round(out['stun'], 3), knock=round(out['knock'], 1), tumble=out['arc'] is not None))
+        return out
 
     def contact_fx(self, name, fallback):
         """V7: a contact spark by name when the effects sheet has its art, else the older generic one."""
@@ -465,6 +508,11 @@ class Bout:
             if outcome in ('hit', 'guard_break') and not self.friendly and self.hp[tgt] <= 0:
                 react, ko = (react if react in ('thrown', 'spiked') else 'knockdown'), tgt     # V7: a juggle / throw KO keeps its fall
             hitstop = b['hitstop']
+            last_hit = not any(nb.get('who') == b['who'] and nb.get('kind') not in ('move', 'emote') for nb in beats[bi + 1:])
+            fd = self.frame_data(who, tgt, b, move, kind, outcome, dmg, react, ko, last_hit)
+            if fd is not None:
+                hitstop = fd['hitlag']                          # V9: both fighters freeze for the same hitlag
+                react = fd['react']
             slow = None
             final_ko = ko is not None and self.final and self.wins[who] + 1 >= ROUNDS_TO_WIN
             if final_ko:                                       # the finisher: a long freeze, then the fall in slow motion
@@ -521,7 +569,10 @@ class Bout:
                     ropts['slow'] = slow
                 if not self.friendly:
                     ropts['hp'] = dict(self.hp)
+                    ropts['pct'] = {s: round(v, 1) for s, v in self.pct.items()}     # V9: the damage % on the plates
                 knock = b['knock']
+                if fd is not None and react not in AIRBORNE and react not in ('pulled', 'thrown', 'spiked'):
+                    knock = fd['knock']                        # V9: knockback from the damage, the percentage and the weight
                 if react in LYING and ko:
                     knock = max(knock, choreo.KNOCK_PX['knockdown'])
                 t_r = tc                                       # when the reaction row starts
@@ -549,14 +600,39 @@ class Bout:
                     big = react in ('hit_heavy', 'guard_crush') or react in LYING
                     ropts.update(to=x, slide_ms=KNOCK_SLIDE_MS_BIG if big else KNOCK_SLIDE_MS)    # clock time: waits out hitstop, slows in slow-mo
                     self.pos[tgt] = x
+                arc = fd.get('arc') if fd is not None and not ko and not slow else None
+                if arc is not None:
+                    # V9 tumble: the knockdown row's airborne frames are stretched over the launch's real airtime (a slow
+                    # window on this row only) while the sprite rides the arc; it lands on the row's flat frame, bounces once
+                    a0, a1 = TUMBLE_AIR_MS
+                    air_s = max((a1 - a0) / 1000.0, arc['airtime'] / 1000.0)
+                    k_air = (a1 - a0) / 1000.0 / air_s
+                    t_air = tc + hs + a0 / 1000.0
+                    ropts['slow'] = [round(t_air, 4), round(t_air + air_s, 4), round(k_air, 4)]
+                    span = a1 - a0
+                    ks = arc['keys']
+                    land = float(ks[2][0]) or 1.0
+                    ropts['air'] = [[a0, 0], [int(a0 + span * float(ks[1][0]) / land), ks[1][1], 'o'], [a1, 0, 'i']]
+                    if len(ks) > 3:
+                        ropts['air'] += [[a1 + 30, ks[3][1], 'o'], [a1 + 60, 0, 'i']]
+                    if 'to' in ropts:
+                        ropts['slide_ms'] = int(span + 60)                # row clock: the flight, then a short skid
+                    slow_extra = (air_s - (a1 - a0) / 1000.0)
                 fr0 = (At.anim.get(react) or {}).get('frames') or []
                 if hitstop > LONG_FREEZE_MS and 'stop_at' not in ropts and fr0:
                     # a long freeze holds the hit POSE, not the one-frame white flash: the flash plays, then the clock stops
                     ropts['stop_at'] = round(t_r + fr0[0]['ms'] / 1000.0, 4)
+                    if 'to' in ropts and 'slide_at' not in ropts:
+                        ropts['slide_at'] = ropts['stop_at']       # V9: the knockback waits out the freeze, not just its flash
                 airborne = react in AIRBORNE and not ko
                 if airborne:
                     ropts['hold'] = True                       # hangs in the air on its last frame until the next hit
                 rdur = tot(tgt, react) + hs + slow_extra + (tc - t_r)
+                if fd is not None and (react in FLINCH or fd.get('block')) and react not in LYING:
+                    stun = fd['stun'] + hs + (tc - t_r)        # V9: the defender cannot act until its hitstun / shieldstun ends
+                    if stun > rdur:
+                        ropts['hold'] = True                   # held on its last frame (no idle in between)
+                        rdur = stun
                 # a knockdown that is not a KO stays on the floor (no return to idle) until the get-up starts
                 then = (('ko' if ko else None) if react in LYING else (None if airborne else 'idle'))
                 em.play(tgt, t_r, react, ropts, rdur, then=then)
@@ -590,6 +666,8 @@ class Bout:
                         em.directive(tgt, tc, '@fx', {'fx': base})          # a heavy hit also bursts
                     if sh is None and not self.friendly:                     # V7: every landed hit shakes, scaled by power
                         sh = POWER_SHAKE.get(min(3, int(Aw.power(move, 1)))) if kind in ('strike', 'counter') else None
+                        if fd is not None and fd['kb'] >= 40:          # V9: ... and by the knockback (a late hit shakes harder)
+                            sh = {'frames': 2 + int(fd['kb'] // 60), 'amp': round(min(2.5, fd['kb'] / 50.0), 2)}
                     if react == 'hit_heavy':
                         em.directive(tgt, tc + 0.05, '@fx', {'fx': 'dust', 'anchor': 'ground'})       # the skid
                     if kind == 'ultimate':
@@ -614,8 +692,9 @@ class Bout:
                         em.directive(tgt, t_stars - 0.05, '@fx', {'fx': 'dust', 'anchor': 'ground'})       # lands
                         self.ko_info = dict(tc=tc, hs=hs, slow=slow, down=t_r + rdur)
                     elif 'getup' in At.anim:
-                        em.play(tgt, t_r + rdur, 'getup', {}, tot(tgt, 'getup'))      # springs up the moment the fall ends
-                        self.down_until[tgt] = t_r + rdur + tot(tgt, 'getup')
+                        lie = MISSED_TECH_S if (arc is not None and not fd.get('tech')) else 0.0   # V9: a tech is up at once
+                        em.play(tgt, t_r + rdur + lie, 'getup', {}, tot(tgt, 'getup'))      # springs up the moment the fall ends
+                        self.down_until[tgt] = t_r + rdur + lie + tot(tgt, 'getup')
             self.beats[who].append(dict(b, react=react))
             t = tc + hs + 0.12 if kind != 'counter' else em.free[who]
             nb = beats[bi + 1] if bi + 1 < len(beats) else None
@@ -695,12 +774,13 @@ def make_match(plan, atlases, fx=None):
     while max(wins.values()) < ROUNDS_TO_WIN:
         n_round += 1
         bout.hp = hp = {left: HP_MAX, right: HP_MAX}
+        bout.pct = {left: 0.0, right: 0.0}                         # V9: every round starts at 0 %
         for p in bout.pick.values():
             p.new_round()
         if ko_loser is not None:                                   # the fallen fighter gets up before the next round
             em.play(ko_loser, t - tot(ko_loser, 'getup') - 0.1, 'getup', {}, tot(ko_loser, 'getup'))
         for w in (left, right):
-            em.directive(w, t, '@hp', {'hp': dict(hp), 'round': n_round, 'wins': dict(wins)})
+            em.directive(w, t, '@hp', {'hp': dict(hp), 'round': n_round, 'wins': dict(wins), 'pct': dict(bout.pct)})
             em.play(w, t, 'idle', {}, 0.0, then=None)
         banner(t, f'round{min(3, n_round)}')
         banner(t + BANNER_S['round'], 'fight')
@@ -743,7 +823,8 @@ def make_match(plan, atlases, fx=None):
                     piece = setpieces.choose(rng, A[att], A[dfn], when) if when else None
             mark = em.mark()
             saved = (dict(bout.pos), dict(bout.meter), dict(bout.used_ult), dict(hp), list(bout.projs), {s: list(v) for s, v in bout.beats.items()},
-                     bout.n_air, bout.ult_used, dict((s, (p.last, dict(p.used), dict(p.counts))) for s, p in bout.pick.items()))
+                     bout.n_air, bout.ult_used, dict((s, (p.last, dict(p.used), dict(p.counts))) for s, p in bout.pick.items()),
+                     dict(bout.pct), bout.fd_rng.getstate(), len(bout.fd_log))
             t_next, ko, ex = bout.exchange(att, t, k, dramatic=drama, air=air, comeback=comeback, boost=boost, ult_sure=drama,
                                            piece=piece)
             if t_next - t_round > ROUND_CAP_S and k > 0:
@@ -752,6 +833,9 @@ def make_match(plan, atlases, fx=None):
                 for s, (last, used, counts) in saved[8].items():
                     p = bout.pick[s]
                     p.last, p.used, p.counts = last, choreo.Counter(used), choreo.Counter(counts)
+                bout.pct = saved[9]
+                bout.fd_rng.setstate(saved[10])
+                del bout.fd_log[saved[11]:]
                 bout.hp = hp
                 break
             if piece:
