@@ -36,6 +36,8 @@ def main(argv=None):
         b.flashes = True
     tele = {w: sim.FakeTelemetry(w, [(0, 'idle', 30)]) for w in br}
     bus = {}
+    if hd is not None:
+        hd[c1]                                          # the slot decodes its HD sheets at start-up (resolve_size), not in a fight
     br[LEFT].request_demo('match', 1000.0, wait_s=30)
     ts = []
     for i in range(int(a.secs * a.fps)):
@@ -52,6 +54,8 @@ def main(argv=None):
         else:
             render.compose(b.atlas, b.atlas, v, b.snap, now, cfg, show_plate=False)
         ts.append((time.perf_counter() - t0) * 1000.0)
+        if ts[-1] > 1000.0 / a.fps:                     # a frame that missed its slot: which one, and in what move
+            print(f'  slow frame #{len(ts)} t={now - 1000.0:.2f}s {ts[-1]:.1f} ms ({v.get("anim") if isinstance(v, dict) else ""})')
     ts.sort()
     m = statistics.mean(ts)
     print(f'size {a.size} fps {a.fps}: {len(ts)} fight frames, mean {m:.2f} ms, p95 {ts[int(len(ts) * 0.95)]:.2f} ms, '

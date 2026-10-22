@@ -120,6 +120,12 @@ class Micro(Isolated):
             self.t['wall'] += dt
             self.f.step()
 
+    def test_eye_cache_never_answers_for_a_dead_atlas_with_the_same_id(self):
+        a = Atlas('monk')
+        real = eyes.find_eye(a.frame_image('idle', 0, 1), 1, a.res)
+        eyes._cache[(id(a), 'idle', 0, True)] = (object(), [(0, 63)])        # what a freed atlas with this id left behind
+        self.assertEqual(eyes.eye_pixels(a, 'idle', 0, 1), real)
+
     def test_pupils_follow_the_cursor_only_while_idle(self):
         b = self.f.brain
         self.go(0.3)
