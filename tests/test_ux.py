@@ -1074,7 +1074,7 @@ class CodexReview(Isolated):
         self.assertFalse(replay.inside_exports(replay.exports_dir() / '..' / 'x.gif'))
         self.assertFalse(replay.inside_exports(Path(tempfile.gettempdir()) / 'x.gif'))
         out = io.StringIO()
-        with mock.patch.object(replay, 'gif_name', lambda *a, **k: '..\\..\\escape.gif'), redirect_stdout(out), \
+        with mock.patch.object(replay, 'gif_name', lambda *a, **k: '../escape.gif'), redirect_stdout(out), \
                 mock.patch.object(minis, 'running', lambda role: False):
             _, s = replay.summarize(PLAN)
             replay.store(PLAN, s, {'a': 'claude', 'b': 'codex'})
