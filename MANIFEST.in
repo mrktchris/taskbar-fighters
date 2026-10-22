@@ -1,6 +1,6 @@
 # sdist contents (the wheel is controlled by pyproject.toml).  Keep the sdist buildable and testable on its own.
 include LICENSE README.md CHANGELOG.md AGENTS.md requirements*.txt minis.py
-recursive-include assets *.png *.json *.ico
+recursive-include assets *.png *.json *.ico *.wav
 recursive-include assets_hd *.png *.json
 recursive-include tests *.py *.json *.txt *.jsonl
 recursive-include tests/fixtures *

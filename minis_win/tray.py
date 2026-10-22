@@ -15,6 +15,7 @@ import logging
 # menu ids (never 0: TrackPopupMenu returns 0 for "nothing chosen")
 SELECT, PAUSE, FLASH, PLATES, RIVAL, ARENA, BOUT, RESTART, QUIT = range(1, 10)
 FORGE = 10                                       # V8: Desktop weapons (the arena's RAM-only screen grab)
+SOUND = 11                                       # V9: Sound effects (off by default)
 PRODUCT = 'Taskbar Fighters'                    # the user-visible name; internal names (minis.py, data dir) stay
 TIP_MAX = 127                                         # NOTIFYICONDATAW.szTip is WCHAR[128]
 WM_TRAY = 0x8000 + 0x4D                               # WM_APP + 'M': the icon's callback message
@@ -31,6 +32,7 @@ def tray_menu(flags):
             (PAUSE, 'Pause animations', {'checked': bool(f.get('paused'))}),
             (FLASH, 'Flash effects', {'checked': bool(f.get('flash', True))}),
             (FORGE, 'Desktop weapons', {'checked': bool(f.get('forge', True))}),
+            (SOUND, 'Sound effects', {'checked': bool(f.get('sound', False))}),
             (PLATES, 'Plates', {'checked': bool(f.get('plates', True))}),
             (RIVAL, 'Rival mode', {'checked': bool(f.get('rival', True))}),
             (ARENA, 'Exit arena' if f.get('arena') else 'Start arena', {'disabled': not f.get('arena_ok', True)}),

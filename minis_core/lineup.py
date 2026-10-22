@@ -132,6 +132,7 @@ def look_of(source_id, lu, assign=None) -> str:
 QUIT_ALL, HIDE_1H, PLATES, PAUSE, BOUT, MATCH, WIN_DECIDED, ARENA, RIVAL, HIDE, SELECT, WIN_RANDOM, FLASH = range(1, 14)
 HUD_DOCK, HUD_MENUBAR = 14, 15                     # macOS only: the Plates position submenu
 FORGE = 16                                         # V8: Desktop weapons (arena forging) on / off
+SOUND = 17                                         # V9: Sound effects on / off (default off)
 PICK_AUTO, PICK_BASE = 100, 101
 LOOK_DEFAULT, LOOK_BASE = 300, 301
 SIZE_BASE = 400                                    # SIZE_BASE + px: the Fighter size submenu (464 / 496 / 528)
@@ -177,6 +178,7 @@ def fighter_menu(slot, assign, lu, flags, chars):
               (PAUSE, 'Pause all animations', {'checked': bool(flags.get('paused'))}),
               (PLATES, 'HUD plates', {'checked': bool(flags.get('plates', True))}),
               (FLASH, 'Flash effects', {'checked': bool(flags.get('flash', True))}),
+              (SOUND, 'Sound effects', {'checked': bool(flags.get('sound', False))}),
               (RIVAL, 'Rival mode (wake a sleeping partner to fight)', {'checked': bool(flags.get('rival', True))}),
               ('Who wins', [(WIN_DECIDED, 'Healthier program usually wins', {'radio': True, 'checked': flags.get('winners') != 'random'}),
                             (WIN_RANDOM, 'Coin flip', {'radio': True, 'checked': flags.get('winners') == 'random'})]),

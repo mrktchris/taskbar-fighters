@@ -523,6 +523,13 @@ def cmd_flash(args):
     return 0 if ok else 1
 
 
+def cmd_sound(args):
+    from minis_core import control
+    ok = control.set_sound(args.state == 'on')
+    print(f'sound effects {args.state}' if ok else 'could not write control.json')
+    return 0 if ok else 1
+
+
 def cmd_forge(args):
     from minis_core import control
     ok = control.set_forge(args.state == 'on')
@@ -1192,7 +1199,8 @@ def tray_flags(cfg, board):
     from minis_core import control
     return dict(paused=control.paused(), plates=control.plates_on(), arena=control.arena_active(),
                 rival=control.rival_on(default=cfg.get('rival', True)), flash=control.flashes_on(default=cfg.get('flashes', True)),
-                forge=control.forge_on(default=cfg.get('forge', True)), select_ok=board is not None, arena_ok=board is not None)
+                forge=control.forge_on(default=cfg.get('forge', True)), select_ok=board is not None, arena_ok=board is not None,
+                sound=control.sound_on())
 
 
 def tray_choice(choice, flags, board, wall=time.time, log=None, quit_fn=None, restart_fn=None):
@@ -1208,6 +1216,8 @@ def tray_choice(choice, flags, board, wall=time.time, log=None, quit_fn=None, re
         control.set_flashes(not flags['flash'])
     elif choice == T.FORGE:
         control.set_forge(not flags.get('forge', True))
+    elif choice == T.SOUND:
+        control.set_sound(not flags.get('sound', False))
     elif choice == T.PLATES:
         control.set_plates(not flags['plates'])
     elif choice == T.RIVAL:
@@ -1603,6 +1613,9 @@ class Fighter:
         self._apply_assignment(self._read_assignment(), now, force=True)
         atlas = self.lib[self.assigned['character'] if self.assigned else 'claude']
         self.brain = Brain(self.slot, atlas, self.lib, self.cfg, self.rng, now, zone=self.logic_zone(), record=self._record)
+        if self.slot == 'a':                               # V9: one process plays the shared fight's sounds (off by default)
+            from minis_core import sfx
+            self.brain.sfx = sfx.Player(enabled=lambda: control.sound_on(self.control_path))
         self.snap = Snapshot(atlas.character, 'sleeping')
         self.ov = self.shell.Overlay(f'minis-{self.slot}', int(self.cfg['zone'][0]), self.g['y'], 64, self.cell, scale=self.g['scale'],
                                      on_event=self.on_event, on_timer=self.menu_tick)
@@ -1737,7 +1750,7 @@ class Fighter:
         cp = self.control_path
         flags = dict(paused=control.paused(cp), plates=control.plates_on(cp), winners=control.winners(cp), arena=control.arena_active(),
                      rival=control.rival_on(cp, default=self.cfg.get('rival', True)), flash=control.flashes_on(cp, default=self.cfg.get('flashes', True)),
-                     forge=control.forge_on(cp, default=self.cfg.get('forge', True)))
+                     forge=control.forge_on(cp, default=self.cfg.get('forge', True)), sound=control.sound_on(cp))
         lu = control.lineup(cp)
         data = director.read_assign(self.assign_path) or {}
         if self.assigned and not director.slot_assignment(data, self.slot):
@@ -1776,6 +1789,8 @@ class Fighter:
             control.set_flashes(not flags['flash'], cp)
         elif choice == L.FORGE:
             control.set_forge(not flags['forge'], cp)
+        elif choice == L.SOUND:
+            control.set_sound(not flags.get('sound', False), cp)
         elif choice == L.BOUT:
             control.request_demo('spar', cp, now=self.wall())
         elif choice == L.MATCH:
@@ -1900,6 +1915,8 @@ class Fighter:
                 b.eye = eyes.look_at(b.x * self.k * self.g['scale'], self.g['y'] + 20 * self.k * self.g['scale'], cur) if cur else (0, 0)
             elif b.eye != (0, 0):
                 b.eye = (0, 0)
+        if getattr(b, 'sfx', None) is not None:
+            b.sfx.quiet = self.paused or not ov.visible     # paused, hidden, full screen or an arena: silent
         if self.assigned is not None:
             b.tick(now, self.snap, self.partner)
             self.snap.events = []                          # events are consumed by the first tick that sees them
@@ -1957,10 +1974,11 @@ class Fighter:
         """The plate window only redraws when what it shows changes (state, the rounded numbers, the blink phase)."""
         from minis_core import render
         snap, name = self.snap, self.display_name()
+        dmg = getattr(self.brain, 'pct', None)              # V9: the damage % while a match plays
         psig = (name, self.brain.character, snap.state, render.shown_pct(snap.ctx_pct), render.shown_pct(snap.plan_pct), snap.plan_label,
-                render.blink_phase(snap, now))
+                render.blink_phase(snap, now), None if dmg is None else int(round(dmg)))
         if psig != self.last['psig']:
-            self.pov.present(render.plate(self.brain.atlas, snap, now, name=name, k=self.hud_k), x=self.plate_xy()[0])
+            self.pov.present(render.plate(self.brain.atlas, snap, now, name=name, k=self.hud_k, dmg=dmg), x=self.plate_xy()[0])
             self.last['psig'] = psig
 
     def _log_bout_notes(self):
@@ -2199,8 +2217,8 @@ def run_arena(opts, shell, cfg, monitor_rect=None, windows_fn=None, backdrop=Non
                     if tm and lp['last_cpu'] is not None:
                         lp['cpu_pct'] = (tm[1] - lp['last_cpu'][0]) / max(1e-3, wall() - lp['last_cpu'][1]) * 100.0
                         if lp['cpu_pct'] > budget and lp['fps'] > 20:
-                            lp['fps'] = 20
-                            log.info('arena: cpu %.1f%% over budget, 20 fps', lp['cpu_pct'])
+                            lp['fps'] = 30 if lp['fps'] > 30 else 20      # V9: 60 -> 30 -> 20, one step per second over budget
+                            log.info('arena: cpu %.1f%% over budget, %d fps', lp['cpu_pct'], lp['fps'])
                     if tm:
                         lp['last_cpu'] = (tm[1], wall())
         except Exception as e:
@@ -2592,6 +2610,9 @@ def main(argv=None):
     fl = sub.add_parser('flash', help='white flashes on big hits on or off')
     fl.add_argument('state', choices=('on', 'off'))
     fl.set_defaults(fn=cmd_flash)
+    so = sub.add_parser('sound', help='short sound effects on hits, clashes and rounds on or off (default off)')
+    so.add_argument('state', choices=('on', 'off'))
+    so.set_defaults(fn=cmd_sound)
     fg = sub.add_parser('forge', help='desktop weapons in the arena on or off (on: one RAM-only screen grab per arena)')
     fg.add_argument('state', choices=('on', 'off'))
     fg.set_defaults(fn=cmd_forge)

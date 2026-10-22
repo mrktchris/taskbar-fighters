@@ -107,6 +107,15 @@ def set_forge(flag: bool, path=None) -> bool:
     return _update(path, forge=bool(flag))
 
 
+def sound_on(path=None) -> bool:
+    """V9 sound effects: off unless the owner turned them on (`minis.py sound on`, the menus' Sound effects)."""
+    return read(path).get('sound') is True
+
+
+def set_sound(flag: bool, path=None) -> bool:
+    return _update(path, sound=bool(flag))
+
+
 def fighter_size(path=None, default=128) -> int:
     """Taskbar fighter size in px (64 | 96 | 128): control.json `fighter_size` (set by `minis.py size N` and the menu),
     else `default` (config `fighter_size`)."""

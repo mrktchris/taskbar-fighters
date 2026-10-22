@@ -67,5 +67,5 @@ packages = [
 "taskbar_fighters_assets.assets_hd" = "assets_hd"
 
 [tool.setuptools.package-data]
-"taskbar_fighters_assets.assets" = ["**/*.png", "**/*.json", "**/*.ico"]
+"taskbar_fighters_assets.assets" = ["**/*.png", "**/*.json", "**/*.ico", "**/*.wav"]
 "taskbar_fighters_assets.assets_hd" = ["**/*.png", "**/*.json"]
