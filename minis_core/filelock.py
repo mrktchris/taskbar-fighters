@@ -20,7 +20,11 @@ def locked(path, timeout=1.0, retry_s=0.01):
         try:
             lock.parent.mkdir(parents=True, exist_ok=True)
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
+        except (FileExistsError, PermissionError):
+            # PermissionError: on Windows a lock file that its holder just unlinked stays "delete pending" while anyone
+            # still has a handle on it (a waiter's stat() below is enough), and O_EXCL on it fails with ACCESS_DENIED
+            # instead of EEXIST.  It is the same "someone holds / just released it" as EEXIST: retry until the deadline.
+            # (A directory we genuinely cannot write also lands here and gives up at the deadline, as before.)
             try:
                 if time.time() - lock.stat().st_mtime > STALE_S:
                     lock.unlink()                         # its holder is gone: reclaim (a second reclaimer loses the O_EXCL race)
