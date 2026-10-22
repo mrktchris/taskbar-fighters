@@ -69,7 +69,7 @@ PIECES = {
                dict(who='dfn', slot='riposte', outcome='hit', react='hit_high', freeze=200, riposte=True)]),
     'guard_crush_combo': dict(
         title='Guard crush', when=('mid', 'opener'),
-        desc='The guard is smashed open, and the 3-hit string goes straight through the opening.',
+        desc='The guard is broken open, and the 3-hit string goes straight through the opening.',
         beats=[dict(who='att', slot='guard_break', outcome='guard_break', react='guard_crush', guard_break=True, pre='block'),
                dict(who='att', slot='string', outcome='hit', react='hit', string=True),
                dict(who='att', slot='heavy', outcome='hit', react='hit_heavy', string=True)]),

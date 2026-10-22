@@ -412,7 +412,7 @@ and effect to `config.fight_band` (plate strip end .. scoreboard edge), so a bea
 | --- | ---: | ---: |
 | frames facing away outside the whitelist (of ~100 000 bout frames) | 237 | 0 |
 | ... of which after a dash-through / vault / throw (`dash_slash`, `shadow_step`, `idle`, `jump`, `walk_back`) | 227 | 0 |
-| melee contacts from outside the move's reach (of ~560, whiffs and blade locks excluded) | 201 | 0 |
+| close-range contacts from outside the move's reach (of ~560, whiffs and blade locks excluded) | 201 | 0 |
 | projectiles fired with the opponent behind / arriving on empty space | 0 / 0 | 0 / 0 |
 | frames reaching over a plate or the scoreboard at 64 / 96 / 128 px (of 4 050 each) | 91 / 100 / 361 | 0 / 0 / 0 |
 | ghost vs real opponent position (frames off by > 0.5 px) | - | 0 |
@@ -484,22 +484,23 @@ flourish - and both now hop on an `air` curve (`tests/test_art_v9.py` `Anchors`)
 
 Owner: make the fighting "super clean", with the feel of the best platform fighters (startup / active / recovery, both
 fighters freezing on contact, knockback that grows with accumulated damage, real launch arcs, techs).  Researched first
-(community frame-data documentation; formulas quoted, nothing else taken):
+(a community frame-data wiki for a classic platform fighter, cited below by article title only; formulas quoted, nothing
+else taken):
 
 - Hitlag freezes attacker and victim alike, floor(floor(d / 3 + 3) x e) x c frames, capped at 20; a 15 % hit freezes 8
-  frames ([frame-data wiki: Hitlag](https://www.ssbwiki.com/Hitlag)).
+  frames (wiki article "Hitlag").
 - Hitstun is 0.4 frames per unit of knockback, so 100 units stun for 40 frames
-  ([frame-data wiki: Hitstun](https://www.ssbwiki.com/Hitstun)).
+  (wiki article "Hitstun").
 - Knockback = ((((p / 10 + p x d / 20) x 200 / (w + 100) x 1.4) + 18) x s) + b, where p already counts the hit; launch speed
-  is knockback x 0.03 per frame and decays by 0.051 per frame ([frame-data wiki: Knockback](https://www.ssbwiki.com/Knockback)).
+  is knockback x 0.03 per frame and decays by 0.051 per frame (wiki article "Knockback").
 - Shieldstun is about d x 0.45 + 2 frames at full shield, and the attacker still takes the hitlag
-  ([frame-data wiki: Shieldstun](https://www.ssbwiki.com/Shieldstun)).
+  (wiki article "Shieldstun").
 - Directional influence leans a launch by at most about 18 degrees
-  ([frame-data wiki: Directional influence](https://www.ssbwiki.com/Directional_influence)).
+  (wiki article "Directional influence").
 - A tech after a tumble is a standing or rolling recovery with a short vulnerable tail; a missed one lies down first
-  ([frame-data wiki: Tech](https://www.ssbwiki.com/Tech)); landing lag after an aerial is its own short animation
-  ([frame-data wiki: Landing lag](https://www.ssbwiki.com/Landing_lag)); startup / active / cool-down / interruptible-as-soon-as
-  is the community's frame-data vocabulary ([frame-data wiki: Interrupt](https://www.ssbwiki.com/Interrupt)).
+  (wiki article "Tech"); landing lag after an aerial is its own short animation
+  (wiki article "Landing lag"); startup / active / cool-down / interruptible-as-soon-as
+  is the community's frame-data vocabulary (wiki article "Interrupt").
 
 **Our model** (`minis_core/framedata.py`, used by the taskbar timeline `rounds.Bout.frame_data` and the arena
 `Arena._frame_data`; pure functions of the seed and the art, so both slot processes and the arena agree):

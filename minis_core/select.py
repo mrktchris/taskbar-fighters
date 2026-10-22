@@ -1,7 +1,7 @@
 """The fighter-select screen (V6): pure state machine, layout, hit-testing and rendering.  The window that shows it is
 minis_win/select_window.py (hosted by the director, next to the scoreboard).
 
-Two stages per player, Smash-style:
+Two stages per player, as in classic fighting-game select screens:
   WHO   a row of program tiles - AUTO first, then every program that is detected or remembered (plus the sparring bot and
         whatever a slot has picked).  Each tile shows the portrait of the character that program is drawn as.
   LOOK  a grid of every character on disk (read from the roster each time the screen opens, so 13 or 30 characters just

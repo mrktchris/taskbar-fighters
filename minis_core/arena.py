@@ -149,7 +149,7 @@ def arena_dmg(beat):
 TRAIT_KEYS = ('launch', 'launcher', 'throw', 'pull', 'boomerang', 'juggle', 'meteor', 'grab', 'pound', 'returns')
 TRAIT_NAMES = {'launcher': ('uppercut', 'launch', 'rising', 'upper'), 'throw': ('throw', 'grab', 'suplex', 'hurl'),
                'pull': ('pull', 'chain', 'hook', 'reel', 'whip'), 'boomerang': ('boomerang', 'chakram', 'ring_', 'return'),
-               'pound': ('pound', 'slam', 'crush', 'smash', 'earth', 'quake', 'stomp')}
+               'pound': ('pound', 'slam', 'crush', 'earth', 'quake', 'stomp')}
 TRAIT_ALIASES = {'launch': 'launcher', 'grab': 'throw', 'returns': 'boomerang'}
 
 
@@ -180,7 +180,7 @@ def move_traits(atlas, move, beat=None):
                 continue                                       # a thrown projectile ("chakram_throw") is not a grab
             out.add(trait)
     if 'boomerang' in out and not projectile and not (beat or {}).get('boomerang') and not a.get('boomerang'):
-        out.discard('boomerang')                               # "ring_spin" is a melee spin, nothing comes back
+        out.discard('boomerang')                               # "ring_spin" is a close-range spin, nothing comes back
     return out
 
 

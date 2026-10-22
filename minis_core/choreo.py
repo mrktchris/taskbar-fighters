@@ -28,7 +28,7 @@ type, never by name.  New optional beat fields (an engine that does not know the
   boomerang  a special whose projectile flies out and comes back to the thrower on its `catch_frame`
   armor      {'anim', 'dmg'}: the defender's poke lands during the wind-up and the attacker does not flinch
   riposte    a counter that is the defender's own riposte row
-New outcome: 'guard_break' (react `guard_crush`): the guard is smashed open, chip damage, and a free follow-up lands.
+New outcome: 'guard_break' (react `guard_crush`): the guard is broken open, chip damage, and a free follow-up lands.
 """
 from __future__ import annotations
 from collections import Counter
@@ -264,7 +264,7 @@ def plan_exchange(rng, att, dfn, sit):
         if kind == 'strike':
             opener = weighted(rng, [('dash', 0.4), ('jump', 0.3), ('lunge', 0.3)])   # dash-in jab / jump-in kick / long sliding lunge
         elif kind == 'super' or (kind == 'ultimate' and not sit.get('ult_reaches')):
-            opener = 'dash'                                                  # melee finishers close the gap first
+            opener = 'dash'                                                  # close-range finishers close the gap first
     elif kind == 'strike':
         opener = weighted(rng, [(None, 0.6), ('jump', 0.15), ('sweep', 0.25)])
     if opener in ('dash', 'jump'):

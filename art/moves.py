@@ -199,7 +199,7 @@ def sig_spin(desc, **_):
 
 
 def sig_pound(desc, **_):
-    """Leaping slam: load with the weapon back over the shoulder, push off, hang at the top with it raised, smash it down
+    """Leaping slam: load with the weapon back over the shoulder, push off, hang at the top with it raised, bring it down
     in one smear as the body drops, the landing IS the hit (shock + dust), hold it, recover.  V8: the leap is `air`."""
     return M([
         (p(dy=3, lean=12, sq=0.93, hf=(5, 3), wa=-118), 110),
@@ -987,7 +987,7 @@ def t_air_slash(desc):
 
 
 def t_spike(desc):
-    """Air spike: load, push off, rise with the weapon raised in both hands and hover at the top (held), smash DOWN through
+    """Air spike: load, push off, rise with the weapon raised in both hands and hover at the top (held), drive it DOWN through
     the airborne opponent on the way down (the contact stops the drop: hitstop), drop to the floor and land with a ground
     shock, recover.  V8: the leap is `air`; hit_frame 5, the landing shock is frame 6."""
     return W([
@@ -1363,7 +1363,7 @@ def heavy_cleave(desc):
 
 
 def heavy_ground_slam(desc):
-    """Ground slam: lift and hold, smash the ground in front, the shock wave runs along the floor and reaches the
+    """Ground slam: lift and hold, slam the ground in front, the shock wave runs along the floor and reaches the
     opponent a frame later (contact on the wave, not the weapon)."""
     return W([
         (p(dy=2, lean=-8, hf=(1, -9), eb_f='up', wa=-110, ff=(8, 0), fb=(-8, 0), face='g'), 200),
@@ -1485,7 +1485,7 @@ def r_pulled(body):
 
 
 def r_guard_crush(body):
-    """Guard broken: the raised guard is smashed open (flash + guard spark), arms fly up, a staggering step back with
+    """Guard broken: the raised guard is broken open (flash + guard spark), arms fly up, a staggering step back with
     stars, then the guard comes back."""
     stars = (('star', 'head', -6, -9), ('star', 'head', 6, -8))
     return W([
@@ -1624,7 +1624,7 @@ FAMILY_MOVES = {
              ('fan_flurry', dual_flurry, 'Three alternating fan cuts; the third one lands.'),
              ('riposte', dual_riposte, 'Riposte: the rear fan snaps out edge-first.')],
     'heavy': [('cleave', heavy_cleave, 'A huge wind-up it will not flinch out of, then one cleave into the ground.'),
-              ('ground_slam', heavy_ground_slam, 'Smashes the ground; the shock wave runs along the floor into the opponent.'),
+              ('ground_slam', heavy_ground_slam, 'Slams the ground; the shock wave runs along the floor into the opponent.'),
               ('riposte', heavy_jab, 'Riposte: no time to swing, so the pommel is driven straight out.')],
 }
 # per-character changes to the family list (the chakram thrower boomerangs instead of gusting; names fit the weapon)
@@ -1640,7 +1640,7 @@ SHARED = [('air_slash', t_air_slash, 'Jumps after a launched opponent and strike
           ('spike', t_spike, 'Leaps, raises the weapon overhead and spikes the airborne opponent into the ground.'),
           ('throw', t_throw, 'Grabs the opponent, hoists it overhead and slams it down.'),
           ('dash_slash', t_dash_slash, 'Bursts through the opponent and stops on the far side; the cut lands a beat later.'),
-          ('guard_break', t_guard_break, 'A long heavy wind-up, then the pommel smashes the guard open.')]
+          ('guard_break', t_guard_break, 'A long heavy wind-up, then the pommel breaks the guard open.')]
 SHARED_NAMES = {'codex': {'dash_slash': 'shadow_step'}}
 GUARD_BREAK = {'bow': bow_bash}
 

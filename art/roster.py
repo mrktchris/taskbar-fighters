@@ -292,7 +292,7 @@ ROSTER = {c.name: c for c in [
        dict(style='arc', kind='chakram_throw', cols=('metal.sh', 'metal.base', 'metal.hi'), spark='trim.hi'),
        ult=('ring_storm', 'grapple_strike', 'Throws two chakrams on lines, zips after them and finishes with a spinning cross cut.', {})),
     _c('oni', 'Oni', 'oni', '#E04A3A', ONI,
-       ('club_slam', 'pound', 'Leaps and smashes the kanabo into the ground.', {}),
+       ('club_slam', 'pound', 'Leaps and slams the kanabo into the ground.', {}),
        ('oni_fire', 'cast', 'Spits a ball of oni-fire across the taskbar.', {}),
        ('rampage', 'raise', 'Swells under a giant "H", eyes blazing.', {'glyph': 'bigglyph'}),
        dict(style='orb', kind='oni_fire', cols=('skin.ol', 'fx.a', 'fx.b'), trail='fx.a'),

@@ -64,6 +64,8 @@ class Files(unittest.TestCase):
                 self.assertLessEqual(max(abs(x - y) for x, y in zip(new, old)), 2, name)   # a libm ULP may differ by OS
 
     def test_the_wheel_ships_the_sounds(self):
+        # The packaging rules name the files; the CI job "package smoke test" builds the real wheel, asserts every
+        # assets/sfx/*.wav is inside it and reads them back from an installed copy (.github/workflows/ci.yml).
         txt = (ROOT / 'pyproject.toml').read_text(encoding='utf-8')
         self.assertIn('**/*.wav', txt)
         self.assertIn('*.wav', (ROOT / 'MANIFEST.in').read_text(encoding='utf-8'))

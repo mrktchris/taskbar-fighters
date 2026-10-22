@@ -93,6 +93,9 @@ jobs:
                   'taskbar_fighters_assets/assets/claude/anim.json', 'taskbar_fighters_assets/assets_hd/claude/sheet.png']
           missing = [n for n in need if n not in names]
           assert not missing, f'missing from {whl}: {missing}'
+          sfx = sorted(n.rsplit('/', 1)[1] for n in names if n.startswith('taskbar_fighters_assets/assets/sfx/') and n.endswith('.wav'))
+          want_sfx = sorted(p.rsplit('/', 1)[-1] for p in glob.glob('assets/sfx/*.wav'))
+          assert want_sfx and sfx == want_sfx, f'sound effects in {whl}: {sfx} != {want_sfx}'
           stray = [n for n in names if n.startswith(('assets/', 'assets_hd/', 'tests/'))]
           assert not stray, f'top-level data in {whl}: {stray[:5]}'
           print(f'{whl}: {len(names)} files, ok')
@@ -109,5 +112,9 @@ jobs:
           assert 'site-packages' in str(root) and root.name == 'taskbar_fighters_assets', root
           n = sum(1 for p in paths.assets_dir().iterdir() if (p / 'anim.json').is_file())
           assert n == 13, n
+          wavs = sorted(p.name for p in (paths.assets_dir() / 'sfx').glob('*.wav'))
+          assert len(wavs) == 8, wavs                         # the optional sound effects ship in the wheel
+          from minis_core import sfx
+          assert all(f'{name}.wav' in wavs for name in sfx.NAMES), (wavs, sfx.NAMES)
           print('installed art:', root, n, 'characters')
           EOF

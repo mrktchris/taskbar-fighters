@@ -174,7 +174,7 @@ for k, v in [
     ('throw', 'Close range only.  The defender\'s `thrown` row starts on the attacker\'s grab frame; both rows share one clock, so the flat landing falls on the attacker\'s slam.  The defender is hoisted in close, then slammed out in front; a slipped grab ends in a backdash.'),
     ('chain pull', 'From range: the chain bites on contact and yanks the opponent to arm\'s length on the pull frame - often straight into the launcher and a juggle.'),
     ('dash-through', 'From range: the attacker slides THROUGH the defender during its burst, stops on the far side with its back turned, and the cut registers on the frozen pose (`hit_back`: pitched forward).  The attacker then vaults back over to its own side.'),
-    ('guard break', 'The guard is smashed open (`guard_crush`, 12 chip damage) and the next strike is free.'),
+    ('guard break', 'The guard is broken open (`guard_crush`, 12 chip damage) and the next strike is free.'),
     ('riposte', 'When a strike is parried, the defender answers with its own riposte row most of the time.'),
     ('clash', 'About a third of blocked or parried weapon strikes become a weapon lock instead: both fighters play `clash` on the same instant (sparks, a straining push), then both skid apart.'),
     ('armour', 'Heavy cleaves: a light poke from the defender lands during the wind-up for 12, the attacker does not flinch and the cleave still lands.'),
