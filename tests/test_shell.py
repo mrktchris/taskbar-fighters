@@ -179,5 +179,75 @@ class Overlay(unittest.TestCase):
         self.assertTrue(self.shell.kernel32.GetModuleHandleW(None))
 
 
+@unittest.skipUnless(sys.platform == 'win32', 'Win32 only')
+class StrangersPCs(unittest.TestCase):
+    """The real Win32 side of the stage: DPI awareness, live re-layout messages, the taskbar's rects."""
+
+    def setUp(self):
+        from minis_win import shell
+        self.shell = shell
+
+    def test_process_is_per_monitor_dpi_aware(self):
+        """Every coordinate must be a physical pixel, or sprites blur and land in the wrong place at 125-200%."""
+        self.assertEqual(self.shell.dpi_awareness(), 'per-monitor v2')
+        for m in self.shell.monitors():
+            self.assertGreaterEqual(m['scale'], 1.0)
+
+    def test_layout_messages_bump_the_epoch(self):
+        """WM_DISPLAYCHANGE, WM_DPICHANGED, a work-area WM_SETTINGCHANGE and TaskbarCreated (posted to OUR window only; a real
+        broadcast would reach every program) each bump layout_epoch; an unrelated setting change does not."""
+        import ctypes
+        from ctypes import wintypes as wt
+        sh = self.shell
+        sh.user32.SendMessageW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]
+        sh.user32.SendMessageW.restype = ctypes.c_ssize_t
+        ov = sh.Overlay('minis-test-layout', 0, 0, 8, 8)
+        try:
+            while not ov.pump():
+                pass
+            for msg, wp in ((sh.WM_DISPLAYCHANGE, 32), (sh.WM_DPICHANGED, 0x00900090), (sh.WM_SETTINGCHANGE, sh.SPI_SETWORKAREA),
+                            (sh.WM_TASKBARCREATED, 0)):
+                before = sh.layout_epoch()
+                rc = wt.RECT(0, 0, 8, 8)                                                  # WM_DPICHANGED carries a suggested rect
+                sh.user32.SendMessageW(ov.hwnd, msg, wp, ctypes.addressof(rc))
+                self.assertEqual(sh.layout_epoch(), before + 1, hex(msg))
+            before = sh.layout_epoch()
+            sh.user32.SendMessageW(ov.hwnd, sh.WM_SETTINGCHANGE, 0x2A, 0)                # SPI_SETFONTSMOOTHING: not layout
+            self.assertEqual(sh.layout_epoch(), before)
+            self.assertTrue(sh.user32.IsWindowVisible(ov.hwnd))                         # a DPI message did not hide / resize it
+        finally:
+            ov.close()
+
+    def test_taskbar_info_is_rects_only_and_stage_lays_it_out(self):
+        sh = self.shell
+        if not sh.user32.FindWindowW('Shell_TrayWnd', None):
+            self.skipTest('no taskbar in this session (a service desktop)')
+        from minis_core import config as cfgmod
+        info = sh.taskbar_info()
+        self.assertIn(info['edge'], (0, 1, 2, 3))
+        self.assertGreater(info['dpi'], 0)
+        for r in [info['rect'], info['monitor'], info['work']] + list(info['parts'] or ()):
+            self.assertEqual(len(r), 4)
+            self.assertTrue(all(isinstance(v, int) for v in r))
+        st = cfgmod.stage(info, dict(cfgmod.DEFAULTS))
+        self.assertIsInstance(st['scale'], int)
+        self.assertGreater(st['band'][1], st['band'][0])
+        if st['zone']:
+            self.assertLess(st['zone'][0], st['zone'][1])
+        import inspect
+        from minis_win import uia
+        src = inspect.getsource(uia)
+        for word in ('CurrentName', 'GetWindowText', 'ValuePattern'):                     # only rects are ever read
+            self.assertNotIn(word, src)
+
+    def test_uia_probe_has_a_deadline(self):
+        from minis_win import uia
+        h = self.shell.user32.FindWindowW('Shell_TrayWnd', None)
+        got = uia.descendant_rects(h) if h else None
+        self.assertTrue(got is None or all(len(r) == 4 for r in got))
+        self.assertIsNone(uia.descendant_rects(0))
+        self.assertFalse(uia._busy.is_set())                                             # the worker thread finished
+
+
 if __name__ == '__main__':
     unittest.main()

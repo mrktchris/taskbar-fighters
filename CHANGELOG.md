@@ -37,6 +37,19 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
   `tools/make_example_pack.py` validates `--name` before touching any folder; the Win32 stream window passes an owned
   pixel buffer and is tested by reading back its own pixels.
 
+## Unreleased - Windows on strangers' PCs (branch `win-robust`)
+
+- **Any taskbar edge.** Bottom: on the taskbar as before. Top / left / right: a strip along the bottom of the work area
+  beside the taskbar. Auto-hide at the bottom: shown only while the taskbar is revealed (never over its 2 px reveal strip).
+- **The zone finds itself.** The empty stretch of the taskbar is detected from the RECTS of its elements (UI Automation
+  bounding rects, the shell's `Start` / `MSTaskListWClass` / `TrayNotifyWnd` windows as a fallback; no names or titles),
+  for centred and left-aligned icons, Windows 10 and 11, re-read every 5 s. A `zone` in `minis.json` still wins
+  (`zone_auto`); `monitor` picks another monitor's taskbar.
+- **DPI.** Per-monitor v2 awareness with fallbacks (reported by `doctor`); integer sprite / HUD scale from the band at every
+  DPI; the tray icon reloads at the new size on a DPI change; `monitors` and `doctor` show each monitor's scale.
+- **Live re-layout** on a display change, DPI change, work-area change and an Explorer restart (TaskbarCreated).
+- `doctor` prints the detected edge, DPI, layout and zone.
+
 ## v1.0.0 - 2026-10-16 (V6 -> V8)
 
 The first tagged release: a one-click Windows zip, a wheel on PyPI (`pip install taskbar-fighters`) and an experimental,
