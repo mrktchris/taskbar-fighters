@@ -627,15 +627,15 @@ class Sigil(unittest.TestCase):
         ch = 'codex'
         c = roster.get(ch)
         mv = M.build_moves(c)['idle']
-        gen = BF.render_move(c, 'idle', mv)
-        hand = gen[0]['r'].copy()
-        hand.putpixel((2, 40), (255, 0, 255, 255))               # a marker only an artist's frame would have
         old = os.environ.get('MINIS_HAND_DIR')
         with tempfile.TemporaryDirectory() as tmp:
-            os.makedirs(os.path.join(tmp, ch))
-            hand.save(os.path.join(tmp, ch, 'idle_0.png'))
-            os.environ['MINIS_HAND_DIR'] = tmp
+            os.environ['MINIS_HAND_DIR'] = tmp                    # V9: art/hand/ holds this loop; the baseline is the bare rig
             try:
+                gen = BF.render_move(c, 'idle', mv)
+                hand = gen[0]['r'].copy()
+                hand.putpixel((2, 40), (255, 0, 255, 255))       # a marker only an artist's frame would have
+                os.makedirs(os.path.join(tmp, ch))
+                hand.save(os.path.join(tmp, ch, 'idle_0.png'))
                 out = BF.render_move(c, 'idle', mv)
             finally:
                 if old is None:

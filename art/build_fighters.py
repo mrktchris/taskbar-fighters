@@ -6,7 +6,11 @@ Writes <out>/<character>/{sheet.png, sheet_l.png, proj.png, anim.json, fx.png, f
 
 Hand-polished frames: drop a 64x64 RGBA PNG drawn in the character's palette at
     art/hand/<character>/<move>_<frameindex>.png          (or set MINIS_HAND_DIR to use another folder)
-and the builder uses it instead of the generated right-facing frame.  The left-facing frame is its mirror with the cap
+and the builder uses it instead of the generated right-facing frame.  For the 128 px build (RES 2) the file is
+    art/hand/<character>/<move>_<frameindex>@2x.png       (128x128; V9 - a 64 px file is never used at RES 2)
+An optional <move>_<frameindex>[@2x]_l.png is used as the left-facing frame instead of the mirror (the HD build shades
+after mirroring, light from the top-left on both facings, so a mirrored HD frame would be lit from the wrong side).
+art/hand_polish.py writes all of them from the generated frames plus a reviewed list of pixel edits.  The left-facing frame is its mirror with the cap
 sigil redrawn un-mirrored at the generator's sigil position (keep the sigil where the generator put it), touching only
 cap-cloth or sigil-coloured pixels so a hand drawn over the cap stays on top.
 """
@@ -458,12 +462,18 @@ def render_move(ch, name, mv, idle_pts=None):
         if rig.is_smear(pose) and prev is not None and not pose.flash and not pose.ghost:
             im_r = ghost_prev(im_r, body, prev, False, pose)
             im_l = ghost_prev(im_l, body, prev, True, pose)
-        hp = os.path.join(hand_dir(), ch.name, f'{name}_{i}.png')
+        if not os.environ.get('MINIS_NO_CLEAN'):                # V9: every frame, both facings: no stray pixels, clean corners
+            import hand_polish
+            im_r = hand_polish.clean(im_r, body, rig.RES, buf, orphans=False)[0]
+            im_l = hand_polish.clean(im_l, body, rig.RES, buf.transpose(Image.FLIP_LEFT_RIGHT), orphans=False)[0]
+        hp = os.path.join(hand_dir(), ch.name, f'{name}_{i}' + ('@%dx' % rig.RES if rig.RES > 1 else '') + '.png')
         if os.path.exists(hp) and not rig.UNARMED:       # an artist's frame (same palette, same cell size) replaces the generated one
             hand = Image.open(hp).convert('RGBA')
             if hand.size == (rig.cell_px(), rig.cell_px()):
                 im_r = hand
-                im_l = mirror_rgba(im_r, meta, body)
+                hpl = hp[:-4] + '_l.png'                 # V9: its own left-facing frame (HD light stays top-left), else the mirror
+                hand_l = Image.open(hpl).convert('RGBA') if os.path.exists(hpl) else None
+                im_l = hand_l if hand_l is not None and hand_l.size == hand.size else mirror_rgba(im_r, meta, body)
         out.append(dict(r=im_r, l=im_l, pose=pose, ms=ms, buf=buf, meta=meta, scarf=scarf[i]))
     return out
 

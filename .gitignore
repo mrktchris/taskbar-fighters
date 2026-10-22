@@ -11,7 +11,7 @@ __pycache__/
 
 # Local overrides and local data
 /minis.json
-/art/hand/
+# (V9: art/hand/ is tracked - the hand-polished frames are art source; art/hand_polish.py writes them)
 /qa/local/
 # art/qa_jump.py strips, GIFs and film strips (~90 MB): regenerate with `python art/qa_jump.py strips|gifs all`
 /qa/jump/
