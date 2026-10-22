@@ -5595,7 +5595,7 @@
    "row": 50,
    "loop": false,
    "cat": "strike",
-   "desc": "Smashes the ground; the shock wave runs along the floor into the opponent.",
+   "desc": "Slams the ground; the shock wave runs along the floor into the opponent.",
    "frames": [
     {
      "i": 0,
@@ -6579,7 +6579,7 @@
    "row": 56,
    "loop": false,
    "cat": "strike",
-   "desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+   "desc": "A long heavy wind-up, then the pommel breaks the guard open.",
    "frames": [
     {
      "i": 0,
@@ -7352,7 +7352,7 @@
     "frames": 3,
     "amp": 2
    },
-   "reach": 36,
+   "reach": 58,
    "grip": [
     [
      34.7,

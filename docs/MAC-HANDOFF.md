@@ -17,6 +17,73 @@ Item format: `- [ ] MAC-<n> (<date>)` = OPEN, `- [x] MAC-<n> (<date>) DONE <hash
 
 ## OPEN
 
+UX layer (branch `ux`, 2026-10-21): MAC-30 to MAC-37.  Every new window is driven by the shared `minis_win/*_window.py`
+drivers through `minis_mac.shell.Overlay` (the same way the select screen runs on the Mac).  Before testing: `python minis.py
+stop`, then `python minis.py guide --reset` so the first-run cards show, then `python minis.py start`.
+
+- [ ] **MAC-30 (2026-10-21) Settings window (menu-bar icon > Settings...).**
+  - PC change: `minis_core/settings_ui.py` (model), `minis_win/settings_window.py` (driver, activatable NSPanel like the select
+    screen), `minis_mac/startup.py` (Open at login = the LaunchAgent `autostart` writes), host in `minis_core/ux_runtime.py`.
+  - Test: open it from the menu-bar icon (and once with `python minis.py settings`); Up/Down, Left/Right, Enter, Esc; click every
+    row once; toggle **Open at login** on, check `python minis.py autostart status` says on and
+    `~/Library/LaunchAgents/io.github.mrktchris.taskbar-fighters.plist` exists, then off again; Fighter size 96 (restarts),
+    back to 128; click outside the window.
+  - Expected: it sits above the Dock strip, crisp at 2x, takes the keys while open, closes on Esc / Close / a click elsewhere
+    (but NOT in the first second after opening from the command line); the label reads "Open at login"; every change is what
+    `python minis.py settings list` then prints.
+
+- [ ] **MAC-31 (2026-10-21) Fight-zone editor over the Dock strip.**
+  - PC change: `settings_ui.ZoneEdit` + `settings_window.ZoneWindow`: a strip the width of the screen over the "taskbar" band
+    (on a Mac, the Dock strip from `shell.taskbar_rect`) and a 30-pt toolbar above it; press / drag / release events.
+  - Test: Settings > Fight zone > Edit...; drag the right handle, drag the bar, Left/Right arrows; Cancel (Settings comes back);
+    Edit again and Save (the app restarts); `python minis.py zone` shows the saved zone; `python minis.py zone auto`.
+  - Expected: the bar lines up with the Dock strip; dragging is smooth with the button held outside the strip; while editing the
+    Dock band takes no clicks through, the desktop above the toolbar does; the zone lands in `~/Library/Application Support/minis/minis.json` (never in the clone).
+
+- [ ] **MAC-32 (2026-10-21) First-run cards and the legend.**
+  - PC change: `minis_core/guide.py`, `minis_win/guide_window.py` (non-activatable, only the cards take the mouse).
+  - Test: after `guide --reset` and `start`, wait ~5 s; click Next, Next, Got it. Then `python minis.py guide` (the legend) and
+    menu-bar icon > What am I looking at?; once with `python minis.py plates menubar`.
+  - Expected: cards above the Dock strip with arrows ending on the fighter, the plates and the scoreboard; the Dock and windows
+    under the overlay still take clicks except on the cards; it never comes back by itself after Got it / Skip; with plates in
+    the menu bar the plates card says so instead of pointing down.
+
+- [ ] **MAC-33 (2026-10-21) Hover cards beside fading plates.**
+  - PC change: `minis_core/hovercard.py`; each fighter process polls `shell.cursor_pos` every 0.1 s, 0.6 s dwell, card in a
+    click-through `ImagePopup` (`minis_win/ux_window.py`) drawn at the Retina density.
+  - Test: rest the mouse on a fighter, then on its plate (Dock position, then `plates menubar`); move away.
+  - Expected: a crisp card above the fighter / plate (BELOW the plate when the plates are in the menu bar), never under the
+    cursor and never blocking a click; the plate's own fade-on-hover still works; it goes away within ~0.3 s of leaving.
+
+- [ ] **MAC-34 (2026-10-21) Event signals and the rival countdown.**
+  - PC change: `minis_core/signals.py` overlays as front / back effects in the fighter frame; the rival countdown is a new bus
+    field (`rival_in`, `rival_kind`) drawn over the sleeping plate's second line (`ux_runtime._rival_plate`, KDraw at 2x).
+  - Test: let Claude Code finish a task (flag over the fighter until you hover it); leave a tool call unanswered 45 s (amber
+    halo); with one program asleep, read its plate; `python minis.py signals off` / `on`.
+  - Expected: crisp marks moving with the fighter, nothing clipped at the top of the window; the sleeping plate reads "rival
+    match in ~N min" at 2x without overlapping "sleeping".
+
+- [ ] **MAC-35 (2026-10-21) Results strip after a match.**
+  - Test: `python minis.py demo match`; watch the end.
+  - Expected: a 4-second strip right-aligned above the scoreboard (which sits at the right end of the strip on a Mac), winner
+    posing, loser bowing on the Dock too; it fades and never takes a click.
+
+- [ ] **MAC-36 (2026-10-21) Instant replay window and GIF export.**
+  - PC change: `minis_win/replay_window.py` (frames from a worker thread), `minis_core/replay.py` (`exports_dir()` =
+    `~/Library/Application Support/minis/exports`; `reveal()` runs `open -R` on the new file).
+  - Test: after a match, menu-bar icon > Replay last K.O.; click it to close; > Save last fight as GIF; `python minis.py replay
+    code`, then `python minis.py replay <that code> --gif /tmp/f.gif`.
+  - Expected: the replay plays smoothly above the Dock (the K.O. in slow motion) without stalling the scoreboard; the GIF appears
+    in `~/Library/Application Support/minis/exports/`, a toast says so and Finder opens with the file selected; with a PATH it
+    is written there and Finder does not open; no Screen Recording prompt anywhere (nothing is captured).
+
+- [ ] **MAC-37 (2026-10-21) Move book.**
+  - PC change: `minis_core/collection.py`, `minis_win/book_window.py`; `minis_mac/geometry.MAC_KEYS` now maps Page Up / Page
+    Down / Home (116 / 121 / 115).
+  - Test: menu-bar icon > Move book...; arrows, Tab, fn+Up / fn+Down (page), Esc; click a fighter, a tab, a cell;
+    `python minis.py book list`.
+  - Expected: the window takes the keys while open, seen moves animate, unseen are silhouettes; counts match `book list`.
+
 - [ ] **MAC-5 (2026-10-15) Menu-bar menu items.**
   - PC change: the menu is the shared `minis_win/tray.py` logic (Select fighters..., Pause animations, Flash effects,
     Plates, Rival mode, Start/Exit arena, Bout now, Restart Taskbar Fighters, Quit Taskbar Fighters) rendered by

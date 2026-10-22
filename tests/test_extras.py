@@ -162,6 +162,18 @@ class Micro(Isolated):
         self.assertGreaterEqual(found, 4, 'eyes found for too few characters')
         self.assertTrue(found_moving, 'no character has pupils that visibly move')
 
+    def test_a_new_atlas_never_reads_a_freed_atlas_s_cached_eyes(self):
+        """The eye cache was keyed by id(atlas) alone; a freed atlas's id is reused by the next one, which then got the
+        old character's eye pixels (the macOS py3.12 flake above: 'oni' with another fighter's eyes).  Simulate the reuse
+        exactly: an entry under the new atlas's id that was made for a different atlas must not be returned."""
+        old, new = Atlas('claude'), Atlas('oni')
+        want = eyes.find_eye(new.frame_image('idle', 0, 1), 1, new.res)
+        stale = eyes.find_eye(old.frame_image('idle', 0, 1), 1, old.res)
+        self.assertNotEqual(want, stale)                                                # (otherwise the check proves nothing)
+        eyes._cache[(id(new), 'idle', 0, True)] = (old, stale)                           # what id reuse leaves behind
+        self.assertEqual(eyes.eye_pixels(new, 'idle', 0, 1), want)
+        self.assertEqual(eyes.eye_pixels(new, 'idle', 0, 1), want)                      # and the corrected entry is kept
+
     def test_fast_drag_makes_it_dizzy_and_shift_drag_throws(self):
         b, ov = self.f.brain, self.f.ov
         mx = int(b.x - ov.x / ov.scale)

@@ -89,6 +89,9 @@ def load_config(path=None, log=None):
                 cfg = dict(cfgmod.DEFAULTS)
         except (OSError, ValueError) as e:
             problem = f'minis.json could not be read ({type(e).__name__}): ignored, defaults used'
+    if path is None:
+        from minis_core import ux
+        ux.apply_overlay(cfg)                          # what Settings / `minis.py zone` saved, in the data folder
     for k, lo, hi in FPS_KEYS:
         try:
             v = float(cfg.get(k, cfgmod.DEFAULTS.get(k, lo)))
@@ -1207,7 +1210,7 @@ def tray_flags(cfg, board):
     return dict(paused=control.paused(), plates=control.plates_on(), arena=control.arena_active(),
                 rival=control.rival_on(default=cfg.get('rival', True)), flash=control.flashes_on(default=cfg.get('flashes', True)),
                 forge=control.forge_on(default=cfg.get('forge', True)), select_ok=board is not None, arena_ok=board is not None,
-                stream=_stream_on(), sound=control.sound_on())
+                stream=_stream_on(), ux_ok=board is not None, sound=control.sound_on())
 
 
 def _stream_on():
@@ -1256,6 +1259,21 @@ def tray_choice(choice, flags, board, wall=time.time, log=None, quit_fn=None, re
     elif choice == T.QUIT:
         if not (quit_fn or quit_all)():
             log.info('quit: refused (tests)')
+    elif choice in T.UX_KINDS:                             # Settings, Move book, legend, replay, GIF: the scoreboard hosts them
+        from minis_core import ux
+        ux.request(T.UX_KINDS[choice], now=wall())
+
+
+def ux_actions():
+    """What the UX windows may do beyond control.json: restart (a new size or zone), and the start-at-sign-in entry
+    (Windows: the Startup-folder shortcut, reused when it is already ours; macOS: the LaunchAgent)."""
+    def startup():
+        if plat.is_mac():
+            from minis_mac.startup import Startup
+            return Startup(sys.executable, ROOT, argv=self_argv('start'))
+        from minis_win.startup import Startup
+        return Startup(read_shortcut, write_shortcut, shortcut_is_ours, shortcut_spec)
+    return dict(restart=restart_all, startup=startup)
 
 
 def director_tray(shell, cfg, board, log, wall=time.time):
@@ -1372,6 +1390,7 @@ class Scoreboard:
         self.select = None                                # the open SelectWindow, or None
         self.stopper = ArenaStopper()
         self.hud_k = 1                                    # HUD pixel density (2 on a Retina Mac)
+        self.ux = None                                    # minis_core.ux_runtime.Host: Settings, book, guide, replay, results
 
     def left(self):
         """Logical x of the widget.  Windows: left of the icon cluster (SB.left_x).  macOS, unless scoreboard_x is set: the
@@ -1407,6 +1426,9 @@ class Scoreboard:
         self.ov.show(False)
         req = control.picker_request(now=self.wall())
         self.last['picker'] = req and req.get('id')       # a request from before this process started is not replayed
+        from minis_core import ux_runtime
+        self.ux = ux_runtime.Host(self, ux_actions())
+        self.ux.setup()
 
     def on_event(self, kind, mx, my):
         name = self.SB.hit(mx, my, self.state)
@@ -1549,10 +1571,17 @@ class Scoreboard:
                 self.last['sig'] = sig
         elif not self.ov.visible and now - self.last['read'] >= 0.25:
             self.last['read'] = now
+        if self.ux is not None:
+            try:
+                self.ux.step()
+            except Exception as e:
+                self.log.error('ux\n' + safe_traceback(e))
         return 0.05
 
     def close(self):
         try:
+            if self.ux is not None:
+                self.ux.close()
             if self.select:
                 self.select.close()
             if self.ov:
@@ -1604,6 +1633,8 @@ class Fighter:
         self.flash = True             # control.json `flashes`: off = no white flash frames on this fighter
         self.ctl_hidden = None        # control.hidden_left() for this slot (hide / hide 1 h, undone by `show`)
         self.stopper = ArenaStopper()
+        from minis_core import ux_runtime
+        self.ux = ux_runtime.SlotUx(self)   # event signals, hover card, rival countdown, post-match beat, move book, replays
 
     # -------------------------------------------------- setup
     def geometry(self):
@@ -1733,6 +1764,7 @@ class Fighter:
         """The brain's match result (it only knows characters), keyed by PROGRAM (V6): the round score says which side
         won; the characters are the fallback.  Written by the left side only (the brain's own rule)."""
         from minis_core import director, records, rounds
+        self.ux.on_record()                               # keep the match for replays / the results strip (numbers + ids)
         mine = (self.assigned or {}).get('source')
         theirs = (director.slot_assignment(director.read_assign(self.assign_path), other(self.slot)) or {}).get('source')
         wins = ((self.brain.round or {}).get('wins') or {}) if self.brain is not None else {}
@@ -1915,7 +1947,7 @@ class Fighter:
                 self.gone_written = bus.write_gone(self.slot, root=self.bus_root, now=wall)
             return
         self.gone_written = False
-        pub = self.brain.publish()
+        pub = self.ux.publish_extra(self.brain.publish(), wall)    # + the rival countdown for a sleeping partner's plate
         ev = pub['event'] or {}
         evkey = (ev.get('run'), ev.get('seq'))
         key = (pub['state'], pub['mode'], int(pub['x']), pub['facing'], pub['anim'], pub['ctx'], evkey, pub['paused'], pub['character'])
@@ -1990,6 +2022,7 @@ class Fighter:
             self.last['tele'] = now
             acts = self.detector.poll(wall)
             self.snap = acts[0].snapshot() if acts else Snapshot(b.character, 'sleeping')
+            self.ux.on_snapshot(self.snap, now, wall)      # before the brain consumes the one-shot events
         if now - self.last['pbus'] >= 0.2:
             self.last['pbus'] = now
             self.partner = bus.read(other(self.slot), root=self.bus_root, now=wall)
@@ -2043,7 +2076,7 @@ class Fighter:
             self.last['top'] = now
         fps = self.cfg.get('fps_fight', 30) if b.mode == 'script' else self.cfg['fps_active']    # V6: 30 fps while a fight script runs
         if ov.visible:
-            v = b.view(now)
+            v = self.ux.decorate(b.view(now), now)
             sig = (v['anim'], v['frame'], int(v['x']), v['facing'], v['dim'], (v['proj'] or {}).get('x', 0) // 2, b.character,
                    int(now * fps) if v.get('busy') else 0, v.get('eye'))       # effects / banners: redraw at the active rate
             quiet = self.paused or (v['anim'] in ('idle', 'sleep', 'wait', 'dizzy', 'rage', 'type', 'work') and b.mode == 'home' and not v.get('busy'))
@@ -2055,6 +2088,7 @@ class Fighter:
                 self.last['sig'], self.last['draw'] = sig, now
         if self.pov.visible:
             self._draw_plate(now)
+        self.ux.step(now, wall)
         return 0.25 if (self.paused or not ov.visible) else min(0.05, 1.0 / fps)
 
     def _show_plate(self):
@@ -2066,12 +2100,13 @@ class Fighter:
     def _draw_plate(self, now):
         """The plate window only redraws when what it shows changes (state, the rounded numbers, the blink phase)."""
         from minis_core import render
-        snap, name = self.snap, self.display_name()
+        snap, name = self.ux.plate_snap(self.snap, now), self.display_name()          # (a second wind refills the meter)
         dmg = getattr(self.brain, 'pct', None)              # V9: the damage % while a match plays
         psig = (name, self.brain.character, snap.state, render.shown_pct(snap.ctx_pct), render.shown_pct(snap.plan_pct), snap.plan_label,
-                render.blink_phase(snap, now), None if dmg is None else int(round(dmg)))
+                render.blink_phase(snap, now), self.ux.plate_key(now, self.wall()), None if dmg is None else int(round(dmg)))
         if psig != self.last['psig']:
-            self.pov.present(render.plate(self.brain.atlas, snap, now, name=name, k=self.hud_k, dmg=dmg), x=self.plate_xy()[0])
+            self.pov.present(self.ux.plate_image(render.plate(self.brain.atlas, snap, now, name=name, k=self.hud_k, dmg=dmg), self.wall()),
+                             x=self.plate_xy()[0])
             self.last['psig'] = psig
 
     def _log_bout_notes(self):
@@ -2084,6 +2119,7 @@ class Fighter:
 
     def close(self):
         from minis_core import bus
+        self.ux.close()
         for w in (self.ov, self.pov):
             try:
                 if w:
@@ -2806,6 +2842,8 @@ def main(argv=None):
     au.add_argument('state', choices=('on', 'off', 'status'))
     au.set_defaults(fn=cmd_autostart)
     add_growth_parsers(sub)
+    from minis_core import ux_cli
+    ux_cli.add_parsers(sub, sys.modules[__name__])        # settings, startup, zone, guide, replay, book, results/cards/signals
     a = ap.parse_args(argv)
     try:
         return a.fn(a)

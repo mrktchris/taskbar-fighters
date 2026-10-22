@@ -85,7 +85,7 @@ FLAT = {'eye': ('ink', None), 'brow': ('ink', None), 'mouth': ('ink', None), 'ey
         'blade_hl': ('metal', 'hi2'), 'string': ('paper', 'sh'), 'arrow': ('trim', 'hi'),
         'doc': ('paper', None), 'doc_line': ('paper', 'sh'), 'swoosh': ('fx', 'w'), 'streak': ('fx', 'c'),
         'fx_a': ('fx', 'a'), 'fx_b': ('fx', 'b'), 'fx_w': ('fx', 'w'), 'fx_c': ('fx', 'c'),
-        'dust_l': ('shoe', 'hi2'), 'dust_d': ('shoe', 'hi'),           # V9: dust in the fighter's own ground-worn tones
+        'dust_l': ('shoe', 'hi'), 'dust_d': ('shoe', 'base'),          # V9: dust in the fighter's own shoe tones (no new colour)
         'crease': ('ink', 'crease')}
 NOLINE = {'fx_a', 'fx_b', 'fx_w', 'fx_c', 'swoosh', 'streak', 'dust_l', 'dust_d'}
 TEXT_FX = ('bigsigil', 'bigglyph', 'qmark', 'zzz')   # effects that are letters: never mirrored on left-facing frames

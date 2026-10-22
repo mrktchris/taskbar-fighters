@@ -6645,7 +6645,7 @@
    "row": 56,
    "loop": false,
    "cat": "strike",
-   "desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+   "desc": "A long heavy wind-up, then the pommel breaks the guard open.",
    "frames": [
     {
      "i": 0,
@@ -7417,7 +7417,7 @@
     "frames": 3,
     "amp": 1
    },
-   "reach": 18,
+   "reach": 29,
    "grip": [
     [
      16.7,

@@ -532,8 +532,8 @@
 }
 },
 "dash": {
-"R": "8cf6fd47df85203cbce5d3abce8a1ad1783edf1a",
-"L": "3d3e6bfe774432e88cb9e8ec7ba6e0c98c5a22fe",
+"R": "50d3705fac8fcefbc9ff05321f3e93f5bc2d7b67",
+"L": "2d54cef8ccf54fdf345ad1ffa5862531dea155b6",
 "frames": [
 [
 60,
@@ -627,8 +627,8 @@
 }
 },
 "backdash": {
-"R": "47611969766b5b6a4aadd230fa49b213870b2112",
-"L": "39a7beeeaed529d3c30a7c12967a7972478eaa80",
+"R": "f2d9e520fe620e57ebe8706a4404709c71e2663d",
+"L": "2910ac0700222be50f8054ac99e77ad70de54aaf",
 "frames": [
 [
 50,
@@ -836,8 +836,8 @@
 }
 },
 "jump": {
-"R": "74e8b2231d84f97c66ab0af750f13f0e85f4ff8f",
-"L": "c8bfda701efe7f0cc97ad87f0507e50f1556fb58",
+"R": "ce6d4a7534d864c6799ee26e4280870ff5f684ed",
+"L": "a9b39b608414f5208b8d0d7c04bcafc823cb382c",
 "frames": [
 [
 80,
@@ -1242,8 +1242,8 @@ null,
 }
 },
 "uppercut": {
-"R": "236f4a17516c537ea9c1387e2d7ad3ed221c7c54",
-"L": "7688a865e36d1f58a6746483f32b7ebad3f1bc44",
+"R": "0325b4a53d0e9522a1eb13950e2bb5033c5bbd15",
+"L": "5017e47ea1b7a4b29118043f759130d0ba6f7204",
 "frames": [
 [
 120,
@@ -2463,8 +2463,8 @@ null,
 }
 },
 "knockdown": {
-"R": "4beea58d9fe1baaa9b36d78f51ec31669193d223",
-"L": "3016baf0a0323205fa74f7a68571f744c2164d85",
+"R": "1d81dc80969182810549a18f577d19ef6e72d8b7",
+"L": "dd56df38652cb4dbcef7acd9211b1c33e7352a61",
 "frames": [
 [
 50,
@@ -2594,8 +2594,8 @@ null,
 }
 },
 "getup": {
-"R": "d7bd042ea692180be6e6b292743899d8bcad35b7",
-"L": "00ed9b00307e048443773fd5bb64ddf347f63493",
+"R": "a5bc06e768fb8f91a8eed34e78199544dbf214c0",
+"L": "5629a4e7dcab9e67a01261c27fececf19be3e23a",
 "frames": [
 [
 160,
@@ -3361,8 +3361,8 @@ null
 }
 },
 "highfive": {
-"R": "317cc42969497a1503468b99e3059fdf3a18d1bf",
-"L": "c10331c6049cb54273b248e135c305157923a4a2",
+"R": "a9488d43345dd759bf440b073ee4a5d47f44b725",
+"L": "ac096fd0d3f8537652ce95428676420dbdb97618",
 "frames": [
 [
 100,
@@ -4567,8 +4567,8 @@ null
 }
 },
 "reverse": {
-"R": "5febf471922e906c2aa3539566c3ae50c30f0184",
-"L": "d09b16188e39951196a77af7583d5a90cac23eb6",
+"R": "3f9089ac2f4be9f697ead564056a920fdac19244",
+"L": "f59fd3a2a50e55f255cd8e4710d52a1c35b323bd",
 "frames": [
 [
 160,
@@ -5611,8 +5611,8 @@ null
 }
 },
 "air_slash": {
-"R": "eb8ff346e056152c9a4f98cb04e8256910ed0c7b",
-"L": "5bf0d4b1a43deeadeafb71109079080b17f032a5",
+"R": "8e61c4bf1a3d6ee370b7f68c77ad9bf4b9872081",
+"L": "f8777ac78622984513383371ae79bf53c3d63e35",
 "frames": [
 [
 70,
@@ -5792,8 +5792,8 @@ null
 }
 },
 "spike": {
-"R": "4c3e80da1466cb9c80bfd7125f14ae2235e4f64f",
-"L": "98c215627fd230351bfc218ea297a4874e3482e6",
+"R": "9687ac2dd43c43b9b623e08dafac1a958dd63f85",
+"L": "a594a9a012a2c70700fc663d80588f79e7bd2b42",
 "frames": [
 [
 80,
@@ -5972,8 +5972,8 @@ null
 }
 },
 "throw": {
-"R": "fe01f60d8d257d7d088d95dc55ed0c54bde9a0dc",
-"L": "e1456d62212028ab895fc0fbb11652e93648a070",
+"R": "c4ac6fc355761e190517ef6995857fb14bbf1bcc",
+"L": "972933afa688e33d824e5a4f500e51f612afdd5d",
 "frames": [
 [
 110,
@@ -6129,8 +6129,8 @@ null
 }
 },
 "dash_slash": {
-"R": "83013406605204290c30e636cda2d9b45cf75740",
-"L": "304132a02a375753ba3e46da3cc48819de448e15",
+"R": "75ccdc578c6247772e52ee763111adb8ad5f2782",
+"L": "1d37dad5686c9988e767fd639f18a82f6f01efc9",
 "frames": [
 [
 130,
@@ -6323,7 +6323,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -6797,8 +6797,8 @@ null
 }
 },
 "spiked": {
-"R": "3c793366123c04ddfd86354b4355b8e509a00a43",
-"L": "16bd076ea5ab60603a13da83f5ae8992703ce7fd",
+"R": "ae2640ded92a9e42240b44f05c5377331837492c",
+"L": "e2ea5c1114434db898b488fd3b8450d7f080bebb",
 "frames": [
 [
 50,
@@ -6958,8 +6958,8 @@ null
 }
 },
 "thrown": {
-"R": "1366a4f575fd079a8ef61da44e7737942be734d7",
-"L": "f18741f5f0dc3e4bc719eabeb9e4baa8a1bcd078",
+"R": "7344eb20a49cdd17369cda01ba034c6695c11e55",
+"L": "88ad2b87fc810fa335b684e788b68191b4237464",
 "frames": [
 [
 120,
@@ -7037,7 +7037,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.7,
@@ -7625,8 +7625,8 @@ null
 }
 },
 "clash": {
-"R": "296123c58a1fd52b3fc79108a743c20b700f3265",
-"L": "a9f8043aca5f27ce26788f67278567cac4acd783",
+"R": "66b66737878d2ac1fc27507d612d41fbdc46b50c",
+"L": "e6c5b156837c9e857955589bee09d88d5e4dad42",
 "frames": [
 [
 60,
@@ -8283,8 +8283,8 @@ null
 }
 },
 "dash": {
-"R": "3292f42eb953061a9036defe60ffe02e0f24e0c6",
-"L": "46816e767a8dd50bc87f77cccd0bf4cf0e638b8e",
+"R": "b50153e7e1343239241170364f6b74b01f7fe2bd",
+"L": "f4bfe3afa8653ad26a902b3f77027c74d09e76fb",
 "frames": [
 [
 60,
@@ -8378,8 +8378,8 @@ null
 }
 },
 "backdash": {
-"R": "7b0faa3dd82c84ace629d259e85775a263b3f474",
-"L": "eec48ad63c157dc38f658c71d8e7b91c9a5765a6",
+"R": "92e8e4e129d50e35ee621f6f9cf82a901093b6b5",
+"L": "abc275c31113a83607914701b233d45b4b79787e",
 "frames": [
 [
 50,
@@ -8587,8 +8587,8 @@ null
 }
 },
 "jump": {
-"R": "4fcf2935ab64e8afbb50b126264463adacec5f8a",
-"L": "3c48b54a50e1714776653ab0b49875bebd993664",
+"R": "3413997d6b7c850ebbccc8e2ada0f101edcf01c2",
+"L": "f0f1b8a1c34bd3b7fc5068623565344ebbb33b0a",
 "frames": [
 [
 80,
@@ -9023,8 +9023,8 @@ null
 }
 },
 "uppercut": {
-"R": "bfa78e082f47fe92081d6b521ba0391096e41f8b",
-"L": "186d3f86365e05b58aec742f68895e9537f81962",
+"R": "68cda6a9c792e0a6bd87e066de2842f21c0b7821",
+"L": "fe681a685b194ac326702d8bbf95b23f0cfb505c",
 "frames": [
 [
 120,
@@ -9468,8 +9468,8 @@ null
 }
 },
 "ground_pound": {
-"R": "fa56b2b19f1ec0e91b1038b0b9221fce8377fe9b",
-"L": "ec8fcfd51e4dfd264b820eff1900efbe204f3222",
+"R": "c2c57f18dbec09444c6e3e9bd6b2188843d20549",
+"L": "95baed6e78b6e3d4e57619e1d53d794ebf6cc00c",
 "frames": [
 [
 110,
@@ -10301,8 +10301,8 @@ null
 }
 },
 "knockdown": {
-"R": "ef5be91d7bb690521a16f541da354bc93e860407",
-"L": "f45de1ea77c3fcfb8d3f03e4cc0ec33116dd2f6c",
+"R": "bda8c8417d8a8edb74692ffec108cf90d4524d65",
+"L": "86dec0e7f783b4ce7c3adbb95eda4bbe7dfb48fe",
 "frames": [
 [
 50,
@@ -10432,8 +10432,8 @@ null
 }
 },
 "getup": {
-"R": "9f205d60e4293f8ac65da7de46eb98cccdd02755",
-"L": "ba38f8a53d177f5033dba07ff29bff806a1cbba7",
+"R": "64c5bf596d8312669ff3cb8da141ec39db0fb70a",
+"L": "3ab67d129a1f7f550489709a2aca4dbe2bd20fee",
 "frames": [
 [
 160,
@@ -11234,8 +11234,8 @@ null
 }
 },
 "highfive": {
-"R": "c4ca2a4a4d090cc5b8f398af3334335dfbc41e4d",
-"L": "a47c4a36bbbf85acf607a82cc2d42d7d61489670",
+"R": "9df828a10dc77fd87a3f478406b2093e2d122e38",
+"L": "73033447476d351ace9ed7df9569813f5eb169f7",
 "frames": [
 [
 100,
@@ -13078,8 +13078,8 @@ null
 }
 },
 "mirror_images": {
-"R": "6d68e5b489bad57d61514ad87def9e52ec4df90a",
-"L": "ac5f84f49b2ff24a7439c96ee9f8c6cc8e83de62",
+"R": "d71ad9840a1749264518de8c373f2c791e402e05",
+"L": "4ce523aa8d777f087292df11a47d211048a1c767",
 "frames": [
 [
 160,
@@ -13608,8 +13608,8 @@ null
 }
 },
 "air_slash": {
-"R": "4e89675badae89fb53235fafaff73d64c4abae44",
-"L": "f9ed41b5a2f1a2f1182e56e518a03e207938415e",
+"R": "0cde60c041ba97b222e03089d9d4dbf372bd427e",
+"L": "e0a17346d2a4d191380e3d07f85185f3b3c2d129",
 "frames": [
 [
 70,
@@ -13789,8 +13789,8 @@ null
 }
 },
 "spike": {
-"R": "59d5b06d5c842789f3d791f20a66c60f2da942fe",
-"L": "902fd698bd52479767e0793b15c325aabaa14ffe",
+"R": "58d7521443a9792546851f01f0882aaf9c351b90",
+"L": "c4c260bbe50c931bbb88d859d5398b1bc051ddd1",
 "frames": [
 [
 80,
@@ -13969,8 +13969,8 @@ null
 }
 },
 "throw": {
-"R": "d91012500e30695a5451c86ae9f20f6dacc1cc72",
-"L": "b053650464c3dd9f5a1f71e054682104e1c95756",
+"R": "ba2b6e7d459984f2f6a285a92ebcdb52d01d89f9",
+"L": "866241dc114c9abdf645899971a6b32599d136a8",
 "frames": [
 [
 110,
@@ -14126,8 +14126,8 @@ null
 }
 },
 "shadow_step": {
-"R": "b9f9547d039e046d51fda23f69d21a072300d561",
-"L": "10050042f75f28b94ea1b37fcc16d73f9f227eb0",
+"R": "45cb217689121c12279ca5dfca94f67f2893550d",
+"L": "ff8f60d9d3d649d4e1bc15a4de432741177b05eb",
 "frames": [
 [
 130,
@@ -14320,7 +14320,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -14795,8 +14795,8 @@ null
 }
 },
 "spiked": {
-"R": "24274980f2d7794355f980078161bc9aa42ebfcb",
-"L": "30c4ac2869ca359d444b242b4ca77d4fa3377363",
+"R": "7ff4d9c4466d4e069cf7fbbf4197c4b56fdc2fc2",
+"L": "e8024f7cc58d1e8500a0f5df44752df555de16a7",
 "frames": [
 [
 50,
@@ -14956,8 +14956,8 @@ null
 }
 },
 "thrown": {
-"R": "3858d13de03b8b71797df5f940b90e1fdc365d0e",
-"L": "5c1141a10b85841cc9de9446f38dcdf7e6bf6d9e",
+"R": "47bde97b97317ea1712d64046be28e1f5d037cac",
+"L": "a55fe8d325fa3d4d497a5266b58b16302be205a5",
 "frames": [
 [
 120,
@@ -15035,7 +15035,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.2,
@@ -15623,8 +15623,8 @@ null
 }
 },
 "clash": {
-"R": "baf58639a2225ab9a359e027b138a317fbac49d9",
-"L": "fdba4f326c05a4b23a0ca28940dbd6c0c3e9a061",
+"R": "954a11860b9f4c3062a4d181dd47ea91a8f1efeb",
+"L": "6cd9184d0476ddc90a96400550d93c7eef36047a",
 "frames": [
 [
 60,
@@ -16283,8 +16283,8 @@ null
 }
 },
 "dash": {
-"R": "49c3b683b1d7ba285588839403a4b3f107ed9da2",
-"L": "e946c7acdec4024a25c53278d7660c1c11ad12d6",
+"R": "c154edad686aa218472ba8ab771b61dd7ec1dc6c",
+"L": "66f6c6e664c5bfa1eec9726a995d15cebd863c30",
 "frames": [
 [
 60,
@@ -16378,8 +16378,8 @@ null
 }
 },
 "backdash": {
-"R": "aecffa1a800a9a7787265d6227aaf6100223368c",
-"L": "797b4c380210da3f7ea9a999cf0ef45c42ecc3fc",
+"R": "2d6e1e7f88dbdd2b9e39f53d30b05074cb0b7de0",
+"L": "60091ee9b608ba2f5d4f56afc2d814ebb76544ec",
 "frames": [
 [
 50,
@@ -16587,8 +16587,8 @@ null
 }
 },
 "jump": {
-"R": "58b87612476c6dd5959de7a154fc95038c6dc21e",
-"L": "bbf1b15402aa02a3283842b6857e2940d444572d",
+"R": "58612eaf1913252c9bea4216c87f2b30984ef1ae",
+"L": "1e047b2c6f486ab145a706cb9276dec89bb18206",
 "frames": [
 [
 80,
@@ -17023,8 +17023,8 @@ null
 }
 },
 "uppercut": {
-"R": "06331dca7a80eae65f35aa5aa10e8c3e42c7cee3",
-"L": "3dd18c1b85221b50560287aa23344ad2f1eddcc3",
+"R": "2ef2c42067463d3a64a995c57c4bb45b373e99d5",
+"L": "3e426c2dcad9fa3a314e02be44efb35c7dd060ab",
 "frames": [
 [
 120,
@@ -18244,8 +18244,8 @@ null
 }
 },
 "knockdown": {
-"R": "40b0648808619954d58027cb5684cc5922a0d924",
-"L": "57d450ad9cec14d41163e5193c15c4a273e8c2ef",
+"R": "7b3ccbf0afefc75f9e8a82dc209454236520ae12",
+"L": "40858297f9ebea0c92ee323994767b726e52627e",
 "frames": [
 [
 50,
@@ -18375,8 +18375,8 @@ null
 }
 },
 "getup": {
-"R": "2ca70abc3aa120ced0aeb45f61c5abcc9d9d8c72",
-"L": "bae146e86ee87da519709fd7d72affd29fc398da",
+"R": "8eedeb697da8215266e327b833c8adc1a5b954fb",
+"L": "066b1e2e6d58f1abf4dbacc4dbf93260026472f4",
 "frames": [
 [
 160,
@@ -19177,8 +19177,8 @@ null
 }
 },
 "highfive": {
-"R": "db39fe14aff0fa901d12694d0014429c70c3c21a",
-"L": "8df0309d181781816104a836da12b754beb13bca",
+"R": "babe30a466fb16f90cd2a2dcc9ed8eff5cb786c6",
+"L": "277f032be3cf38e858ce1098efbdf8da151ee363",
 "frames": [
 [
 100,
@@ -20413,8 +20413,8 @@ null
 }
 },
 "twin_flash": {
-"R": "690ed1578acf31afa1eaa1c0ab488becd8db9e6a",
-"L": "5e0cfd3810570cc59190ec8ec67af667dac7143f",
+"R": "93d98b86b10c8b946c4deb90a9190e051965f16f",
+"L": "9357cf201f42e220410ce3e61bcf0fcdecea3cc6",
 "frames": [
 [
 160,
@@ -21597,8 +21597,8 @@ null
 }
 },
 "air_slash": {
-"R": "b2817f244740b752644d1c787beb20b8f1f656ce",
-"L": "004922d251fa69ad01ffb2c3683da92fdc27a26e",
+"R": "1fc25da9b39f6e69a42a0e48fe92c75e84d518c7",
+"L": "c7e313076508153c8019954bcf5851782fc514ec",
 "frames": [
 [
 70,
@@ -21778,8 +21778,8 @@ null
 }
 },
 "spike": {
-"R": "9c57846d94d7135957617111d82a4d0dc14a33ff",
-"L": "0d3cd0ff0e5678be463474ecefad204203e75468",
+"R": "c7d462cdd57d4d797c512d1fd4159d05087fa5c1",
+"L": "c5b440b2cbd8a7890d640f89a7126302690d07cc",
 "frames": [
 [
 80,
@@ -21958,8 +21958,8 @@ null
 }
 },
 "throw": {
-"R": "d1771dedf1b9f94c6860b6d7f423b37a7f5e3938",
-"L": "8013a185f03fc638123bab189f1f2e00622e2483",
+"R": "24f29f1318267b8b6432f8b18468f667cd470f1e",
+"L": "289975fbbee9e03a02afcaecc70f59435f411a68",
 "frames": [
 [
 110,
@@ -22115,8 +22115,8 @@ null
 }
 },
 "dash_slash": {
-"R": "9ad9c0608b5bb6538dab5a5bc51f7e8e8d394097",
-"L": "6604c8307e217a6de2f9d5b7bd51a331d7c0b9f6",
+"R": "49d15ff2156fe78a2ff587cf8ade43d5f9a04109",
+"L": "a6234745e4806684273a149f3722525cc22fb7f6",
 "frames": [
 [
 130,
@@ -22309,7 +22309,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -22783,8 +22783,8 @@ null
 }
 },
 "spiked": {
-"R": "84f533cca94325224142bb731cf73370b29c2a42",
-"L": "0c99eeb2398957468485ac5486fc41c5e2d68710",
+"R": "d8e8a31655bb431343f061333e807c3aa46a05c6",
+"L": "fbddb829cebbb1c87ee98b958a2b5f51375dc72f",
 "frames": [
 [
 50,
@@ -22944,8 +22944,8 @@ null
 }
 },
 "thrown": {
-"R": "ec0346f17b27e88449e6b04302e296c82e79566c",
-"L": "ce02491896fde013fd7143b38ccbde0a2b243c3b",
+"R": "f4e7b471f78baeafc9305c0808b4b2bb13f9296d",
+"L": "108af05a926dbfb4b4796907a37127e9f8940f31",
 "frames": [
 [
 120,
@@ -23023,7 +23023,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.5,
@@ -23611,8 +23611,8 @@ null
 }
 },
 "clash": {
-"R": "946d3d4d0941edbee392c18ffb6d74dadb050557",
-"L": "ac8671644fd303726f24565f2fc20a37e40a95b6",
+"R": "23329f3bee7da9491ae9157ade01f231dff49704",
+"L": "854d18bf84b00a380f517ab6ca07048fb68a217e",
 "frames": [
 [
 60,
@@ -24277,8 +24277,8 @@ null
 }
 },
 "dash": {
-"R": "4eb855330b9d61c7a6375cb3aa85e5bda018d3b9",
-"L": "591195e879363e892c5cda7f6ed1890bd8d314ac",
+"R": "956c7de55c9cff1b8b046366f4f5e3def5f6d516",
+"L": "23af2fd8d5bdaac89d77226040adb1c7f3e3c89c",
 "frames": [
 [
 60,
@@ -24372,8 +24372,8 @@ null
 }
 },
 "backdash": {
-"R": "7bc5257b263831c44caf26bc36c13d9af20c2c09",
-"L": "46a44572eb9e29bd86b6be193d4a5009cad9fbd0",
+"R": "938117a1790ecc4257ce68acc26dc45f63cb47d6",
+"L": "95c343b5e99df6517882f82130c72cad68b37d8e",
 "frames": [
 [
 50,
@@ -24581,8 +24581,8 @@ null
 }
 },
 "jump": {
-"R": "0d0130bb773e1ae463b82e0c1a3ab0dbbbc9048d",
-"L": "10ff29b61bec610ddf1ff3e38ff3306f1a5a8f57",
+"R": "3684dfcd1a592b29b7c7839d4f9d49cda583c65f",
+"L": "9c078abb40d8d2e4b06d9c098b8fe26b11160e66",
 "frames": [
 [
 80,
@@ -24987,8 +24987,8 @@ null,
 }
 },
 "uppercut": {
-"R": "6763a539181e49b53d6d2ce14bb9b79d75e63a7f",
-"L": "0f25339e60672988071971c22d614647bfc67907",
+"R": "2898e44bda4940c7d33e14ba959d85ba13c09bc8",
+"L": "b55ce54afb8cd71ec9bd4c56b1cc5e8db4086bd6",
 "frames": [
 [
 120,
@@ -25432,8 +25432,8 @@ null,
 }
 },
 "ground_pound": {
-"R": "d9638e6f1d677f9ba487225e79cfa52e514f3a8d",
-"L": "e7492cdbc8c1bbb7453c788da70fae79833853cc",
+"R": "e722faf31f3635c58f177248d30e5efd3d5508b7",
+"L": "a559f129b7a3d7a53e852fbe6be6d31f150f85d1",
 "frames": [
 [
 110,
@@ -26265,8 +26265,8 @@ null,
 }
 },
 "knockdown": {
-"R": "157ca5a03b4c6533959645e698b9def87bb51d71",
-"L": "4c12f34e1fabf7926fb025e4b3a5dabcacbc102d",
+"R": "fe34adff6c784f8d213e8601762e9f1aadda2e76",
+"L": "ef1ccd67941e0dda15fa9da132b6d5fe158dd35a",
 "frames": [
 [
 50,
@@ -26396,8 +26396,8 @@ null,
 }
 },
 "getup": {
-"R": "ee7f4bcef3cf09ec6fe3f16c378fcfae7ba6091c",
-"L": "ab3989117f1c1427cc9ea5f0b24ded00c68f563d",
+"R": "298bf2d1670846b6acb064507d4c90368b21064e",
+"L": "51ebc410307a41212b9c8cda41a804ce25bcd152",
 "frames": [
 [
 160,
@@ -27182,8 +27182,8 @@ null
 }
 },
 "highfive": {
-"R": "c016701e8ec6c23f5aee99d22ac8ae29a639e6a7",
-"L": "a728a3a9c1bee9240b2746cd9472a92ce728c2fa",
+"R": "37d8549025841d052ee49bb50e32b3e4b1dedd47",
+"L": "928e1aa4c6852c8ac828729ad4a6b6bc53d98598",
 "frames": [
 [
 100,
@@ -28856,8 +28856,8 @@ null
 }
 },
 "grapple_strike": {
-"R": "be097cb047dd20bfb4435936c083703941724f89",
-"L": "87d07b55c8f0a6476294089d9d54b0f2a9b28279",
+"R": "bbbd0a9ea19a0200264b2f9293f7a3a646df3532",
+"L": "fce918e8ff01159becdc789cdc90986ed468d1ab",
 "frames": [
 [
 180,
@@ -29192,8 +29192,8 @@ null
 }
 },
 "pole_sweep": {
-"R": "a52c5f0636e2296a3af1679f4392b6b968d61766",
-"L": "4b997bf392ce7cbd55983ca66d888a221133c449",
+"R": "d89f56f444059232c60df07ea6cf305dc1e0192a",
+"L": "4d014ffe51b66923d1ca3b4a0dd72a2a68e04d89",
 "frames": [
 [
 110,
@@ -29331,8 +29331,8 @@ null
 }
 },
 "vault_kick": {
-"R": "946a998ebad38679dc2fa2cc2fcce7eb39c2f5e2",
-"L": "3703a0406c2292a871ce34df8b67f44f34034a5d",
+"R": "799838dc38d2f3a1f57eaddd845b7705cf98d9bb",
+"L": "f69a4072d08840910c573742a0c14194162b2d8c",
 "frames": [
 [
 100,
@@ -29787,8 +29787,8 @@ null
 }
 },
 "air_slash": {
-"R": "12b7df8234169f3723ba69176037c2c5a36b312b",
-"L": "9b5418e6a43d1e55520bcc102a792ef9d3a3cc5c",
+"R": "11b5ca765fbb04442b57aeafa880e6415c7c1662",
+"L": "11555b22b56038a2afc492c2b4e46330bfa97156",
 "frames": [
 [
 70,
@@ -29968,8 +29968,8 @@ null
 }
 },
 "spike": {
-"R": "78815b4a30181a268bd22684c3f89c680f08e8b2",
-"L": "a17c3b3c43ac6ffad93f7a3b81b98d8a2ba41dc8",
+"R": "e439a1bfdb18eeee057d22c68be9cfdc99565ee7",
+"L": "93858decc498590ab7e77372329a5545d4e777f2",
 "frames": [
 [
 80,
@@ -30148,8 +30148,8 @@ null
 }
 },
 "throw": {
-"R": "a87cec74f977bd5c904f7031772f375a45db652e",
-"L": "3f3c347795431a436f3c242d0e7ecc3906283783",
+"R": "1ce8d542900bc772fd99478725eb9126253f84d6",
+"L": "c629887076a334423566a3c4b7f00995cb3687bd",
 "frames": [
 [
 110,
@@ -30305,8 +30305,8 @@ null
 }
 },
 "dash_slash": {
-"R": "b7fc3cc170134dcdabf8fd5f4b4fa2ac813a9bf3",
-"L": "7344ee44139321d41efd0b943445fbc9fe60758e",
+"R": "b50c48db1a18979058ef22aa9c1c34c04f21c8c5",
+"L": "0685966e74fab58f3492b38cdffc6d6a53aee24f",
 "frames": [
 [
 130,
@@ -30499,7 +30499,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -30973,8 +30973,8 @@ null
 }
 },
 "spiked": {
-"R": "8aef7612a59ec7fc8fc99d1140196f840f908d4a",
-"L": "a7126f29b48fe994fd25ea5a9b1d7324a55440d3",
+"R": "f34d0ab2517ef21b4f57910441489c84d1237521",
+"L": "778f49243bec6ecb7238603e3fdcea379844c32a",
 "frames": [
 [
 50,
@@ -31134,8 +31134,8 @@ null
 }
 },
 "thrown": {
-"R": "cf7d387e6fbc6b6909a31baba14d4a3d62fa9718",
-"L": "0b3e61231e88092e7bd721a307564f7c5198626c",
+"R": "a94097f3b6b84a36e320e1523c545a1f5d932c84",
+"L": "9f9999271307bfaa7f848945b0abf12a222aa29a",
 "frames": [
 [
 120,
@@ -31213,7 +31213,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.7,
@@ -31801,8 +31801,8 @@ null
 }
 },
 "clash": {
-"R": "16a2656b7ef98d383560dc18b0106edc87d9e84f",
-"L": "8ce0660a813ba6a4ae606153bf8ed526e10a52b8",
+"R": "1abdcf40cc8d6db519d5628b5c1185a102a92451",
+"L": "ff1a499da4d897ab49dec82689d0427613fdd9a8",
 "frames": [
 [
 60,
@@ -31965,8 +31965,8 @@ null
 ],
 "moves": {
 "idle": {
-"R": "23d5446ef58253dd4d11466b8e9bfe4d197582d6",
-"L": "f1b3078fcb6216f161e6917cba33f746099b2303",
+"R": "4f9702d1639bd27174e9c7e2dee08cb21a3eff1a",
+"L": "845cb40b4812484fdbb8ca490727cab37769f163",
 "frames": [
 [
 170,
@@ -32464,8 +32464,8 @@ null
 }
 },
 "dash": {
-"R": "60887092a6c099146f480e258e33c08a7c778f61",
-"L": "34e4b04b19af94822c580eec388286fc64685878",
+"R": "cbd1de127ae2f0fda6815e4208645d5ca2bae2d4",
+"L": "67725ae959488340cad3f368673eef9bb515a307",
 "frames": [
 [
 60,
@@ -32559,8 +32559,8 @@ null
 }
 },
 "backdash": {
-"R": "39a4ebdbe686f5aa0b4760839886087636faa399",
-"L": "dd539498d9188439d5a1c89fa0981ecf952e0a51",
+"R": "d56262f7513fb116ea9033a3583211adb0f48bad",
+"L": "1919892b68f36fd9aa4e7095f10adc4f618064c1",
 "frames": [
 [
 50,
@@ -32768,8 +32768,8 @@ null
 }
 },
 "jump": {
-"R": "d75d1bb0c49881e678e27d750f9f002aa7ca4bea",
-"L": "58f69f7d81994748b7581db9db3d88a921dc5dd9",
+"R": "47ac274d2346f27dd07283d5d5457f4d3f708954",
+"L": "8f474373b3a98ca600be64b1ea92a7a977f0167c",
 "frames": [
 [
 80,
@@ -33174,8 +33174,8 @@ null,
 }
 },
 "uppercut": {
-"R": "0963af300b0c347ff9b2ec29545c0be9224dd491",
-"L": "2fb5a5ec1256df211fb70e1c6a8b858d7eaf0bf2",
+"R": "793becefc788fdcfd6242735d1ecf5aa5e74bdae",
+"L": "ed51b920f346ec575fbf1e3638553221062af914",
 "frames": [
 [
 120,
@@ -33619,8 +33619,8 @@ null,
 }
 },
 "ground_pound": {
-"R": "e3d29b0a482bd71e777f8356b313e41f5fb7c078",
-"L": "0050920513d9ecbc110b1326b19543a72402a29c",
+"R": "522948902827906397ac8619741f5f73b2be42e7",
+"L": "19848cf75621ce49cf2624ec0eabc4d2f7374a61",
 "frames": [
 [
 110,
@@ -34452,8 +34452,8 @@ null,
 }
 },
 "knockdown": {
-"R": "02f445172f6b2fa904bc82061bdbdc156619f203",
-"L": "413a4d430c44d114d9fe829f6c900d3c384f3f49",
+"R": "7cecbb9b7708d47c460002f8492cad2d72212fb5",
+"L": "4ba468faf33aa9050934bafbcf814f113b69878d",
 "frames": [
 [
 50,
@@ -34583,8 +34583,8 @@ null,
 }
 },
 "getup": {
-"R": "7b0cb8dec8c6bd3f1f9edeed17f243c874162b05",
-"L": "5c40a6ad06329a717527be73b3d5548935f3e69e",
+"R": "0f03901b93b658212b49ed93dc56260e0e061bae",
+"L": "79bdf853f799a77709c0fc915e2b0b70d3e9c399",
 "frames": [
 [
 160,
@@ -34904,8 +34904,8 @@ null,
 }
 },
 "victory": {
-"R": "dcdcbb48865f98c3cae5187955ae7656c36cb230",
-"L": "bc27ec5e467afab7461f19ebaa64002fa993b86d",
+"R": "3da01fb1a57252b517a0cc5763a192ab0154a237",
+"L": "fc11b227e9bd4076a5dbada204a710e2439f2962",
 "frames": [
 [
 110,
@@ -35371,8 +35371,8 @@ null
 }
 },
 "highfive": {
-"R": "e152012eb4b629aa82a21adc22f2917032ea3aac",
-"L": "335ecef8602c7a0e29a961610fadd24541db845c",
+"R": "d0dd5e21495ea665855fded04573ac1fe0031d18",
+"L": "29a7db46c19ea35bddae4e5d0a18beb0e9e8b456",
 "frames": [
 [
 100,
@@ -37013,8 +37013,8 @@ null
 }
 },
 "gale_rend": {
-"R": "ae25727956a3b1ba549a81c6e3bb0c647ac1df88",
-"L": "4d96a8a57b74b3aab2dbaf9677c4610b5e1d8144",
+"R": "abdb0a7616f0654df8dcab2ad4fbfe245cb4ab47",
+"L": "62581b2a464bbbfe466cfe6fdad8b26a8ed8a758",
 "frames": [
 [
 200,
@@ -37184,8 +37184,8 @@ null
 }
 },
 "overhead_slam": {
-"R": "cca108887116c510ea2de07fbec364abd7ae2df0",
-"L": "d8ebb88767963cee962731bb6bf66cd15af32c3e",
+"R": "2fba856216aaf238829943928aec7cdf4682a4ab",
+"L": "96965bc3e5171d0fc17c9741d0d3e92f990914f8",
 "frames": [
 [
 120,
@@ -37344,8 +37344,8 @@ null
 }
 },
 "staff_sweep": {
-"R": "56e0f8add9c328af483d037965e3c8e7416aedfc",
-"L": "ba8acaabed206e45c5d13395f8f420b388ed5565",
+"R": "b3335a4c1221c652457638dc6d394b8956f09e5e",
+"L": "4817e5c761fd71a295101e57ca0aa46fe9b5079b",
 "frames": [
 [
 110,
@@ -37484,8 +37484,8 @@ null
 }
 },
 "pole_vault": {
-"R": "161e36d47ea86ae0ee228b577427fcfeb599656f",
-"L": "4b583ec1f9650212eda111e5259538dd7577e556",
+"R": "4ffab125f5f24be1af6a1474a39df1381dbf8b08",
+"L": "8ad5d1d829e3e0f72d64c24ca501b3dab1713872",
 "frames": [
 [
 100,
@@ -37784,8 +37784,8 @@ null
 }
 },
 "air_slash": {
-"R": "3395558f84ca16cd4ac3d3f9c22a4a60932b5347",
-"L": "4140f4ce1478223a1b89800c5762af77fa14ea40",
+"R": "8a8742e718ab4a6048c18c6d4caaf9662e58e330",
+"L": "50bb4b0263da3005c70968ac0b0f5e882ac1c05a",
 "frames": [
 [
 70,
@@ -37965,8 +37965,8 @@ null
 }
 },
 "spike": {
-"R": "7c12ed3e11f01acbe3dcfac236e6f6712813ef31",
-"L": "113f4612a1f6d7573b147db3cd027ccd54e2de86",
+"R": "f1e0fc7755516b261385a3022fe381780d9c1cb1",
+"L": "7abdfb8550658b31a7000111cae251f0d634431a",
 "frames": [
 [
 80,
@@ -38145,8 +38145,8 @@ null
 }
 },
 "throw": {
-"R": "4add54570f04b580316cc2ac7cf7b932309942ca",
-"L": "8af8cd397e3b52cffce0cac3adc30fdb81467ea7",
+"R": "f0c33bea0bb728a0c95122535d40a30e37ece6b6",
+"L": "73bf6161607a2553e100415f1176a624ba5cdf02",
 "frames": [
 [
 110,
@@ -38302,8 +38302,8 @@ null
 }
 },
 "dash_slash": {
-"R": "0051fd3458c2512aa336b2327582d23ace2ca0fb",
-"L": "9c7fa1a5dd90c00768088240065a4d2e8e547f88",
+"R": "af14728db36079b55e5ca9c5f2f6d7440660d9fa",
+"L": "d3981f82059494713a62de54cf44966f2a543a08",
 "frames": [
 [
 130,
@@ -38496,7 +38496,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -38970,8 +38970,8 @@ null
 }
 },
 "spiked": {
-"R": "d578faff57333a325bf260d2db168e926465a141",
-"L": "e3eabe7f00f754937e74b3cf715afbf7a621c628",
+"R": "44a09b717e73708b393b1e86a456adfabc16d717",
+"L": "0991a37e7d4af77184a6c1bc37332550502e9537",
 "frames": [
 [
 50,
@@ -39131,8 +39131,8 @@ null
 }
 },
 "thrown": {
-"R": "2701baa5806e11937470bda0d5f6fdc1841dbc80",
-"L": "8219d7ec9f1f1e16c46062bd7e879194f79d7350",
+"R": "c54571443a2419e92ddfa68b1f1cf86915a6e2ba",
+"L": "aea29af0e77de8ebc0af7c79c397821276bfd03e",
 "frames": [
 [
 120,
@@ -39210,7 +39210,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 17,
+"reach": 30,
 "grip": [
 [
 18.5,
@@ -39798,8 +39798,8 @@ null
 }
 },
 "clash": {
-"R": "8e065d3c250c6e89064ed6978e2d1125c8ff47fb",
-"L": "4a698f8fa2f3d4d5db4cec0d80c564aaad07e62d",
+"R": "cf58489f9b2cb0dce1630c8c090b2d51a9059cc9",
+"L": "90e357a2df89640ca5e4bff15659e9ffc6a60fbb",
 "frames": [
 [
 60,
@@ -40461,8 +40461,8 @@ null
 }
 },
 "dash": {
-"R": "fd10973cf4339f2640084dab3731c6633e930f5f",
-"L": "fdf5e28c52cc0412802e44444d5c72f7203becf1",
+"R": "3b90823bc4ca26b21261024cca3532472ab269b4",
+"L": "eb9144541c6d09ad72b9e8adc8a1b2ffc195b9b2",
 "frames": [
 [
 60,
@@ -40556,8 +40556,8 @@ null
 }
 },
 "backdash": {
-"R": "3f666029c2d173f9f5336a371b6e79e4a5039c2e",
-"L": "61e2fefe2048a738c7e419bbdf91375757e13cb5",
+"R": "0cce6faf0fb931f67b603ebaa8001c87f808c5b3",
+"L": "6092bb023417a450baba43accd383a4a5ec98364",
 "frames": [
 [
 50,
@@ -40781,8 +40781,8 @@ null
 }
 },
 "jump": {
-"R": "d8a01ac0a1aea80ba3b4e8ec6308de9a7411555d",
-"L": "6ae1265401b6d09a6dd396bcdee25323e18b8be9",
+"R": "ef7e3fe0171c9f52b27e62d57e756746db1fe060",
+"L": "7d4e1d17507f4313f1cb0e264ba6c68618fdf668",
 "frames": [
 [
 80,
@@ -41187,8 +41187,8 @@ null,
 }
 },
 "uppercut": {
-"R": "2af438be9328fb36618fef8cbd9abc5b115cf095",
-"L": "0dbcf72c49d8ce2d2ce3691b8a086cd4ba6858d4",
+"R": "bceb21db5632f68e94ebb029c29db9b794657231",
+"L": "def2cfb79ed9fc36fb44629a7337b83b311a2575",
 "frames": [
 [
 120,
@@ -42440,8 +42440,8 @@ null,
 }
 },
 "knockdown": {
-"R": "052d9ed6997334a61cba15123da502e6ef6e917c",
-"L": "b590c22bafef307661e929c518fb26e62dfd66cc",
+"R": "93fe832a8d93d1a3b4f99b1884bba5789840aa35",
+"L": "c96b38d37e5a56e6a1abca165f38012ee643c977",
 "frames": [
 [
 50,
@@ -42571,8 +42571,8 @@ null,
 }
 },
 "getup": {
-"R": "b5857d5e6e6ec0e43fbe6cf4df421ccb071ec47f",
-"L": "04c3323f5b0737f971b311a2cdd4c2967e59093a",
+"R": "cd32e59a36bb3995c4a4b7350c87971aa4d97e4a",
+"L": "07b77dd61466a2392869e5d6fdb4ee673df01e95",
 "frames": [
 [
 160,
@@ -42892,8 +42892,8 @@ null,
 }
 },
 "victory": {
-"R": "29f5ca5c03bd3b8ec9f5c404137c8b397e617970",
-"L": "00e9557b451f35716e36dbbf89ebe0cba8498bae",
+"R": "12557157fdf2cc23ebf9462b84186ff7984e48bd",
+"L": "0d8c1e1e780798af8cb22167313dc06e1fc15b97",
 "frames": [
 [
 120,
@@ -43391,8 +43391,8 @@ null
 }
 },
 "highfive": {
-"R": "bd7798463650822648b1a5abd5698357bb452cac",
-"L": "dd05852ab8e63a80267fb557552e328fa3777554",
+"R": "d8e0536a74dbd515f077fe73b12a8ebaf75e7ac6",
+"L": "e56546816ed4b4370dc0e007b490a1b40c41c095",
 "frames": [
 [
 100,
@@ -44613,8 +44613,8 @@ null
 }
 },
 "hot_swap": {
-"R": "25e9b4d96cf39e3ba7cbdeb24d37475d8251ce4f",
-"L": "acb6b1e0f3b1deebe017d5aac0887e081b88eb2f",
+"R": "81af2b55ec940b3ade8acaa808055fdea3da1aba",
+"L": "8f61df79d85d5023e225d35a06b2bf7e3fb97d4d",
 "frames": [
 [
 160,
@@ -45691,8 +45691,8 @@ null
 }
 },
 "air_slash": {
-"R": "75edf6463480c6c65ae6016f68ea0b4288a5c619",
-"L": "df45010942aa2987a682f25335a22d5076d4ce2d",
+"R": "e5bae04abd6ed88ebd9bb833238aad4b33840c22",
+"L": "9fdbb3c1c40f81990eec2c9c71c7948b37eea483",
 "frames": [
 [
 70,
@@ -45872,8 +45872,8 @@ null
 }
 },
 "spike": {
-"R": "625ce8a09c70f6d2ecbf884509cb6f7ab1022da4",
-"L": "b51dc63163f145c5cc83f776af4522bd794d58b1",
+"R": "4a525d024898e74056147ad1a10f883687c42e18",
+"L": "0fae2f7bb59cf83adacfcda6d6c09056e451a796",
 "frames": [
 [
 80,
@@ -46052,8 +46052,8 @@ null
 }
 },
 "throw": {
-"R": "6ff7c6e2350d2730849b1438de44d2fc442ba4ba",
-"L": "4c7f2ae89823b07b119a91fba016f6b06404081d",
+"R": "b75b51d9b14deae9f50b39d50a4d170ed313e8bd",
+"L": "b9bc2e952aefa623673224e5533cf2b9da85ce1a",
 "frames": [
 [
 110,
@@ -46209,8 +46209,8 @@ null
 }
 },
 "dash_slash": {
-"R": "8d5f73bb1c3221ff84f6698bf7d1196df19c1ba4",
-"L": "6f4cae8cb997ab5c20214867124661ae4eb1b443",
+"R": "ba913e22f6974a33119a37f952f4174c6a19f2ee",
+"L": "39d638ba96984d461b5e86d18e670eb9f9690515",
 "frames": [
 [
 130,
@@ -46403,7 +46403,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -46877,8 +46877,8 @@ null
 }
 },
 "spiked": {
-"R": "d68d79a794727bf7c9052881d0b0a233020d2940",
-"L": "44b8e4f5ce57caa63e8a244a3225ecca158cf4a6",
+"R": "5028eb1aa5eb13be8573916760727644e8a5801f",
+"L": "b2c68ff92fdffaa1aecbe620599ca310525282c7",
 "frames": [
 [
 50,
@@ -47038,8 +47038,8 @@ null
 }
 },
 "thrown": {
-"R": "f7406b8324421d384874068752947c5a6bbe5466",
-"L": "00243aa14fdaafa67320d8f4fcc241b10f57002d",
+"R": "cfa0fdc180c0da3a428b415771457a16fa972eb6",
+"L": "2094702290dba5bbbfcfeb4f2a7209fe31ad0041",
 "frames": [
 [
 120,
@@ -47117,7 +47117,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.7,
@@ -47705,8 +47705,8 @@ null
 }
 },
 "clash": {
-"R": "a04f5c5d91d260919d39df0a1ad3ae1b80490972",
-"L": "4e575853d67782d30b087cf405abad8f6d634519",
+"R": "49672c4d7f7a1056971a0ab92780e0f361603496",
+"L": "acf43af0bf5f9ca2ae87aa3a881e1d0563e8789b",
 "frames": [
 [
 60,
@@ -48369,8 +48369,8 @@ null
 }
 },
 "dash": {
-"R": "9333d85ad9b8d40fd14bec1451ef4b43df3c8130",
-"L": "f40a82beab77af717f2b537f906db96c983e5824",
+"R": "acf7208bda559256d9546004e864d55403e4e3cf",
+"L": "795829e5e7d4e1974e338e4d4207da079b00a4bd",
 "frames": [
 [
 60,
@@ -48464,8 +48464,8 @@ null
 }
 },
 "backdash": {
-"R": "d8d97f52d6b76fac807f5634400dce8c65a0c803",
-"L": "d04b078ecb0532b4893d534d5d2585458ef978c3",
+"R": "df39057eb08a70b478125e84157a3b056e2874e6",
+"L": "b5bed75ab8fd930f0215c56bf84f265b9ef86f85",
 "frames": [
 [
 50,
@@ -48673,8 +48673,8 @@ null
 }
 },
 "jump": {
-"R": "f0c98a4a28eaf0618813ead2be05507045e6b7b9",
-"L": "783e0d54d19678b10b4659fa12643eb2e0e0cc86",
+"R": "ee22dcdfa1fccbde986924b932219a9029c36da2",
+"L": "0e8d91151d1b44da0c2a3dfe0b81e56cd92c68a1",
 "frames": [
 [
 80,
@@ -49109,8 +49109,8 @@ null
 }
 },
 "uppercut": {
-"R": "7d226e31ff8502cb1f54a5197f2e2262917763b3",
-"L": "bb943a3553cfd802ddb79bf293f3cf4583485e2c",
+"R": "163e8cad8759eb4fc87fbd6a8d5da220d2c5d418",
+"L": "5567b0022ded3cc1fb8f6d18348e84df5fc33092",
 "frames": [
 [
 120,
@@ -50362,8 +50362,8 @@ null
 }
 },
 "knockdown": {
-"R": "241e24ddfb2b76d4248fd9fac04b4c2ba3a75b20",
-"L": "9ce73af202bb28877a55f8f10cab3643c64cb374",
+"R": "a746cada0aded09db0bcdc2305b04c80c9332f81",
+"L": "5f9e467827b5645dd1d8a7ea0fdf247d8b3e4411",
 "frames": [
 [
 50,
@@ -50493,8 +50493,8 @@ null
 }
 },
 "getup": {
-"R": "473d22a733529e138b18961ed15b14d49b0e2651",
-"L": "c7733f8ebac589c1bf95abe1e9f6de7d389131fd",
+"R": "b4318b70adbbef73391ec767bfe4ca2533144e36",
+"L": "8461a29b6eb73b369176bedbba958bb4f32b48d4",
 "frames": [
 [
 160,
@@ -51298,8 +51298,8 @@ null
 }
 },
 "highfive": {
-"R": "a32611a59ae377559864ba410f669a79e5f794d2",
-"L": "f064936e5c14c874e32d9a4b611887bae8d70e2d",
+"R": "c317164abd074fead5e8354f406cff61d62e97bf",
+"L": "00927c7e0091e68c2d3b785a0bb42a037e5aad2a",
 "frames": [
 [
 100,
@@ -53455,8 +53455,8 @@ null
 }
 },
 "leap_shot": {
-"R": "362487c5e6b513e4868024464249abdd20be8332",
-"L": "4035f442c775f70caedac46c5137aca8cd3a5908",
+"R": "d514785bd43af6b4c5bd9a0bd0df0d99e1494a3f",
+"L": "f8e395af5e37dc10292cda029d458c953a6374a6",
 "frames": [
 [
 90,
@@ -53755,8 +53755,8 @@ null
 }
 },
 "air_slash": {
-"R": "8fac2b20a1c0c9ce101703def82a44fdf301f94e",
-"L": "38c82195550cef3bd296d3c831962249c21fe47a",
+"R": "21bd82353a99e712bdedb930c0e9d364cf42110d",
+"L": "0841545a680067615b8afdbaa87e0c89c0f41b77",
 "frames": [
 [
 70,
@@ -53936,8 +53936,8 @@ null
 }
 },
 "spike": {
-"R": "8d5b578e88fbefe129f70b3f411cac72202d42c3",
-"L": "64ad1ef74916fbf50ce76e91550050f51f5efb06",
+"R": "9dd5813673dc8bdf39b5b20fe1834a3f9d8bbe83",
+"L": "43146ace588b5aaa44eac77ebaa00e954baad442",
 "frames": [
 [
 80,
@@ -54116,8 +54116,8 @@ null
 }
 },
 "throw": {
-"R": "52c892955d2840bd2c78a31fb48acaece66b76fc",
-"L": "e41b367ff2629e4c4adb53cd53db36c57b766f04",
+"R": "087c20f8d5e76e4b8e3d41924e49034254e80c2d",
+"L": "a0e4d9a02f86302bf2abc5184239c2721fbbf80b",
 "frames": [
 [
 110,
@@ -54273,8 +54273,8 @@ null
 }
 },
 "dash_slash": {
-"R": "6046bbc0ef9a7cc02c049e8de2ce9ea5706a0c3c",
-"L": "66144a7b0c92b70750fea78bfc1dbd6df4c68a07",
+"R": "6267f26983f871b39966880f23b2a1a87644096c",
+"L": "df3282aab6e718906313ad5ed25652fc8e814b09",
 "frames": [
 [
 130,
@@ -54467,7 +54467,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -54941,8 +54941,8 @@ null
 }
 },
 "spiked": {
-"R": "ba2934ff47d4adbc19f6829030abe3f6619674bc",
-"L": "4b0e31d0083120961ed4a4693dbca3f21168f163",
+"R": "01892e380bdcec817ded623a7e801250f9350bf7",
+"L": "f5f90ef48688dcbb165a00a51d7efe154dfe430a",
 "frames": [
 [
 50,
@@ -55102,8 +55102,8 @@ null
 }
 },
 "thrown": {
-"R": "765c085459c5ee168d80c0da67667fc76b776d16",
-"L": "ee8bf39892c0ee1d05df798ca3b3448b2284d96d",
+"R": "4300034aff778df32bcd25c9ffa79ec61b6e2531",
+"L": "734f131471ca546621e97b34f7ec07104266be67",
 "frames": [
 [
 120,
@@ -55181,7 +55181,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.7,
@@ -55769,8 +55769,8 @@ null
 }
 },
 "clash": {
-"R": "11b76b05c7c2650bcbcca4a8d8b3717e474f4d69",
-"L": "b8686b4e7dfcb88cdb3e866a2287268b4f20896b",
+"R": "fdf62998c1375fcd2fb489563c5e2106349134a5",
+"L": "e104a6cc95d448d4daf128ccf040f80432e58989",
 "frames": [
 [
 60,
@@ -56429,8 +56429,8 @@ null
 }
 },
 "dash": {
-"R": "ccbd4c823ac806ce80d4f8577a3bf3f8679e4aa9",
-"L": "cb21d0128ae01366255470c72684b9c7c6bdced7",
+"R": "42d9424caaf316cdb999e06654914e0d8f735d20",
+"L": "b814d3c5e21d1e109e7929e9178537c74ebe9874",
 "frames": [
 [
 60,
@@ -56524,8 +56524,8 @@ null
 }
 },
 "backdash": {
-"R": "a72fed834101b26348bd709fdbd8b7420f877aac",
-"L": "3709f61dc92f535e3c153eb7ee0da5801ca3f77e",
+"R": "2a28374794fc5f3d6f2cf931ae4011d922954652",
+"L": "777642178863a9a223b36a8187f2235e5c993341",
 "frames": [
 [
 50,
@@ -56733,8 +56733,8 @@ null
 }
 },
 "jump": {
-"R": "f37d32d8f2ae6588ae3e0712528854e3cfd9e2cb",
-"L": "e417b9d8ec01bc64b4b950a86f73e0e2862459b9",
+"R": "fafab4133dec125ac605fb7f746905b6c3ffab11",
+"L": "a9ac2f5bac286483edc6a55c481870b4f3245538",
 "frames": [
 [
 80,
@@ -57169,8 +57169,8 @@ null
 }
 },
 "uppercut": {
-"R": "82b300418c4e03d3eb1cce0b8d3a137ca0ea0493",
-"L": "5e67e300c9480714281f63b744099389485a3695",
+"R": "d42079525db3277aadadcf465805d991a60cf95f",
+"L": "c00a740d39cf49157afeb14a4917e8f272b6c931",
 "frames": [
 [
 120,
@@ -58390,8 +58390,8 @@ null
 }
 },
 "knockdown": {
-"R": "79ef2a22cb805ede49afea055e6c876871b08157",
-"L": "d4d7c66d4bfa971ee71c1b842268fd38aa77663a",
+"R": "a76e7d260b066f02831ea44eb0204b0443052ca2",
+"L": "e408a01ea11c4be8f614d89f719e79c41bb7d99c",
 "frames": [
 [
 50,
@@ -58521,8 +58521,8 @@ null
 }
 },
 "getup": {
-"R": "0afafc0a519988bdf53d9212365b92ae29305613",
-"L": "72e38dd1db629b96b4cb94dbc755753aa577f14e",
+"R": "4d1a49da21710ec79b7d4bb3cbb00760cc10372a",
+"L": "f36c2269956b8debdf81cb205589ee7891b0d05a",
 "frames": [
 [
 160,
@@ -59323,8 +59323,8 @@ null
 }
 },
 "highfive": {
-"R": "722b1e4ee0f76eb170c0c3f249396de184ed016f",
-"L": "8722f8e2d4e95636d1d5f10d87662141006c812a",
+"R": "fb2211a0292ac4a89d1ded58b47fc4aae17c9ae2",
+"L": "6535a4f16d07311070b23e9015508e4d6169ae10",
 "frames": [
 [
 100,
@@ -60527,8 +60527,8 @@ null
 }
 },
 "vanish": {
-"R": "3d286a5afb6c4d9bf6de20dc4989dd2f9130e052",
-"L": "3e5927584c4e60ff8a93b054f8ee935cb5b61b47",
+"R": "31176656eede6d12991a1254f991d80bb7673e3b",
+"L": "a40ed092f1e1fe0582fb338215c05302251f149d",
 "frames": [
 [
 160,
@@ -61697,8 +61697,8 @@ null
 }
 },
 "air_slash": {
-"R": "78d7d9a30ebd1aee89649daea707067c9670394e",
-"L": "49717a686db3929cca80ffed1e2c93f97e6f2f30",
+"R": "f09fa2620caf2f33ce2c987752cfd33ffb0f4333",
+"L": "6ec8d9f01a0dd73a77334af67ae87ac22c0d8b40",
 "frames": [
 [
 70,
@@ -61878,8 +61878,8 @@ null
 }
 },
 "spike": {
-"R": "f33ba5e34f7a8eda90a93892eff599d95acb74a7",
-"L": "29600f8096ebfa7279e9fb2e97b150ce4263f009",
+"R": "d6c51ad9518691f4da5cedc22338aed898864793",
+"L": "8dfcd87b19699517336db5fba9b7cb608ae65278",
 "frames": [
 [
 80,
@@ -62058,8 +62058,8 @@ null
 }
 },
 "throw": {
-"R": "4fac239f8d2b000fc4c3b746477e6a18ce44662e",
-"L": "23ec57a4767b206eb38f9d836555c78260054292",
+"R": "a361782f05b1361b3f738030153092a3c64435eb",
+"L": "15155f58d76a8ecbf0790444baecf3df3299e560",
 "frames": [
 [
 110,
@@ -62215,8 +62215,8 @@ null
 }
 },
 "dash_slash": {
-"R": "dad4d7f7cd0ca324a25b1e99874650827ae41d65",
-"L": "6047b66a2bb5564b4aa3859ff6392eeacb3a6c76",
+"R": "e9b3d1767e6743acd4453aac13b2ebff772577a1",
+"L": "9346606cdc1b7bccca6a7dbd954f4061f0c73c14",
 "frames": [
 [
 130,
@@ -62409,7 +62409,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -62883,8 +62883,8 @@ null
 }
 },
 "spiked": {
-"R": "d5cdd8eb5d814eeb1357f16c82a4671a6cc8c6e9",
-"L": "6b8dff327790f9814f5927b78160fe45470dc2e3",
+"R": "240450382948eee4113411f77b424cf1ea8f1ab8",
+"L": "6ccd51aa07972e8a789ffe32299bf5754853146c",
 "frames": [
 [
 50,
@@ -63044,8 +63044,8 @@ null
 }
 },
 "thrown": {
-"R": "3f5c241c66d67e02cefe29c16310f2076de7dbfc",
-"L": "fa9b9f4fcb0b6cb884f3de4990958b18c992ea94",
+"R": "18aad78d778aa086f720843285ddd53746ac6555",
+"L": "2d58cd485a4f96a2f226e8920da8e2307d1a1fcc",
 "frames": [
 [
 120,
@@ -63123,7 +63123,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.1,
@@ -63711,8 +63711,8 @@ null
 }
 },
 "clash": {
-"R": "3d6823dfebc000c99bca5959ad9ddb608735e462",
-"L": "cfd06de767926360ed4f92289101ea22111bac7e",
+"R": "a351fce3aa3a429c8b29802a862cfbfd091cc6f8",
+"L": "9a9aa3d303ee7dc029be8ba3ed998172a88fab84",
 "frames": [
 [
 60,
@@ -64372,8 +64372,8 @@ null
 }
 },
 "dash": {
-"R": "c1435aeada88d78314aa533ee986a1b1f26ee010",
-"L": "91acd482240794992465c0f8e3c1aaf96fa138ed",
+"R": "0ce15717ee1f0979d30a7a658b558ec3bcecb101",
+"L": "a39d456fa67be7adbd35c99cdb74b49f645b4610",
 "frames": [
 [
 60,
@@ -64467,8 +64467,8 @@ null
 }
 },
 "backdash": {
-"R": "70ae47b1b3c22698e20a5718d1eb10807fcf3010",
-"L": "0476ee0073d7b5f9a28f40fadca533c411ec547c",
+"R": "d0ee79d9dee35915bb6fd44407c3fd18c8cddef2",
+"L": "769c8c6af3310845414b78c5b6e3c8187b0caad0",
 "frames": [
 [
 50,
@@ -64676,8 +64676,8 @@ null
 }
 },
 "jump": {
-"R": "8d6fc95380f04c468ae67deb75484eae1a7b50af",
-"L": "e227c32f26d5725fefcd5052002fec606722b87e",
+"R": "1f211edaab2c4f7db58fdebf0657310835922dfe",
+"L": "2d26a4a74552c5ba0ada9d70a002225a22146fd6",
 "frames": [
 [
 80,
@@ -65082,8 +65082,8 @@ null,
 }
 },
 "uppercut": {
-"R": "269a99185325f3a458dd86bfb7e8432a135f2603",
-"L": "7d8adfe9fa7ecae8d1e7d764662f8634df3fa817",
+"R": "e4d43a381239c738b147dd54f612ad7e6a1f53a0",
+"L": "ac0972881b40117b22e73b9fdc3446ff0c348cb4",
 "frames": [
 [
 120,
@@ -65527,8 +65527,8 @@ null,
 }
 },
 "crusher": {
-"R": "8a29f832cdb5b61c13ecc2ab44df29f7df2528b0",
-"L": "44dc8cbf4d5c8b6880879a565c4ec1cae69ec98c",
+"R": "cfbedf0fabfaef7cac33ce4823b91d1bc99fb0e4",
+"L": "6e1f162f3869eed273a7cf258bfd2c3f9ac21b3f",
 "frames": [
 [
 110,
@@ -66344,8 +66344,8 @@ null,
 }
 },
 "knockdown": {
-"R": "575620a35543a05521898129896a56fa8297577a",
-"L": "c24e2b5f21b3d58e9131ae733bda4856118cf8b8",
+"R": "3d7be819636edaa25cc986a30b5aa25729801b9a",
+"L": "d5fd88a7d7855eec90ad33d83bba93528b6b4295",
 "frames": [
 [
 50,
@@ -66475,8 +66475,8 @@ null,
 }
 },
 "getup": {
-"R": "d3c79aa18b58f367001dd407b57a4f340bcb3459",
-"L": "d55e62a75cfd58b31f2cdf26d764b9656b5de29e",
+"R": "e12599651a588808f6a731628deb317cbd4ae361",
+"L": "b1849c3cb3e4c5bed45a7d890ac64f2da27da571",
 "frames": [
 [
 160,
@@ -67261,8 +67261,8 @@ null
 }
 },
 "highfive": {
-"R": "dd19aeeae8886b0d9c2899f3d88a9e1db5f47bbc",
-"L": "14b42471e47165b66f2bd51436fd4ab06451af62",
+"R": "7a9b11d5e7ea8313bcc588ec2fac843cf3b3ac28",
+"L": "04d7c6c3b621cf6b8be831d6eb5503e3657281e8",
 "frames": [
 [
 100,
@@ -69090,8 +69090,8 @@ null
 }
 },
 "cleave": {
-"R": "fa7c3214ee0ab47460b418b8b6b409bfeba1108a",
-"L": "54590addd5092a25a55024fca23689a046701b7e",
+"R": "828eefebaaaa269602ebfe35ed3ca70c6a090a99",
+"L": "bc049da4a490b08f4247d6166c03a68f16399a93",
 "frames": [
 [
 160,
@@ -69251,8 +69251,8 @@ null
 }
 },
 "ground_slam": {
-"R": "413fd9d85723816c76b20737847516e5b396e427",
-"L": "05821fd2c27d26a46792bb5c6e8516f29378a16e",
+"R": "054b10cc65718b5eb62d2775582bf6ba598b7167",
+"L": "a46a4d335912f108ff34c296543d75a0a4f1eb1b",
 "frames": [
 [
 200,
@@ -69290,7 +69290,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Smashes the ground; the shock wave runs along the floor into the opponent.",
+"desc": "Slams the ground; the shock wave runs along the floor into the opponent.",
 "hit_frame": 4,
 "power": 3,
 "hitstop_ms": 220,
@@ -69534,8 +69534,8 @@ null
 }
 },
 "air_slash": {
-"R": "9d0d5c4e69442d0a342fff78fa1372329748d082",
-"L": "164f7e4f6cf0df3b82918f84e69e8fcbc71f5dc0",
+"R": "057b3c3694e8180e55a31c136fa2cfc40b1ce650",
+"L": "9c3e0ba6fff30b89de4acac3c5f33a71b1d0a39b",
 "frames": [
 [
 80,
@@ -69715,8 +69715,8 @@ null
 }
 },
 "spike": {
-"R": "397b78997dd93ee4d3667f284e7eb79138ad6d12",
-"L": "ea84906ad4427b82d539541a89d3935f03771892",
+"R": "a3a1b3eaa98f6cda04dce9fc04cebf27b2d52339",
+"L": "6d909f418499633d301a1715b502add198437578",
 "frames": [
 [
 90,
@@ -69895,8 +69895,8 @@ null
 }
 },
 "throw": {
-"R": "39275f81bfc3f5d9961394e4c9fcabfbae2df17b",
-"L": "4053933318e35ef314d67fe2116996fda0269777",
+"R": "c1fe276dd605b8e082f59d17bd25147775471326",
+"L": "86e86ec37333f5c85a152af1c73566650fd67a5f",
 "frames": [
 [
 110,
@@ -70052,8 +70052,8 @@ null
 }
 },
 "dash_slash": {
-"R": "96d3e9710069861a8a16a64f4d334ba4c6ba8661",
-"L": "27681ee975ebe414ec102870d1c9b1fc4b7b8f02",
+"R": "af893b92aa29d420b069311cc4302140f6650f89",
+"L": "bc245a08fbb22a7ea8dd8a9ad1f051e4d71056cd",
 "frames": [
 [
 160,
@@ -70246,7 +70246,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -70721,8 +70721,8 @@ null
 }
 },
 "spiked": {
-"R": "23ebc6dc9d80cbf577387d990d8917b601412d7d",
-"L": "1f2f582128d4bbbec782d9b9aa028894faeb7dea",
+"R": "df7ba7c4370cfe9f4879fae9a1c40a6a95007dff",
+"L": "bf0a5e665cfbb0d88ab1d9cacb42cc640dfe60e6",
 "frames": [
 [
 50,
@@ -70882,8 +70882,8 @@ null
 }
 },
 "thrown": {
-"R": "fb904160c9a2c494aad5f0d34ccf54e480df927a",
-"L": "f958bf244f5bd09b6e4848920694af8834eec2ed",
+"R": "9f1059b1ce87c14ba749f4d3b347d38a0433da90",
+"L": "17e87fd2ea6d3e55d01117a323bf152ba74d0556",
 "frames": [
 [
 120,
@@ -70961,7 +70961,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 17.1,
@@ -71549,8 +71549,8 @@ null
 }
 },
 "clash": {
-"R": "52c655185933548fc58a7ebf3c4245a7317df467",
-"L": "3747ac131bfc4464d3f795272b4af737cc393e56",
+"R": "040b95be4b08edac40929263837cb12f226efd3d",
+"L": "aa131e04c196242c4dc47adf3c9d9a82aa06e794",
 "frames": [
 [
 60,
@@ -72080,8 +72080,8 @@ null
 }
 },
 "dash": {
-"R": "5743aa3fb6e9c75874816e005fe6ecfdc7a6689d",
-"L": "633d6b8edf9dcea02f9d4af1d478afa67e3f8e26",
+"R": "4c6fd7e8115023d8928db735bcce58c7bf63f210",
+"L": "5f100b58cf1f0e8e54679ee4cc318519d4a62944",
 "frames": [
 [
 60,
@@ -72150,8 +72150,8 @@ null
 }
 },
 "backdash": {
-"R": "d718f21114b53f8384d942406be1bce39af964c6",
-"L": "7b75cb33d0fcc840e1bc220cb60296f4d834e119",
+"R": "4f1b8347824be550a54d0a2023c1d8b1b263dafd",
+"L": "2b01cb5fd78434735f0560d526a132ab0b384443",
 "frames": [
 [
 50,
@@ -72309,8 +72309,8 @@ null
 }
 },
 "jump": {
-"R": "753f36ae96bf9e7cfc57179e3f109df07394bb59",
-"L": "6c4907781ffcaaeacf86f90b5154628a3aafaeeb",
+"R": "2e4a8532cd896ba922ff1318b497beb69e4771b2",
+"L": "23750fc52fc7ef22b9410409b8734d53e62e764b",
 "frames": [
 [
 80,
@@ -72635,8 +72635,8 @@ null
 }
 },
 "uppercut": {
-"R": "ca639c26b0046fd0280f61944d2296cb93af9cb8",
-"L": "c047f59620fc13a52da3973ae2244b7a57f837ef",
+"R": "7b24b17d589428b728a8b896c721eec47f18e38e",
+"L": "92744de356b0106d9831ea0028e2f356eb7db974",
 "frames": [
 [
 120,
@@ -73573,8 +73573,8 @@ null
 }
 },
 "knockdown": {
-"R": "8bbc958537fee1009ba28e1dce98b189ecded6cb",
-"L": "72276a058578b885b85d3b461ce5d600fb6e8ec6",
+"R": "1c956303bed54505b39185905de21306ef0ed074",
+"L": "550a335901114383f42c7d8d1e585c2cf98d549d",
 "frames": [
 [
 50,
@@ -73669,8 +73669,8 @@ null
 }
 },
 "getup": {
-"R": "d01756470b31c03948e22665ce2a67903411cf88",
-"L": "144083851cba329c30e8b038b86c48d9d5ecca17",
+"R": "20f9ee62ec92aba308140d7f058cb06e65409235",
+"L": "14056f0dde39be073f7687653acf552cd3bbe79c",
 "frames": [
 [
 160,
@@ -73905,8 +73905,8 @@ null
 }
 },
 "victory": {
-"R": "ce37306b8b36c5ac318aef4e2585b10d08854ef5",
-"L": "16690e280415fe59a011a6c7f4dd263d1e8f4ded",
+"R": "322f8b81a18e1954f0b173af326268bc0867e5b7",
+"L": "5583fa412fba3d4cdbbb279173ee41ea401292f2",
 "frames": [
 [
 110,
@@ -74282,8 +74282,8 @@ null
 }
 },
 "highfive": {
-"R": "8f7e0af863f52ac68b931ab100bc31ea64817592",
-"L": "7e617dae4607972534f53e22cc12862f81af40e1",
+"R": "96cd34719dcc5204c00a62749abda9c2a1758455",
+"L": "8a212147259471d75d934753f0afd2d433452f47",
 "frames": [
 [
 100,
@@ -75524,8 +75524,8 @@ null
 }
 },
 "earthsplitter": {
-"R": "73e4e515439ec7dea90007b0ced6eb9ff8d31a0a",
-"L": "13ba9861db48ea57d620fa474b9dc0df3388dba5",
+"R": "ddb6f3adbc8a45036edb0710670d1e6c14594e53",
+"L": "5293e6d53909a8ff820d4cff930ab6c7dca447d6",
 "frames": [
 [
 200,
@@ -75655,8 +75655,8 @@ null
 }
 },
 "cleave": {
-"R": "bcf08ecc70a9a13bde05eddb58010c16b32c1fc4",
-"L": "deea8441878bc18bbfc972f80bc3de879ec47554",
+"R": "daeb2df72c2c99e5f32ee2d2fb700f4d822395fd",
+"L": "3649ba6eede1e7f6e640450e0a15b44ab828afd8",
 "frames": [
 [
 160,
@@ -75776,8 +75776,8 @@ null
 }
 },
 "ground_slam": {
-"R": "dac830fcf35d0b1d046594280a4044a5774bd324",
-"L": "0b41bd50a7d055e2e3c9bd150fc368996695188c",
+"R": "0d1871ea2eae16d98df16d370fd79463aa9194c1",
+"L": "ac2fcbdb34e50a394c3437b0618bf299832f61b3",
 "frames": [
 [
 200,
@@ -75815,7 +75815,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Smashes the ground; the shock wave runs along the floor into the opponent.",
+"desc": "Slams the ground; the shock wave runs along the floor into the opponent.",
 "hit_frame": 4,
 "power": 3,
 "hitstop_ms": 220,
@@ -75989,8 +75989,8 @@ null
 }
 },
 "air_slash": {
-"R": "c73d7b51b7841a9a9b718ed0f68a18b3f8641197",
-"L": "92c1fc6d7fa26217ae6047d44c4f596a2f8a2798",
+"R": "cf340a67477517a7eded0617ccf1fdbfcdb53809",
+"L": "1cef07078cbac693cf95b28dcea334fb644bd474",
 "frames": [
 [
 80,
@@ -76130,8 +76130,8 @@ null
 }
 },
 "spike": {
-"R": "43d4aca1a63d456bcf034d2ce92bf97a5f02a211",
-"L": "f41072aa82dfd3e2e1795d9bb7d73f0989a47422",
+"R": "6a48b8b83360083e41380e1bcb28dbae05afab7b",
+"L": "6353850e9e66ca6ef84e9b1eba73ef74a404f1e1",
 "frames": [
 [
 90,
@@ -76270,8 +76270,8 @@ null
 }
 },
 "throw": {
-"R": "5480bf6107a267aad60dd644b9bc43d71a3299d8",
-"L": "7519c942c4547fe6b49a42fa73a645936b364e54",
+"R": "dbd8b55c3766871e9b7f170c26da70e34fb96a92",
+"L": "c5236829733042d652fcefc988f381c3c64dcdf5",
 "frames": [
 [
 110,
@@ -76387,8 +76387,8 @@ null
 }
 },
 "dash_slash": {
-"R": "afc82fec4d04978ab73752476790dfb2dc50a281",
-"L": "3bd0a399dfcfe3955e4102e046af53bfefc41257",
+"R": "bf7ede9676c4f740d8906fb31f5f7beb65831d70",
+"L": "0ce406e81c5747cf698030c2d00c07e5631a863c",
 "frames": [
 [
 160,
@@ -76541,7 +76541,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -76891,8 +76891,8 @@ null
 }
 },
 "spiked": {
-"R": "f203ffb9222fe54599803f0bba4e1c2344046c3a",
-"L": "461cb6e732ab26c84d3c7c65173585e8a86e5efa",
+"R": "bedf62083141f85aed3aeea2f37f4d429d7e06b3",
+"L": "12bb2bda57e85529105e79876f3e9808ddadea93",
 "frames": [
 [
 50,
@@ -77017,8 +77017,8 @@ null
 }
 },
 "thrown": {
-"R": "97d39f33e3a45674b79c4063e718bd3140823a34",
-"L": "c011ae325bd9ac3429d4db4abf7ebdbd6bd85e40",
+"R": "ad1b9c1ff2ec7e2ddda1d4c31cd6af2c15171251",
+"L": "44ae0508f8d20b064fdf5d312556a2698876060c",
 "frames": [
 [
 120,
@@ -77096,7 +77096,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 30,
 "grip": [
 [
 18.0,
@@ -77519,8 +77519,8 @@ null
 }
 },
 "clash": {
-"R": "6bdd3d9e9f64fb68f86967b700e6ec86bc678dd9",
-"L": "020cac9be0595af75e5e99fa7a4a2b1ae5245da2",
+"R": "25b54911f88ea2ea3d7113288231468246eb4954",
+"L": "a181dd35d153d010d3dae98c1236806ff6a04f94",
 "frames": [
 [
 60,
@@ -78144,8 +78144,8 @@ null
 }
 },
 "dash": {
-"R": "3bc18c8b1df5d18ba1f981d007cb52f24100d104",
-"L": "3cbc62c0277efa8920a0d51c1cdba347739893ea",
+"R": "55a020bac522b9a271650cd03de8ce7d9a003f5c",
+"L": "ea2527c928d391d9058a091dae8ea726aafc93c4",
 "frames": [
 [
 60,
@@ -78239,8 +78239,8 @@ null
 }
 },
 "backdash": {
-"R": "8a7235a0ddc16cce231a1ccd2de0ed915a2197f2",
-"L": "284ff48e4629d7f173bc0c944bbb31555af24b1d",
+"R": "a4fb9ddc69032fd380b4b2a685359b92ce6a776a",
+"L": "413b36c701273443ef4d59ac522e439249b2f194",
 "frames": [
 [
 50,
@@ -78448,8 +78448,8 @@ null
 }
 },
 "jump": {
-"R": "866c4c77ed673997c5e5872ec8231496eef1001c",
-"L": "9bdf20f9fea3bfc7f1eeadf7959184aabf58f369",
+"R": "82cc5efd238165362979b492fc423f560cd5f0ef",
+"L": "92632b6d2922db461645ea24243e30fb38bd4c43",
 "frames": [
 [
 80,
@@ -78884,8 +78884,8 @@ null
 }
 },
 "uppercut": {
-"R": "615c3fe6305746a7d5c2df08ad0439c9cada3ad3",
-"L": "ce4a685b6f9fdf52249cffd2cba689bf050f5e76",
+"R": "bb6046ef41df303452bead8933639d44100d7a67",
+"L": "813fa1b118cbcab60ca4a101a93d3935be75a7aa",
 "frames": [
 [
 120,
@@ -79329,8 +79329,8 @@ null
 }
 },
 "palm_crash": {
-"R": "73dc2434f9136cfe1894866bcee44a77bb2df147",
-"L": "5665e4bcf4e0a11672bbc3f4c22d2eadfa730c0e",
+"R": "e1a7ddea6bdb620689e50c3cdf24bc9ecb299c80",
+"L": "f21c939f29e8507e75d6e542ca02c7be33fc6aff",
 "frames": [
 [
 110,
@@ -80162,8 +80162,8 @@ null
 }
 },
 "knockdown": {
-"R": "c1c9d2227e6154eef7408357918228513a0a7c4f",
-"L": "7cba9f2156cb15311264766c59da2845ec5c11db",
+"R": "a4f920fe26add484912d05b2bebb69dedf4a9c4f",
+"L": "8477370197f9906b0d1c5b0686d7fc132c48cf11",
 "frames": [
 [
 50,
@@ -80293,8 +80293,8 @@ null
 }
 },
 "getup": {
-"R": "771abe717b8f1d96d0340e288d03a1e85c6dacb0",
-"L": "52af4ce10afa161daab59f9539c08961f7333251",
+"R": "6b28a77a5f9414e8e482b1019424908ce3192a24",
+"L": "00cb666394e76be108f5dd54d5b2d782c51ad80b",
 "frames": [
 [
 160,
@@ -81095,8 +81095,8 @@ null
 }
 },
 "highfive": {
-"R": "21195736a8f9b71a284c6a76697231c7eccefa1d",
-"L": "acc24861189fce98104e2523a3f61eec183076ef",
+"R": "25fd12243c0b01672f67ab88dcf8c93610a494c4",
+"L": "6123e70dc9cc51356e090e277ad81e50ece847ac",
 "frames": [
 [
 100,
@@ -83499,8 +83499,8 @@ null
 }
 },
 "air_slash": {
-"R": "e3e4f4448dc089998d0ca47dd52d53a8c1ab7f44",
-"L": "7f7d80d85b3c33f7c468b14f86f2424c28abdf03",
+"R": "7772b3b6efb15bf024c3e23a41873cd88a94979f",
+"L": "ef3caeef3871ffbcb6884e3a954724cbe5f8cd61",
 "frames": [
 [
 70,
@@ -83680,8 +83680,8 @@ null
 }
 },
 "spike": {
-"R": "27c2454b0c7cbe080ea661a03dfe207737215a51",
-"L": "2cd0f4483b990a7cb85aef83386a8a5a94bd113d",
+"R": "f38ab1340100001eb9d447f42fd184a48f4fd84e",
+"L": "72a02bc523f32d0785716dedf447b316cc4ad5af",
 "frames": [
 [
 80,
@@ -83860,8 +83860,8 @@ null
 }
 },
 "throw": {
-"R": "1d2811e7bbfb73d53110833daab3b35eadc93c7e",
-"L": "177b137751850ae8ba35da0fa7ced4bdf9ae9eaf",
+"R": "a2633c187464a50577188c22cb6d08bc8ffe9597",
+"L": "8059678a07a80af44814572d7ce309c1a4330f6d",
 "frames": [
 [
 110,
@@ -84017,8 +84017,8 @@ null
 }
 },
 "dash_slash": {
-"R": "5ced950dcda4bb4a11245d27717be352bd686907",
-"L": "83488208a01bf1389d9528051207d5fb7c514b21",
+"R": "28645164a189ef233c545a97a098dd2791826064",
+"L": "0e98f6b9c42690056101111268e31337332dac2d",
 "frames": [
 [
 130,
@@ -84211,7 +84211,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -84685,8 +84685,8 @@ null
 }
 },
 "spiked": {
-"R": "285ef8255433d45d06b8de3ea37ee07f7859c913",
-"L": "7e5eab812abb4d90aa65e1b4b0381b4405447866",
+"R": "8c22afd9962a411e7706a3e87d85d641a68d32cb",
+"L": "76ceaa14ecda4f9daafb7856fcb45809063c0ed6",
 "frames": [
 [
 50,
@@ -84846,8 +84846,8 @@ null
 }
 },
 "thrown": {
-"R": "636bcd426df26e9beb9de43ead78e1661fd09e4d",
-"L": "e72093a4e6856b0e0b9295f243794f0dc8ea47cc",
+"R": "ff0feab045ca5a615ede9277981cd14c63a5ed91",
+"L": "97efb2c2c7802be7ebc1055b9670ce5ff11d4a66",
 "frames": [
 [
 120,
@@ -84925,7 +84925,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.6,
@@ -85513,8 +85513,8 @@ null
 }
 },
 "clash": {
-"R": "3144e448cafe8528a48e290d6b97ed6fdee8cc49",
-"L": "5e268eab1f4d8b09347f35044e6a312ed5d8a6b2",
+"R": "0343c3293dd0662e03aba1d715fa3e473846ec0e",
+"L": "169ee4e5a09f68d2198deec3e4f5483bcbac3c95",
 "frames": [
 [
 60,
@@ -86176,8 +86176,8 @@ null
 }
 },
 "dash": {
-"R": "cb3fb8ad2346f2cc8e6f35f794e3ff956e9bf9f0",
-"L": "2ad4f097902f6ca8a4e6cb3b463bffa663ab558f",
+"R": "4a1bfaddff73ba3e3dcf1007d60f5062d9bb94dc",
+"L": "faca6f96518b003395e2d8055883193a13b9ebc7",
 "frames": [
 [
 60,
@@ -86271,8 +86271,8 @@ null
 }
 },
 "backdash": {
-"R": "0942bfce77131743378f4994e8aff7cc8447daf8",
-"L": "875c2a7f020d4db8391179666a079d849b49da15",
+"R": "8b1e977515832ed19eb74a27de40ba6294bb8c8e",
+"L": "356f144a0b6afc0c74b69090973ffff53063e8e3",
 "frames": [
 [
 50,
@@ -86480,8 +86480,8 @@ null
 }
 },
 "jump": {
-"R": "7513a5ab61c2ddaa52bd503c73eb2124b85d8e9c",
-"L": "a52e94a31b7b5f2685efc0ca5ac92f2de71e25ee",
+"R": "7326954e0f5bcc6f1830a91f5fb2462da7cbff73",
+"L": "9ac0c00220fc8b0663c636bd57d32048397219de",
 "frames": [
 [
 80,
@@ -86916,8 +86916,8 @@ null
 }
 },
 "uppercut": {
-"R": "b45ae8bc6237d5723d84bbd20e7184dbc5372573",
-"L": "0f6bb18de0b26e9c9a3888a18ff9e1e03a642124",
+"R": "792b248188c1f66e70b06d3bfa4fff329842db72",
+"L": "b5de6028fff19e81cbfa3084c32700d5e9763cf4",
 "frames": [
 [
 120,
@@ -88137,8 +88137,8 @@ null
 }
 },
 "knockdown": {
-"R": "31ca865afdbe97f791cff2dd4c70fe0f6a40795a",
-"L": "dcd78636e10d09f7a286e2d75628ed90af25762d",
+"R": "680049a5fa5d435dc579dd8f966752323e1a4e93",
+"L": "3f4ab5b9838b6a8acc140e3092ea1130219728c2",
 "frames": [
 [
 50,
@@ -88268,8 +88268,8 @@ null
 }
 },
 "getup": {
-"R": "6c4951925d2deee4a458eda75215280a7fc0a04b",
-"L": "9de574a6cc3ea614691d56c0312a65402a46818d",
+"R": "ff3e637f62be6d64f0b8b0daf0329d670142294c",
+"L": "6c30cd6413b4a1267a9b298273b4d05268aabc7a",
 "frames": [
 [
 160,
@@ -89073,8 +89073,8 @@ null
 }
 },
 "highfive": {
-"R": "5d097a37e325119891b8ecfbb5fadf3a1dab69ea",
-"L": "b8fee1cfa30eb19bb2df061ff0c0f0a3669eb0ac",
+"R": "941a55f31f5f9cb1c72ed7562229e3ae44400599",
+"L": "db5012b1f2ad63002174bacfe3f0177e3e9164b0",
 "frames": [
 [
 100,
@@ -90309,8 +90309,8 @@ null
 }
 },
 "mirage": {
-"R": "eeebe83eb6900c88dd95c47440ff2a1110ad626d",
-"L": "4996489e5f0ad73d3ec5e91fc88df085dfd44f89",
+"R": "6a1e84ac242cf262573e6a501030af9f9d70e044",
+"L": "58a33c5ee5a003aa31b27f5a75d7f5dbc3743610",
 "frames": [
 [
 160,
@@ -90745,8 +90745,8 @@ null
 }
 },
 "ring_storm": {
-"R": "dd7a7cb28ee94891890fbed1f1429a7d25c3adbf",
-"L": "3137e54d03ee5a4dac176e4968bc63beb741b196",
+"R": "22abf56b2388ed1c7fad6a14dd2a2e1671ba5609",
+"L": "71c0b0068f5504acdee72b3aed4c5b3a32456c7e",
 "frames": [
 [
 180,
@@ -91509,8 +91509,8 @@ null,
 }
 },
 "air_slash": {
-"R": "f48fc825cc58f271d62c41fe9ccef88bb8cf94be",
-"L": "ac23c9568b55286dbd609c6e07150b359b0a8f03",
+"R": "619f75775c0e6b2511dfd176ab7b4d2127dc6914",
+"L": "f8d7aa19c13eced0e5e8e6f3a91ab2502553ccaa",
 "frames": [
 [
 70,
@@ -91690,8 +91690,8 @@ null,
 }
 },
 "spike": {
-"R": "07bfbcd1a4df6b4183597be0040508cb88316a89",
-"L": "ab2a77ea6cae091d8ac45568090a3f3616da90a0",
+"R": "c61466f2b1e8fb1f35880e0e7613f5ef4fae8b67",
+"L": "790bdb9563fd5f834e4a45790bb63259bc81da97",
 "frames": [
 [
 80,
@@ -91870,8 +91870,8 @@ null,
 }
 },
 "throw": {
-"R": "59801f66b864d19ecef223298d45d3ef9dba3370",
-"L": "bcc33709f3eefe8f97810f9d5093cb946829eab9",
+"R": "2ca662da5eb2c2754be904ec6722de9f3805ab26",
+"L": "9ff4ec09a6ca3683a7ec974a86e3a129c1578926",
 "frames": [
 [
 110,
@@ -92027,8 +92027,8 @@ null,
 }
 },
 "dash_slash": {
-"R": "96da0b3d683c68d1092e14544651c176263581df",
-"L": "126a1ba171e598de4e6aca412ea91855f919fcb0",
+"R": "4875b4be02f4504b82f31420b30cf0bb2ee64a15",
+"L": "6b37660a33bdd8ad54f808c77ac23be52d7aaaba",
 "frames": [
 [
 130,
@@ -92221,7 +92221,7 @@ null,
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -92695,8 +92695,8 @@ null,
 }
 },
 "spiked": {
-"R": "ba943c27240b0ed21aa0f6300a08ab0495b6196e",
-"L": "8135a1858a6ef78212345476cba24da4c7cbffaa",
+"R": "0856a7131c72ea3c750b788e0173d56acd0280e4",
+"L": "d6e6b0a823d8fa14753da9b894020fcd25efeace",
 "frames": [
 [
 50,
@@ -92856,8 +92856,8 @@ null,
 }
 },
 "thrown": {
-"R": "41057d0c7dbcc62ac27fb12e6b03c335ac44c1de",
-"L": "e92841e92fe339962a9ae6b3fde2aab80c4f7e2d",
+"R": "c20caa9d44ead00791e0fc8ecc2453e53ebc59db",
+"L": "03db1c794cc3d37db20c212ee98f9c06145429ec",
 "frames": [
 [
 120,
@@ -92935,7 +92935,7 @@ null,
 "frames": 3,
 "amp": 1
 },
-"reach": 18,
+"reach": 29,
 "grip": [
 [
 16.4,
@@ -93523,8 +93523,8 @@ null,
 }
 },
 "clash": {
-"R": "00bc609ff3edd8c9d85ab177322a91f876583e35",
-"L": "d5fb9a5c4a9fa9cd52372301b350765dcdcce197",
+"R": "4f0c18febc6265bf9f11056955bab1f9d09fb74e",
+"L": "e96323b81ff330e5ee6f38697ca1c72f15b0ed60",
 "frames": [
 [
 60,
@@ -94188,8 +94188,8 @@ null,
 }
 },
 "dash": {
-"R": "081a6be581225b937574f1163b307d754b25d667",
-"L": "1bcb6ff74c6f90c0b3f8f31fd491c5b82022eec6",
+"R": "5c5326dc814226822c14dc43c2560dc668dc4cbf",
+"L": "c1266bafd2326224ee899b9660623294e87221d7",
 "frames": [
 [
 60,
@@ -94283,8 +94283,8 @@ null,
 }
 },
 "backdash": {
-"R": "e295b596cbc7a3c291a101c0c0fa328c0eb4347b",
-"L": "5f5b260fb90798bf49ab12fffb34ec6991577cf0",
+"R": "bc9dc963d979e0c3e16e951353d4122b772d1a90",
+"L": "3eb442872f46cc5ed675f960340068afa3e26bdf",
 "frames": [
 [
 50,
@@ -94508,8 +94508,8 @@ null,
 }
 },
 "jump": {
-"R": "85d7c6376ef9627213d73c317d56dcd37b4372f6",
-"L": "42de8c24bfc77fd968ec98424fa45ff73b937bba",
+"R": "6430294f506f8597ee2e0411159926d1abe013f9",
+"L": "e263e66a6935402502983aeb27af680740490458",
 "frames": [
 [
 80,
@@ -94914,8 +94914,8 @@ null,
 }
 },
 "uppercut": {
-"R": "c532231d203041c89fc6c2b9c4a89ef949cefa7a",
-"L": "ec43cbcbdab9b45654f4d554f40c7e87a23a3312",
+"R": "d45d07a03bf2fb2b22e07e659290e8661e0ebcdd",
+"L": "8bd808e63f8b23bc64f2db0cc84f34d18e06b27a",
 "frames": [
 [
 120,
@@ -95359,8 +95359,8 @@ null,
 }
 },
 "club_slam": {
-"R": "6d67e067c015e3071967b49a49b68b8c5b0414c4",
-"L": "489e1dadc4bf5190b6c8e0307d3fbf65c71d3265",
+"R": "7225f2044c6a9ea48819c39689d2daa3f374156f",
+"L": "c039c5c79af6680539f7a2e514eaff7c359084f3",
 "frames": [
 [
 110,
@@ -95398,7 +95398,7 @@ null,
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Leaps and smashes the kanabo into the ground.",
+"desc": "Leaps and slams the kanabo into the ground.",
 "hit_frame": 5,
 "power": 3,
 "hitstop_ms": 220,
@@ -96208,8 +96208,8 @@ null,
 }
 },
 "knockdown": {
-"R": "cdf3a84085f3a9902359c6d497c24db92573fb7e",
-"L": "e9a7ad1a81e696cb05aec0edbf5506c27d653afc",
+"R": "ee73d2423fe25147304d2dedffd23b479c2b5419",
+"L": "6e84cc9cb879ce4ac496c1a898e43573ed6c808d",
 "frames": [
 [
 50,
@@ -96339,8 +96339,8 @@ null,
 }
 },
 "getup": {
-"R": "5a8396f87afc7f4769d66b35e3c4f39888a68557",
-"L": "4e21caf3b971b1124489df692054a281fe2a196b",
+"R": "feecca16f1f19a501c4e26af0233f2583ee32978",
+"L": "51715cee718f599950e5e4dced394432650c056c",
 "frames": [
 [
 160,
@@ -96660,8 +96660,8 @@ null,
 }
 },
 "victory": {
-"R": "344ecc15479f4bc1bdccfb8749ef02bf8c372c2c",
-"L": "254d8ceab0585d58ddb4f95448808c9c87d6b952",
+"R": "230a2fc6dceeb6b6e1c0e681c455b6ee44967880",
+"L": "4ae8ebf413d612385e489c1a84f8115b5fdd4de8",
 "frames": [
 [
 110,
@@ -97159,8 +97159,8 @@ null
 }
 },
 "highfive": {
-"R": "81ca3c30d1cb0e743b5f2e7ed47640b06aee6631",
-"L": "4adb93bc4ef5453371e06e8d936103821d0e1bdf",
+"R": "103f6b70f5fe1ead4291f42d45f4646f35a7d016",
+"L": "1eeb53a0a5a9865a8f033c0d664b9df62d9f6805",
 "frames": [
 [
 100,
@@ -99004,8 +99004,8 @@ null
 }
 },
 "cleave": {
-"R": "5791c7c6baaae0730566453ba147ebcb2199978c",
-"L": "bd262d96d5dc5d5402899895379fafc5fc48fa4f",
+"R": "19efd5a778845f02f9d68abdfcd4b68b6e552427",
+"L": "f2be11079f7c9de2514ac89d1586c300d71f17fa",
 "frames": [
 [
 160,
@@ -99165,8 +99165,8 @@ null
 }
 },
 "ground_slam": {
-"R": "e8e3f62fda6fb11039be8769b3955e9aaa72192a",
-"L": "2334600ed85aba36b59195d947a9be0d252096d5",
+"R": "f3032bf60163c6d3ca3b0725e33115512529deb7",
+"L": "17f1aedf30d0244ce063fce7f37c49e7868244d1",
 "frames": [
 [
 200,
@@ -99204,7 +99204,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Smashes the ground; the shock wave runs along the floor into the opponent.",
+"desc": "Slams the ground; the shock wave runs along the floor into the opponent.",
 "hit_frame": 4,
 "power": 3,
 "hitstop_ms": 220,
@@ -99448,8 +99448,8 @@ null
 }
 },
 "air_slash": {
-"R": "4f3b78f076e9356ea9464b0e88aa1ae27f7a680f",
-"L": "3275f71de4f07990107f32565a6fc79925509549",
+"R": "082b9ef4efd2231bdcaf0f983f606b1c3f4d567c",
+"L": "a7869bee3b9d02d714e6d04b753cd8c01f927f40",
 "frames": [
 [
 80,
@@ -99629,8 +99629,8 @@ null
 }
 },
 "spike": {
-"R": "b74c5637bb3db6bbae518d6f6f8e1550d26a705b",
-"L": "bfcc4891ce1caf0cbe6c89e132b4cfe8f87933c7",
+"R": "3121cb4ef6d8aea9e840398eb0c3887183fcb461",
+"L": "bb9db4d58ac392090e14660b515c193029a4e00a",
 "frames": [
 [
 90,
@@ -99809,8 +99809,8 @@ null
 }
 },
 "throw": {
-"R": "094209d7dd92a1644a09a23908969e5099f9e80a",
-"L": "a7193f252dca1b4b653cef6929d37b3bed0c9a6c",
+"R": "46b56c2febc205cba63e9da51daf0540421f2c8c",
+"L": "14b2b72fdc9ed5d8809bd73cb59df92bc6425e95",
 "frames": [
 [
 110,
@@ -99966,8 +99966,8 @@ null
 }
 },
 "dash_slash": {
-"R": "019aa6ca3464cb2b076dbe71191f7026db1c13dd",
-"L": "920f46c7b507a259ac16fd1bb069a2e5f04da1ae",
+"R": "de997e6265930e014c6bbe0f9771724b8c44d7fd",
+"L": "0c91980a92a0250be8ed0df1496899296236e114",
 "frames": [
 [
 160,
@@ -100160,7 +100160,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -100635,8 +100635,8 @@ null
 }
 },
 "spiked": {
-"R": "f21cc8b60a2d968c3dccf1c53a6ed23fa1da8ab1",
-"L": "dac4d0ac278b780582c6769fe848ad50feb791ff",
+"R": "127c67f3acc2f3b6f064a72fcbffd3f0bde72b89",
+"L": "202b5c415a10b224efcbb1b7ed4a039dd3ba5439",
 "frames": [
 [
 50,
@@ -100796,8 +100796,8 @@ null
 }
 },
 "thrown": {
-"R": "41a21e89a0c7dca76c22245eb47084d60a6fd9f6",
-"L": "db9dc113c05ae38ed6beeeccf636762747ed9eb9",
+"R": "cb8ca177810193185873dc61e9bb8901d6f58529",
+"L": "3c01b41f7418064bae821cc36a80b3f37b480971",
 "frames": [
 [
 120,
@@ -100875,7 +100875,7 @@ null
 "frames": 3,
 "amp": 1
 },
-"reach": 17,
+"reach": 30,
 "grip": [
 [
 19.6,
@@ -101463,8 +101463,8 @@ null
 }
 },
 "clash": {
-"R": "ca155ef57868da9fccf001c8f3d81ee60adebc94",
-"L": "7fe023e45cf4fbb4e8c9638400f815e3e7f041fd",
+"R": "613abb1142af3dda8592ceb65b29a82d915f4a74",
+"L": "d93c8eb7bc10f697c2cd34665419dd625c43d372",
 "frames": [
 [
 60,
@@ -102137,8 +102137,8 @@ null
 }
 },
 "dash": {
-"R": "d5bcd10e88f883d758e423d6e2939a34b2ed0f29",
-"L": "40020faead2f5b5e7106e5446df812fcd7bfc745",
+"R": "f9cff639a77ed7557723cb1bb1d49261fbeec284",
+"L": "1da860d08c5798713cfb3b64d587a9cdbd4bc28a",
 "frames": [
 [
 60,
@@ -102232,8 +102232,8 @@ null
 }
 },
 "backdash": {
-"R": "7c2cd229cdf893dc914eb5415317d8e2212f0074",
-"L": "f010637e4d8c3195b130cf2cf6ac0be54232ec38",
+"R": "0eb8c8b8afa0b5edc35ae0a1c0b6f882c7b0d35c",
+"L": "dc92ac8751fc00ca20c4dbb2852ddcc53c7cb914",
 "frames": [
 [
 50,
@@ -102441,8 +102441,8 @@ null
 }
 },
 "jump": {
-"R": "35072cd8bf0dd6d95a62b90f6a8f3cac8b44997e",
-"L": "2998158ad8e90c1ad7c5d0a9b9a520f06c165dd3",
+"R": "32c1e968a975d1506305f7bf965ff67a2e52d2f2",
+"L": "765adc59bc4254487119547b5367ac091618b3c9",
 "frames": [
 [
 80,
@@ -102847,8 +102847,8 @@ null,
 }
 },
 "uppercut": {
-"R": "e577859203a999e25d939cd38f850c9c2af3fdb5",
-"L": "50b63dc92b7ffb85bac252e8f08562d16e491e7f",
+"R": "7e0e2278ee163d9ebc3097a4046544238209e796",
+"L": "e1ac882c891621e0dd1cdbb8ad42617064685227",
 "frames": [
 [
 120,
@@ -104068,8 +104068,8 @@ null,
 }
 },
 "knockdown": {
-"R": "e5625fc3404ddd3707c7b1a0d19c22c1ae6071fc",
-"L": "2a255a65accc941d5119abf72fdd4f3f00c355ad",
+"R": "2bc120a7ef5083a6470412454838c29cf479ad59",
+"L": "d11f2907475539382d9e8a44a883b9a7a251a571",
 "frames": [
 [
 50,
@@ -104199,8 +104199,8 @@ null,
 }
 },
 "getup": {
-"R": "8b53ce3e1ad379cdd89c3a525c61be45ecd7e8a9",
-"L": "7c5616de024ca581ddfd3bdb7e5a12efacf5bc2e",
+"R": "01bcb8c779fbc96dd558ea7795d148237ac18494",
+"L": "c3c86a2220250da3278712222199e9efcb27ad1a",
 "frames": [
 [
 160,
@@ -104966,8 +104966,8 @@ null
 }
 },
 "highfive": {
-"R": "6c3547c8523fccd7acdd91a64a25ade2e4747d27",
-"L": "1af53a093c2c3ec890b405368401b50672950fff",
+"R": "d9c646327b6568d9e5a5d1b6d06b4df20e63c95d",
+"L": "5dfc28c9fea217f5f68e1b6d204bd7a4d91c7143",
 "frames": [
 [
 100,
@@ -106172,8 +106172,8 @@ null
 }
 },
 "reverse": {
-"R": "833f223eb25119e41c476f1bec9941763203d2c8",
-"L": "c442c1c6e885bbe127f50c297f1447abddc7fff5",
+"R": "e2fb2cc48e9e6c34bb2c85a6774e74edfc0e6455",
+"L": "a6689cdb463c2fc8f396a24ec82cfad3f112ef9a",
 "frames": [
 [
 160,
@@ -107216,8 +107216,8 @@ null
 }
 },
 "air_slash": {
-"R": "8c2efc34b5de8fde04af94e8a741f8ac1b045c9c",
-"L": "6d87354966f2977a6265fe013bd124de4a72fe3f",
+"R": "81640dd1f616b72f2e4fee56c5d55a1d72d723f5",
+"L": "86617d5ce2b9ff8abb850078f8feb328b3d564b4",
 "frames": [
 [
 70,
@@ -107397,8 +107397,8 @@ null
 }
 },
 "spike": {
-"R": "68b37b6b3fb7d178ad7a6b82bf677688b7e8fafd",
-"L": "c593ac1b205eeb4062fcf8e1b018883e4c6492a3",
+"R": "e8a8d34fbfe99fa0799b3938402dca325763dd0e",
+"L": "e0365acd3b641eb4cd07a55190a5181115ab6b7f",
 "frames": [
 [
 80,
@@ -107577,8 +107577,8 @@ null
 }
 },
 "throw": {
-"R": "af8519df2f2dbff42e63dc1227b4694c7e55a453",
-"L": "25a545d57940604b9b2f9c227e2c25f2b83f9dea",
+"R": "ccd1c1e6a73c2ff9beb39a7ef37e48e27a08744a",
+"L": "6d7a4c0d1706a0cbedf99079b94406d888cb932a",
 "frames": [
 [
 110,
@@ -107734,8 +107734,8 @@ null
 }
 },
 "dash_slash": {
-"R": "129fc8d60ebc27a16b343f69649211923699a388",
-"L": "d8661903623044c183f1fbc17aa467f05e862890",
+"R": "0a6dcbce3bbaf3b59c1d2cca2cfaeb69dece450b",
+"L": "cdf661c6c67e2746bfcb19b0117478537d8c2067",
 "frames": [
 [
 130,
@@ -107928,7 +107928,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -108402,8 +108402,8 @@ null
 }
 },
 "spiked": {
-"R": "bd981ef47ce6b29e383b1596d6dcf3a4191852b1",
-"L": "59717ba86ad68d634147f0d307ddff70f48583d3",
+"R": "82266d9a677afd9fbcca0e1f0fc728ae95a22145",
+"L": "db1aabbe57cbf13263a37a49b1d01025868e08ed",
 "frames": [
 [
 50,
@@ -108563,8 +108563,8 @@ null
 }
 },
 "thrown": {
-"R": "6d7a5fc5372f9a61659713e854ecb39003d2a6fc",
-"L": "3201c197b28e8f1c231f9b175d5b5e369825bb04",
+"R": "4e413e011e7297b446dbe822463dc6ac65dc2ad3",
+"L": "7203f49e541c3449529075a750f7b67ba332b242",
 "frames": [
 [
 120,
@@ -108642,7 +108642,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 36,
+"reach": 57,
 "grip": [
 [
 33.9,
@@ -109230,8 +109230,8 @@ null
 }
 },
 "clash": {
-"R": "deaf0c3d31ef1544914f870bb55a3bfe361a08eb",
-"L": "663415c719726b6a06b2d8ba61a480c3df0327c7",
+"R": "f9c8813b9c09daaf0ce1704df225fb73bb83f18e",
+"L": "9d43ceb9388f7243d2dd5c997c161f51d32081e9",
 "frames": [
 [
 60,
@@ -109898,8 +109898,8 @@ null
 }
 },
 "dash": {
-"R": "97e187c17c53822372c6c76690aa18d48cb952eb",
-"L": "dadcf1493db5e619bc3aa5279904ba98c59abbc0",
+"R": "5675ee32ce286ed5925fcf5abc70d78462e8a413",
+"L": "ea94c1a195236678a1cc2b284014ebbd6c9af81a",
 "frames": [
 [
 60,
@@ -109993,8 +109993,8 @@ null
 }
 },
 "backdash": {
-"R": "14e408c29a688d079fcffe275425ca0dac9cafac",
-"L": "a13b580dbd082a600ea21fb3d28e02fb718f0ed2",
+"R": "3d44dab2a522e4b539972a2d942562e8b41c0a36",
+"L": "a46661499dd7c313cb22439b93857cb81c0b790c",
 "frames": [
 [
 50,
@@ -110202,8 +110202,8 @@ null
 }
 },
 "jump": {
-"R": "5d917cb71a6393f08dacf9cfb5653d2a009ddb96",
-"L": "2c63a1ff177042ca9a4d1bb0e6895a501498b158",
+"R": "7b692a0f1d0aad0464e39e88e74948730db6bea9",
+"L": "016004591f6cac7c83e6963b4a2a6577e5046af4",
 "frames": [
 [
 80,
@@ -110638,8 +110638,8 @@ null
 }
 },
 "uppercut": {
-"R": "1dc20adc261021456ac98dfa295341bd3e744f9f",
-"L": "3551c8071db5de4a7c3fbfe72eaac34fb19645c3",
+"R": "44ae2bfe244a6f4258e0207efd71ce5cbd574e01",
+"L": "45195aaa46458c1ffb8431dccf8709a36b61d746",
 "frames": [
 [
 120,
@@ -111083,8 +111083,8 @@ null
 }
 },
 "ground_pound": {
-"R": "42d5b62bf46209481679c179103675a23cd2b8a9",
-"L": "68336246cf409ee54165563a2197d0e60cb78c89",
+"R": "11b7baff18a9fb370e62ef068490bb72c4327dc6",
+"L": "8fbff648778a7cb8e3aff3904e10db02395844af",
 "frames": [
 [
 110,
@@ -111916,8 +111916,8 @@ null
 }
 },
 "knockdown": {
-"R": "bc0a03400da69aa5ed5ab14cc8061bb821df2e11",
-"L": "3455791c279a6b7202c2fd410e408a4686912e20",
+"R": "f1168103108836bacfd85c01c3740f5dedfae1fc",
+"L": "b5359fcf737d73a418c529aec2010b4f9db0cdae",
 "frames": [
 [
 50,
@@ -112047,8 +112047,8 @@ null
 }
 },
 "getup": {
-"R": "1eead7115fd034c726fa55834dea2f10f0ba2645",
-"L": "206040f4d5781a487d09201b75b62fc62f949297",
+"R": "72bdb7d14b0d18f1814a4fbabcffa77be1c0b75b",
+"L": "cb726ffe37e011c6bac99433d432cecf37e10967",
 "frames": [
 [
 160,
@@ -112849,8 +112849,8 @@ null
 }
 },
 "highfive": {
-"R": "16a9613860998370f488549815b31d9eb190b892",
-"L": "81f7e4a80e284588079fb853f87bbf95677f3d19",
+"R": "a62fa01782ac57727755140dc7caaeceb6c351fb",
+"L": "979d7ff48404885790d40eb7881ba56b2edbdffd",
 "frames": [
 [
 100,
@@ -114693,8 +114693,8 @@ null
 }
 },
 "mirror_images": {
-"R": "58ff406a14ce0a3924c356189b8d390a2399f553",
-"L": "43c53ebd0d064a4a427f1e819b450e249c3d9a21",
+"R": "84ea775ec3bcf20980ceac1f55f52a764493ae6f",
+"L": "bdbf3d7dce9f702e29ef375acd349f21f9cae92b",
 "frames": [
 [
 160,
@@ -115223,8 +115223,8 @@ null
 }
 },
 "air_slash": {
-"R": "86aedef04da91bb3f024f9914c88f2c6478a6f62",
-"L": "2d85ee992ed1cd73cc9eb607f02601de8beb9a54",
+"R": "5eda1c2e31f7d69f7fe857ad05dd6fd3c59be143",
+"L": "7ba3fbac69fab2b070dd1528243df33f7101c25c",
 "frames": [
 [
 70,
@@ -115404,8 +115404,8 @@ null
 }
 },
 "spike": {
-"R": "d1b2d217d9d7847197f808d368376d2574df4abf",
-"L": "fed431b69ab01b95f470f8ab3c891c6c4150af8e",
+"R": "c035019c670d21fe0e186743d9e52ed993ed3d87",
+"L": "a197037a6f7ee65de1c2f9ea8e9ef7da617f66b6",
 "frames": [
 [
 80,
@@ -115584,8 +115584,8 @@ null
 }
 },
 "throw": {
-"R": "57b89106934fb9881f76518ba563ec898fc19c45",
-"L": "1c4a88eceacf6cd2f270698bcd5fa8c74c2cc2ba",
+"R": "a369e2d2de6864b2f7e5a3a993399933002243fb",
+"L": "45acf79365f030b86a0025920e7139206a85db73",
 "frames": [
 [
 110,
@@ -115741,8 +115741,8 @@ null
 }
 },
 "shadow_step": {
-"R": "a4ca94543cd32fa73d1f804d1b685b40194dba47",
-"L": "ff123f7530c81306c72c6f0a3b28ff7e8c7e8b3b",
+"R": "968f5f717fb8b7011fc6dec947a2a296cff48a32",
+"L": "0a87f032572ced806c92b30eb3d8e104ed4b2184",
 "frames": [
 [
 130,
@@ -115935,7 +115935,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -116410,8 +116410,8 @@ null
 }
 },
 "spiked": {
-"R": "cac35cf20a1900a00a252eb5f83dcd1e20fd0e93",
-"L": "7b66e14792d769864457a0f062f0be9090ef7e9c",
+"R": "9e443e134e6ff849edb418e67a8a14630cddfdf9",
+"L": "309a9c86cb7419cf992f9dedaa6aa97b45cdffe4",
 "frames": [
 [
 50,
@@ -116571,8 +116571,8 @@ null
 }
 },
 "thrown": {
-"R": "9b56ea788f2412d925ac2e1094f2e33fac71026c",
-"L": "63eed264dc041d6908a46c21bcb31d6a3402ca92",
+"R": "1ac827d2a4e0a5012cbdc989f7a7f0f109418a62",
+"L": "a566ff9d92ff4fcd110455317981932195480211",
 "frames": [
 [
 120,
@@ -116650,7 +116650,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 35,
+"reach": 56,
 "grip": [
 [
 33.0,
@@ -117238,8 +117238,8 @@ null
 }
 },
 "clash": {
-"R": "4ce8e6c5f91ad9040509a114d0c30203b7df947b",
-"L": "3da4462e5c5c66911bd7122cf251788c1cb54aee",
+"R": "717e8d5752d6b4389c8d3bb466c958498417a6f7",
+"L": "6a1768d12581df3e69114611a0a7a35cfcaba33a",
 "frames": [
 [
 60,
@@ -117908,8 +117908,8 @@ null
 }
 },
 "dash": {
-"R": "b109a5d60867b7eca1c27052028947ee2d38b371",
-"L": "230b97940a0e1747968fb258fad527c05868f966",
+"R": "6f5666e374076fca2bd50472486fd2381b86dce1",
+"L": "8a0283e1827f614f47e86e0daa58e132a9df6d40",
 "frames": [
 [
 60,
@@ -118003,8 +118003,8 @@ null
 }
 },
 "backdash": {
-"R": "cf9f081b790d7a5be03aa234fe299d237dfce0f1",
-"L": "25cc99c6612a3195eafca528fe2915a10ee01f0e",
+"R": "ffb163ac333af27dcb5f512b9f5dd4cc2dbeebeb",
+"L": "8cead80ae833c77f27fdac74bd8e61b3c8d49006",
 "frames": [
 [
 50,
@@ -118212,8 +118212,8 @@ null
 }
 },
 "jump": {
-"R": "69027a9addcf1fa151e9cbc6d6e0d689236ad38d",
-"L": "294f56d756901e59f3b5d6fb5faec410ee14679c",
+"R": "864c93c43995a9fcbb103b658517f60a22f38ae4",
+"L": "2ef997353195a088648bd435c693b3f5e0724de2",
 "frames": [
 [
 80,
@@ -118648,8 +118648,8 @@ null
 }
 },
 "uppercut": {
-"R": "096dfc6cfd187e07448914ca17664a98678ad287",
-"L": "f1bb7608bf2097084f88f3aba2ed0cab72a813ab",
+"R": "e624d30ba66884cfb923696ba1ae0ea98baea918",
+"L": "0df8a43ee4c9275eaf3de6fdfeb481ea37735a14",
 "frames": [
 [
 120,
@@ -119869,8 +119869,8 @@ null
 }
 },
 "knockdown": {
-"R": "12be8417c98692e916bb5018f3dc2e7189b3dfea",
-"L": "084ddc89cc9072e7efc545055a60c8175356c23e",
+"R": "bdd4e1d8ad74744e7ac83bdc1f8739bb12c271df",
+"L": "6dbd80a24bcba762ad4e6edd3727179230fd5227",
 "frames": [
 [
 50,
@@ -120000,8 +120000,8 @@ null
 }
 },
 "getup": {
-"R": "3b2f998ba1f1d0bfc20ead79ec975f5baffa49b7",
-"L": "c69857e8df3392a923890503cd878c87cb5e078e",
+"R": "770004cf1b97ceaf530d987fec2d2a5196cb0e70",
+"L": "55901cd270d4890a082aef241215ac468f4e55f0",
 "frames": [
 [
 160,
@@ -120802,8 +120802,8 @@ null
 }
 },
 "highfive": {
-"R": "c571fdc236e5208b3ac4eb990c57014789f4a642",
-"L": "65feaa85f11a6950eb51f0de1dd71366d616d9cc",
+"R": "68bf0c56b956046bedb79d9aacbd7276e55a7c6e",
+"L": "cd31636b3cf1830f7cc20f808d4410361f508620",
 "frames": [
 [
 100,
@@ -122038,8 +122038,8 @@ null
 }
 },
 "twin_flash": {
-"R": "e176ed271f04398a32516770666cc0d1710d50c1",
-"L": "ab6422aa217b557165b9a0db07f207694b5a2a1e",
+"R": "ee2c5dd8ea4c0fe93d732688e4ef6ef981c5d865",
+"L": "f94c8d9db9238689c49f89ca766d90f18a92d7aa",
 "frames": [
 [
 160,
@@ -123222,8 +123222,8 @@ null
 }
 },
 "air_slash": {
-"R": "f5765e6d4d0859b4aca94125ee5f681e9ee1e089",
-"L": "3102925aee1c14ac293409eaf8cd1790bb8f681b",
+"R": "c947a0f3417598f4c4f2b89f34b4ae678704734d",
+"L": "1bedc7d0fe2d2aae744b5a0d4a26710d59e1e5e8",
 "frames": [
 [
 70,
@@ -123403,8 +123403,8 @@ null
 }
 },
 "spike": {
-"R": "5422f5354bfe38e52ea2e387ab9d37c0b672c4f3",
-"L": "93dfbae8a905fef0902a00d5be8a444fcf11e395",
+"R": "5c56e544bed6eada8ccc48dec50ba5d529314c0f",
+"L": "720b622d1d7042fb1514593506407d7cab1f85b2",
 "frames": [
 [
 80,
@@ -123583,8 +123583,8 @@ null
 }
 },
 "throw": {
-"R": "d4bbf06fc2a0c5c9e8e73c71487e7b88340a3187",
-"L": "2d054ca7e4dbbdbb221cf43290f391c0da311ce7",
+"R": "b1243812638b29a7cb3587b88227666aa8c2039e",
+"L": "396038580ddefd895369e6bf55e8c1e5378da185",
 "frames": [
 [
 110,
@@ -123740,8 +123740,8 @@ null
 }
 },
 "dash_slash": {
-"R": "2bb0c9171aa64f713101c8f66a00ef0435efb47c",
-"L": "612ef8de3ba290ba92c13b6362f5d721e8feb33f",
+"R": "55957a1b51c44dd1f5a4d9f531f9fa90373b3750",
+"L": "be91fe88c525c5ad99e75e170293dccec91486b1",
 "frames": [
 [
 130,
@@ -123934,7 +123934,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -124408,8 +124408,8 @@ null
 }
 },
 "spiked": {
-"R": "c658509603ac4a5ef7fd6722c0d7bf4e8dafd367",
-"L": "7be177e69121f5fab9e86f99545b29c2794c5f12",
+"R": "130047d6cab249dfae1087c03576f159ddb26cef",
+"L": "dc2b0fb4688a72f4d18f9e3a32d0707934e8e373",
 "frames": [
 [
 50,
@@ -124569,8 +124569,8 @@ null
 }
 },
 "thrown": {
-"R": "fe163f3e13cb3250d943bc3c093220cbc2dd1071",
-"L": "a679117ec8e10cc6eccaaeae72eebe3928b1db86",
+"R": "1ef7548fe376fa61f963785cc09208290c94f9ee",
+"L": "688074a48292b2d25f9d850ca09d5cff5e6b19b6",
 "frames": [
 [
 120,
@@ -124648,7 +124648,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 36,
+"reach": 57,
 "grip": [
 [
 33.6,
@@ -125236,8 +125236,8 @@ null
 }
 },
 "clash": {
-"R": "1926ecce1e5501dc1388af2de3061d4b8bff5b85",
-"L": "0b34b120edf808a5b2ac96aa4654960ce3177b47",
+"R": "11a74897acabca3cd951d7f9405ecbbd10fdcc6e",
+"L": "5297b3a12f6a89dd6a16a4434790f449e22d44c7",
 "frames": [
 [
 60,
@@ -125916,8 +125916,8 @@ null
 }
 },
 "dash": {
-"R": "c8a955f8ef86c822d8ebf664e27796fe041fdfc9",
-"L": "3d8933a7ecf6b4a2d2f1d9619d5ecb4e2ea9be1e",
+"R": "15286efb93f7c1fc2d72324befc39b93009827a1",
+"L": "611dccc38ab420b2fe965d7daa86c6c88efb800e",
 "frames": [
 [
 60,
@@ -126011,8 +126011,8 @@ null
 }
 },
 "backdash": {
-"R": "731966b3f3a016241f44ada647a8b99ad9f5fa5c",
-"L": "e1843e844b5ced4cca7ca3980d3ae32fd7992058",
+"R": "08126068c1a1b8703f653600244095b001b5bcb4",
+"L": "e9bfbd4aeddd027144d698a19aa2938b0eed4140",
 "frames": [
 [
 50,
@@ -126220,8 +126220,8 @@ null
 }
 },
 "jump": {
-"R": "161e7b4eae648948b51b5355a8196816e8b64b73",
-"L": "8f5ea5a92166727da106e29af8a4278239bc512d",
+"R": "ec485314eee67c742a2daa78082aced7ad04a262",
+"L": "81cf031877f92a74d1dd7f642f4fa15cd835928d",
 "frames": [
 [
 80,
@@ -126626,8 +126626,8 @@ null,
 }
 },
 "uppercut": {
-"R": "7489885cd3647560a5070457c52ed84445d934f6",
-"L": "dc34dc6785fa467a17a2c480ade8a52227a666c3",
+"R": "c6fbdf7d466c67c8e89f9bf75268f33da5387284",
+"L": "c2cd600ebe9ef849567968f51741f482761443ca",
 "frames": [
 [
 120,
@@ -127071,8 +127071,8 @@ null,
 }
 },
 "ground_pound": {
-"R": "1a8637d0a7f5eafa02975eb332e382260441bf46",
-"L": "3af7b344e04daf0fa632596290f6d9d78f3dc3f3",
+"R": "55792546ae41a6dde30884b0195200de78efef55",
+"L": "f10d0f609e3ddc5a585a7d11828e7c720da9cfd8",
 "frames": [
 [
 110,
@@ -127904,8 +127904,8 @@ null,
 }
 },
 "knockdown": {
-"R": "da7d6c476135780a9e05f33c311ae1fc75021cdd",
-"L": "1299a56a54f666df778d6b25677eba4434d76e08",
+"R": "0122fc22aab2e4232c59cfdb7e52204d5fc6e711",
+"L": "c6465e35eb8f93f5758cbc2d30c375976b966374",
 "frames": [
 [
 50,
@@ -128035,8 +128035,8 @@ null,
 }
 },
 "getup": {
-"R": "92aba2a0cac6dd2e5ecbb2d4dcc6d316b661e154",
-"L": "6fd8f2cf269c1b4fb37eff877e1c4f1303f0a92b",
+"R": "f8d94d060f2adfa4f41fc73d626144639aaf1944",
+"L": "b6ca1769c3265afe23872bac8a813456811bd62b",
 "frames": [
 [
 160,
@@ -128821,8 +128821,8 @@ null
 }
 },
 "highfive": {
-"R": "e616e633f357680d14e3ef0f87b199a604513858",
-"L": "f2609b7fb128de6d0e328d83738f5d2e073d4ef6",
+"R": "6d4ba8aa732163c6c39d88b0de32acfa1b6f978a",
+"L": "68e3e72f5f1a3e7f1384b28b56691cdf16e6a933",
 "frames": [
 [
 100,
@@ -130495,8 +130495,8 @@ null
 }
 },
 "grapple_strike": {
-"R": "44a9d3be59b866c9260ec4c141c080ce2b7de5f9",
-"L": "77c157f7989be7f0b073d10a2ba415e31a47a350",
+"R": "35a72b75a29fd11a17eeec3470e0116501b0ca3b",
+"L": "99eef061c85226f739c01eaf251377a03e330f51",
 "frames": [
 [
 180,
@@ -130831,8 +130831,8 @@ null
 }
 },
 "pole_sweep": {
-"R": "949ec8a713bdd3aa0cb553e0f9862e5f0659901e",
-"L": "775f51917f6b12d20cc103c42ea930e4ada75f6b",
+"R": "8e38636ba22c58d9666d40b4a31572a417fa9cd8",
+"L": "69faeb8fe81c9e4bc143076655feaf8df69b13cc",
 "frames": [
 [
 110,
@@ -130970,8 +130970,8 @@ null
 }
 },
 "vault_kick": {
-"R": "1bc1fa8585fedbb25f17c6ffd46da1c0eafafd70",
-"L": "a951e6f82e6bde88586267f1a816eeafe19b0cc1",
+"R": "f6a6f6d755c2537ceb2a625b34327ab614e7468a",
+"L": "c08fda9a0b6b6dd4f1025dba9c7bf7e3da45080f",
 "frames": [
 [
 100,
@@ -131426,8 +131426,8 @@ null
 }
 },
 "air_slash": {
-"R": "2e8e552c76f1dc835ef37073d0058020ee1eb099",
-"L": "69ae28df14bd64d435963b5678c7d343694b30b4",
+"R": "7a1afd1aff6b9d92a9de85bafddb4479cfadc827",
+"L": "5e23424ec6b82d251f2901191e997033bb192a8a",
 "frames": [
 [
 70,
@@ -131607,8 +131607,8 @@ null
 }
 },
 "spike": {
-"R": "714ce9d9dd3ab08870de75359075775bcf189d17",
-"L": "fd87292cde428c602996544d0eaaf8ee57899871",
+"R": "eb502f8559986a155d70d38cd64e4388019b5a44",
+"L": "4e957de33eafcbdd85979c303e73df57712ce57d",
 "frames": [
 [
 80,
@@ -131787,8 +131787,8 @@ null
 }
 },
 "throw": {
-"R": "add756938ea708b274857269a1cf8d67bff54e50",
-"L": "f8da96dcd4b1b3a38ea1cdcc03843ca0a41f1c1d",
+"R": "b846eb66a2e8b880d338c1c1e3aa761091fae4ef",
+"L": "00ef4aad28ebf5fadf61b0b842dbbf4fe187638e",
 "frames": [
 [
 110,
@@ -131944,8 +131944,8 @@ null
 }
 },
 "dash_slash": {
-"R": "786431cc289d5b9169f2f150c3fe612f8944936f",
-"L": "a92fd28730bfd1c0170c10158ea9779c22b1c8be",
+"R": "00d69c9bc49d88ddea975c43d2054ad03f302db5",
+"L": "49887fe4ba20a38825d1e953bcfaded1ad8aaf98",
 "frames": [
 [
 130,
@@ -132138,7 +132138,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -132612,8 +132612,8 @@ null
 }
 },
 "spiked": {
-"R": "819dc5b0e39ffa66e35567c0d694a3c318080d25",
-"L": "cdde7fc2b6f0854a64e46954aab56e3b2fb4712a",
+"R": "427389dcf40b97516f57e3245bd17417029537e8",
+"L": "458b549279afe916925595996e093be352e54ea0",
 "frames": [
 [
 50,
@@ -132773,8 +132773,8 @@ null
 }
 },
 "thrown": {
-"R": "2d02c3a7d6506bf5a2fcbd84ca35f613cfb93929",
-"L": "cd8b62465e69633cf26736ff8371361f128fae7c",
+"R": "05e95625f97deed7ef88e1c4db383e3f261e7d7a",
+"L": "b309802422a1a28af193768c0c25daacf693b679",
 "frames": [
 [
 120,
@@ -132852,7 +132852,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 36,
+"reach": 57,
 "grip": [
 [
 33.9,
@@ -133440,8 +133440,8 @@ null
 }
 },
 "clash": {
-"R": "b2f99efc0820be91c36b38c47bee798855db6c57",
-"L": "1b47fe7d5d1420ea705ac26872df6ffa5cfcb1ea",
+"R": "f234bad9f92151fe990c3263487f2ef0196f98a8",
+"L": "e1700d1481e1a8c71c8ea868d8c292f41a4819c0",
 "frames": [
 [
 60,
@@ -133616,8 +133616,8 @@ null
 ],
 "moves": {
 "idle": {
-"R": "4a1d87d1edda01af5e5e2ac2656860f712f29b65",
-"L": "7889cbb3432cea6e4398a7818fc6d8d4be7446ae",
+"R": "c06469393dd0313e3da09c2aaec198255a316868",
+"L": "f8b51eee4a8d18737e16ff32105f44fb8acd7d1a",
 "frames": [
 [
 170,
@@ -134115,8 +134115,8 @@ null
 }
 },
 "dash": {
-"R": "eaa92265e740099348a9c0325538e47b4d52d3df",
-"L": "efc79eacf0ef72c5300c5902969802f42dbe2b84",
+"R": "c6db6487c358cb33cf2658da9387b1d015942790",
+"L": "ce104a3329d467689ddb93d5f53886fad711805f",
 "frames": [
 [
 60,
@@ -134210,8 +134210,8 @@ null
 }
 },
 "backdash": {
-"R": "0ab46cec4f90b2dcb128a8776d68855a172e30d4",
-"L": "20f74b9fd2d8ec01486a2c5dfaf842bfcc1127f6",
+"R": "5a4eaac1ab1ee060c6e96a112f3ca4bcb1e10af4",
+"L": "4d0edd67af5d81dd9d088a651f35094ce023620f",
 "frames": [
 [
 50,
@@ -134419,8 +134419,8 @@ null
 }
 },
 "jump": {
-"R": "c82ce8cbf3a320eb24c13ff0e8a07b1405445fe5",
-"L": "95ace42922a6efc6f2ca2abf0c85589a16fb3e2f",
+"R": "0d930ad2d595eb7b532c661507779b0e793f1df5",
+"L": "d8d38e210ca84b74918bba7bf3f1b084cc2e7dd3",
 "frames": [
 [
 80,
@@ -134825,8 +134825,8 @@ null,
 }
 },
 "uppercut": {
-"R": "440a08af5cdb229fea3a1143ffd249d710be2b61",
-"L": "b6b6f826db5949111cd0b31b37ef401e680bf20f",
+"R": "9be97d5ffa21883a22ac0b6b7c735213773e93fe",
+"L": "274001d3f983718276dfd686a5e6da003f925ef7",
 "frames": [
 [
 120,
@@ -135270,8 +135270,8 @@ null,
 }
 },
 "ground_pound": {
-"R": "f5bc1c93aae656624262c608c77f4beade5c6613",
-"L": "4af98345fb3cddaf04bfce3569b2e6b6b16bd609",
+"R": "c1c17cbdfdd07135dad336e36f5ea665f03d414a",
+"L": "c3b56ce3697cc1bb9404123cae84aed7d346dbc2",
 "frames": [
 [
 110,
@@ -136103,8 +136103,8 @@ null,
 }
 },
 "knockdown": {
-"R": "b8a4bd587d8fd60b63d2e729be4feb69099a3ea5",
-"L": "25567b3ca63a6024c4e1ffd2e0b3baf79ce8490b",
+"R": "43e38739a7b916d6eacff49976343f27557630d8",
+"L": "39905a5c4c2c31fa87527ebc3f958ed11be45f0a",
 "frames": [
 [
 50,
@@ -136234,8 +136234,8 @@ null,
 }
 },
 "getup": {
-"R": "cf95ae4a3466bdeed27462600c4831341ae6433c",
-"L": "3782690419120687a2ca5087d8bd933e0f0933e4",
+"R": "f3ec24e266adcb6ffb3939ac7c50dcb3b87bdd3d",
+"L": "bd84bb261a6151c4e8dce85c9183c8364dfbddf0",
 "frames": [
 [
 160,
@@ -136555,8 +136555,8 @@ null,
 }
 },
 "victory": {
-"R": "8941ef9f4b119a6bc719377734b99a63c13bd36a",
-"L": "43229fd5e952f143bdb8deb4a4b8ec8fd291a83a",
+"R": "7ec7f102250e2113e5df1d949f155b96287285c3",
+"L": "72dc1140831a22c5b4f0e594ea92794f545ab4c4",
 "frames": [
 [
 110,
@@ -137022,8 +137022,8 @@ null
 }
 },
 "highfive": {
-"R": "60920522bd55d1bb2e97f4058ecd645bbdde60ca",
-"L": "b9baecd4ed1cc37cea24ec9ed52a3b3949970627",
+"R": "4d108ef3f23caed8022cf862d80124ff8dd8d353",
+"L": "a774e0f459e036a83bc74c1212e3ed756d3bd170",
 "frames": [
 [
 100,
@@ -138664,8 +138664,8 @@ null
 }
 },
 "gale_rend": {
-"R": "b3a9d67c19f166f4939bf6df18e60917fea3b4ca",
-"L": "7a7cb8127da8a2253b6929a8eeaeb4a747a8534b",
+"R": "7fbbb09f39298c0b85700809b05f5e590d18af4f",
+"L": "50657ab9e4f279fb3e134836df52c654ba96b37e",
 "frames": [
 [
 200,
@@ -138835,8 +138835,8 @@ null
 }
 },
 "overhead_slam": {
-"R": "51f92ef33e8244d876a297b01f1a4a1c7ceaec24",
-"L": "b8b153588da741e1a348e822f60658de12b29d48",
+"R": "cda8858b31257e2e54c38156355208baabe62842",
+"L": "d6c17ff4f9c6849c3350a0cca06c7ce8410123e8",
 "frames": [
 [
 120,
@@ -138995,8 +138995,8 @@ null
 }
 },
 "staff_sweep": {
-"R": "08bda8e1e167f5f8255440a038ff24df4f186b46",
-"L": "eee5230dd37a2608276c69034b4c0f3d4bb5b0c8",
+"R": "ca033b1e3210789f07534efadf998851cafb64fb",
+"L": "e34ee2d917c081c8fe7f7a00596bf577e8b3fc64",
 "frames": [
 [
 110,
@@ -139135,8 +139135,8 @@ null
 }
 },
 "pole_vault": {
-"R": "028af6cfebe80078f48f18bb13edd742ad5f9cfe",
-"L": "3585ad70695ed2f04c9c989735b74c6044108086",
+"R": "4e25c28da4556d9f3dc6c8d4dad9410a64b23809",
+"L": "210618c021887534c9effd977044b254beae30ca",
 "frames": [
 [
 100,
@@ -139435,8 +139435,8 @@ null
 }
 },
 "air_slash": {
-"R": "64b52235c365ae4a42682bfbd7184b60f35312e8",
-"L": "535e867203e19a0d7dd0ebb250111ea617f2415c",
+"R": "f3df7e4bb5fade3eacd7d7e4b5caf8d3f3aeeb66",
+"L": "94cf12033a41d381b893c789493150d555cd4dc0",
 "frames": [
 [
 70,
@@ -139616,8 +139616,8 @@ null
 }
 },
 "spike": {
-"R": "4bfd860da7a73a9a04ed5fe02b0e1e451e7704df",
-"L": "8ee2384ee825fd3419c6840bd78b6919601b3ee2",
+"R": "dc7d04334f78f4f4cf71d10e5e69dbbb2855d1e8",
+"L": "e3d972f94d4701ebfd2323166594010ed4f182ae",
 "frames": [
 [
 80,
@@ -139796,8 +139796,8 @@ null
 }
 },
 "throw": {
-"R": "09d49b03bf4cf434da8f6912d965452785e1608f",
-"L": "c96063c52b518626c765bf87032afedd570ee26b",
+"R": "258d0304f7674d6a6fba5cff0a93ce7a597a20bf",
+"L": "0ea03ad6c196822cb12420da3e5714f9c3bb9079",
 "frames": [
 [
 110,
@@ -139953,8 +139953,8 @@ null
 }
 },
 "dash_slash": {
-"R": "f6ce15a0cd1c137da12ca9ddef9574d76c535845",
-"L": "0e4784f0adef6f0d9d4498307292f8f14cc51f02",
+"R": "4bd49392dbb80dca7031379f5765d12da54b0a35",
+"L": "163076ab2b51f9b70d7190ef5e119cf4c3d02ee6",
 "frames": [
 [
 130,
@@ -140147,7 +140147,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -140621,8 +140621,8 @@ null
 }
 },
 "spiked": {
-"R": "f42834c81b22ceb1ce523ef775fb61d28015fc6d",
-"L": "ceee3eff4c520cccca949e510a672ab335b2b487",
+"R": "3794ab9a85ed1f300c3325273281fb9cf52ffb11",
+"L": "fe91c75ef3d0434f96987b22062b28c7bc950b3b",
 "frames": [
 [
 50,
@@ -140782,8 +140782,8 @@ null
 }
 },
 "thrown": {
-"R": "91c419eba5693ded3dba30f10b8817f9cdd11ede",
-"L": "50d4bcec8530a06a5bb907498c22f299f597f987",
+"R": "a652d489b02387260e53cb6b049dea3fda174e3f",
+"L": "4031c34c2102cf77f713b20b6b4fb12e9cb621d9",
 "frames": [
 [
 120,
@@ -140861,7 +140861,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 35,
+"reach": 60,
 "grip": [
 [
 37.4,
@@ -141449,8 +141449,8 @@ null
 }
 },
 "clash": {
-"R": "2f81fd5204081597c435c3db5dc86077e540eba5",
-"L": "744217090b7960efe55565e870be8b9be857a508",
+"R": "124b64f80d9d58faec12914f325afa5d4db08873",
+"L": "3a8696145222070f32ce54b80a3e9493d33a8f2a",
 "frames": [
 [
 60,
@@ -142123,8 +142123,8 @@ null
 }
 },
 "dash": {
-"R": "75c9f54ac266b238f6b4649e6d20b8f20c7cc63d",
-"L": "b9b667ef1d12afc372ef3650a5797f212749f3de",
+"R": "b8eb8b0b531996d20274fc03413d8a728ea58870",
+"L": "2f57ae0e8b22e2b4b7d74db9c17d286282cc09d8",
 "frames": [
 [
 60,
@@ -142218,8 +142218,8 @@ null
 }
 },
 "backdash": {
-"R": "e49bf657d234ff810e01073a2bca59783c09581c",
-"L": "5432c0521889058bfb56e2e985d82b083d570675",
+"R": "bd667253b78fedcb22671b0219b1e7cf3ebef3d6",
+"L": "ac0ee73cf723250b52c4ed1796d5d0f721c478b0",
 "frames": [
 [
 50,
@@ -142443,8 +142443,8 @@ null
 }
 },
 "jump": {
-"R": "8813fbb81844c296a64d6d044368235139a6fe8a",
-"L": "026e743628f9461fc80cf6964c909948d8e3dec0",
+"R": "5ab50bac444b44c4cb2e47d538552e99e969b878",
+"L": "1452817034906dd024d8333b125cfcac1eb7051c",
 "frames": [
 [
 80,
@@ -142849,8 +142849,8 @@ null,
 }
 },
 "uppercut": {
-"R": "df8722d067d61e4d37e21b84d0a8489f16f876a3",
-"L": "ecc7a439f36c3b04b75193b5799a11b96278b667",
+"R": "1a1fa0f321f22e5241b993a98f43b425dd5446e1",
+"L": "f71cb70502d5d85a9a4998dab77e7babffcaaeec",
 "frames": [
 [
 120,
@@ -144102,8 +144102,8 @@ null,
 }
 },
 "knockdown": {
-"R": "3cbdd0863b234c46b1456559f4d83628b7453186",
-"L": "0f81a062aa71f6f899de17b64ffef028ff91e932",
+"R": "b592783eb5ee68700fdcd676b511996166431ac6",
+"L": "bd4e0330afdc51229584a285116ca9054dd83851",
 "frames": [
 [
 50,
@@ -144233,8 +144233,8 @@ null,
 }
 },
 "getup": {
-"R": "922fcefecba46bd9e8ba35b5790dfea0f4896756",
-"L": "93b813842b7a9e03610cd22ce0b816df72d3a216",
+"R": "2ce55a6eba135d950e189ad5ae27a521bb54a88d",
+"L": "e18fbd1f48cfa53674043f2bf803c6a56213b161",
 "frames": [
 [
 160,
@@ -144554,8 +144554,8 @@ null,
 }
 },
 "victory": {
-"R": "e696209e149994df15b32b488409fb05b210668c",
-"L": "ce7f5cce3f5284783c2c5b0ac5e535731c4ab8f1",
+"R": "72e4f7830c334cebafdfb2dbc771c9c11ea19c8e",
+"L": "b3543e862d85b9b253abd16fe34a217c99e4d39d",
 "frames": [
 [
 120,
@@ -145053,8 +145053,8 @@ null
 }
 },
 "highfive": {
-"R": "e12b21d691626a54d9de07ba7013f5f0bafafd94",
-"L": "b26df82427560a1cb5973e3f60a478074eff25c7",
+"R": "8b72ce348f792d68acd8d85475fd845e5c8f94db",
+"L": "7a8174ac8e179acfca87db0e42ce91c8a2d22ac8",
 "frames": [
 [
 100,
@@ -146275,8 +146275,8 @@ null
 }
 },
 "hot_swap": {
-"R": "9cd9b6eb5547f7880198270da36ac89a53904391",
-"L": "5c5adee002ea99117442a4e4b66ca289d2e4fe70",
+"R": "8490f1f10a59e45e3bf9dffdee8c06abebff47e5",
+"L": "64fdcb5c0912ca7ba64b2f64f9f29fdffefa595f",
 "frames": [
 [
 160,
@@ -147353,8 +147353,8 @@ null
 }
 },
 "air_slash": {
-"R": "51d382ae551ec824a90f720b3458e5a3e75cbae5",
-"L": "a71ea692d7dd50698ea8d2895b0a77d61817e262",
+"R": "e61da96e9f1b7d7d53deaf3a6cfe531e8ab2622f",
+"L": "627e2568fa402eb3a2a49301063739ca956c7d89",
 "frames": [
 [
 70,
@@ -147534,8 +147534,8 @@ null
 }
 },
 "spike": {
-"R": "009ac1a0fe2b8fc60a365aa3d39a8cc8f198c1ce",
-"L": "304f9668cf98311730294c6bd9c2424fe957622e",
+"R": "6ab8dca68dabfb68ee797943e51c65f686043ee7",
+"L": "45a701f7c7ae5461dd2c26ef760f57a50d97d89d",
 "frames": [
 [
 80,
@@ -147714,8 +147714,8 @@ null
 }
 },
 "throw": {
-"R": "57cbdadec6fdc660c33593755af78125a18f0298",
-"L": "07ba0e981fff38b69c1ae0763000c5cdfe01eda4",
+"R": "abe66e4a26298d28445566f8540b56e2baf194c8",
+"L": "2b248a7f8e3db44ab3f0a3c6326fa5cba7a11828",
 "frames": [
 [
 110,
@@ -147871,8 +147871,8 @@ null
 }
 },
 "dash_slash": {
-"R": "0e24c6cec5fad139ee9add541d101a2b9184eb22",
-"L": "20d83d9cc461ce563ee44e0e62aa7fa1134b75e7",
+"R": "9815563fa2ecbee5f1ecd8e20e827dd45b64c8e8",
+"L": "1ab25b0d9c218e8a71d934fa5472601e11e5ed64",
 "frames": [
 [
 130,
@@ -148065,7 +148065,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -148539,8 +148539,8 @@ null
 }
 },
 "spiked": {
-"R": "aba8928f5fd7ccc4f8e5db233b9b3288de224e96",
-"L": "a2d1a75710a489d7fea9c91f761fc384ab6e2af4",
+"R": "49881d747c8c2627dc4a0b97b25a2040423dedad",
+"L": "cbf0a8128e062968cc4b87807932f6bc32082fd2",
 "frames": [
 [
 50,
@@ -148700,8 +148700,8 @@ null
 }
 },
 "thrown": {
-"R": "828ea27ecdfee5e99ee23b5bbba896d78c421aec",
-"L": "ec6d6281a459d6a12a7a01c622f885ac49b2c636",
+"R": "288e67a8e1e735a0576f971bbc1a925c7be9fd23",
+"L": "73e78494fd79492ca79ae9ae733aa4a5776cd465",
 "frames": [
 [
 120,
@@ -148779,7 +148779,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 36,
+"reach": 57,
 "grip": [
 [
 33.9,
@@ -149367,8 +149367,8 @@ null
 }
 },
 "clash": {
-"R": "3894ba7905681b3d9d222faacde69b6ea4cc15a6",
-"L": "269e361e141cfb5088f99cb36e34912fde02845f",
+"R": "0d52329386820d234cb780d169209c11e2be9043",
+"L": "5b8a9400ed8cd3e45f2c2fb2079d9aabe8725a35",
 "frames": [
 [
 60,
@@ -150043,8 +150043,8 @@ null
 }
 },
 "dash": {
-"R": "7c5cc02ea4947d2f9b3e2e2bf14788644fdde781",
-"L": "8dced7d7e24c0cfba388d9ffbc8c73d348883f80",
+"R": "61015881bad6e8f3f63cbea147feb2294a48eb92",
+"L": "07d1c79b1b77126f3d20170e537eba767a8c4e5a",
 "frames": [
 [
 60,
@@ -150138,8 +150138,8 @@ null
 }
 },
 "backdash": {
-"R": "12aa25bcd6e4ad4e55a6fead2c7c19f4607e22ee",
-"L": "d2e86be877976e570477687bd0580e34d891e08f",
+"R": "803c43ea3ed5abefeec22b40c79b529a4940f22c",
+"L": "7663a1f168a31a56ffad3ed921ad55e758a4280f",
 "frames": [
 [
 50,
@@ -150347,8 +150347,8 @@ null
 }
 },
 "jump": {
-"R": "0fcfeae3a7d8663de8f1ec632a59feeb966a01d5",
-"L": "9fb6381eb39005fc3ef91c7288a1ea425d4b5bbf",
+"R": "bd5660b1809998684d9b650cea42467dd3bcfe72",
+"L": "bdc154ea3ab5e215b7cbb5976f4027ed3fd4cfa4",
 "frames": [
 [
 80,
@@ -150783,8 +150783,8 @@ null
 }
 },
 "uppercut": {
-"R": "40ce0e24dc268827f7600ac57ed2cbcc4d730553",
-"L": "7a2d95d71b07e814b6ca3f90f64f35626531e9c6",
+"R": "b656ad252fbca0e2a56c3001b72b3d581d2831fd",
+"L": "4fbfd860d461afa43d40b57dd4226794571779e8",
 "frames": [
 [
 120,
@@ -152036,8 +152036,8 @@ null
 }
 },
 "knockdown": {
-"R": "d8cb2ae2bb01bd5ee7932b567db77b6e407fbb03",
-"L": "6d571286586f30f1bb51c83a5a3d8a2565119f5d",
+"R": "b83ba7636c0428ca1111acad7742571d5a50ec62",
+"L": "178dd002d2102b5bd84cd6d0f32b82e2a5c5c21b",
 "frames": [
 [
 50,
@@ -152167,8 +152167,8 @@ null
 }
 },
 "getup": {
-"R": "a8f8c438462de5d62eac22724288eb5342d0b8d6",
-"L": "33b13ff880dc56858e43d1637b9e8cf29d92a93e",
+"R": "ef3532de5a669026de4ffd7d27dec3a5fab2be11",
+"L": "939a99ba6bd5eaf0f826279f191e6b574a26a222",
 "frames": [
 [
 160,
@@ -152972,8 +152972,8 @@ null
 }
 },
 "highfive": {
-"R": "46283372b7d847a0120acf5aaf117ee4f580dd16",
-"L": "d2d56427f168bb7639fcc9e0dd48d8bb73177e59",
+"R": "50e7a22c4d9f470a4616f205c9bc18fec0a3be85",
+"L": "8461e3d65467b4e53e22a516e3c64cf12c32a3f2",
 "frames": [
 [
 100,
@@ -155129,8 +155129,8 @@ null
 }
 },
 "leap_shot": {
-"R": "fdea55eaced3d2dd4cc239caab282973d825a248",
-"L": "f088f3d73426f34ade83582117639817b6dc3015",
+"R": "3b5abd52ad51067790fd5c7f193827e889ef0892",
+"L": "1a14aae5861d5b3830e0bd655cf2ebb5f43abd8d",
 "frames": [
 [
 90,
@@ -155429,8 +155429,8 @@ null
 }
 },
 "air_slash": {
-"R": "c98f632dfdda3bead3b9b631436ffb15492d164f",
-"L": "4a8a6a53d59d6951267888164a158bd150205908",
+"R": "5f191c815d5b7ce6cbc0a6b87b109d470a1e973a",
+"L": "4ea09de24dcea6ef6dd432b278465d4206875e2f",
 "frames": [
 [
 70,
@@ -155610,8 +155610,8 @@ null
 }
 },
 "spike": {
-"R": "83fcbb3b4331221a41eaea19606fbcde52c0710f",
-"L": "b06207e01464094de013ffb1b5483b785d0e7d76",
+"R": "ccddb8c83fa5a78498c308ffa44a967b9ad5a794",
+"L": "d68e5644a572c7699c4c573cfc170e38b4fe9386",
 "frames": [
 [
 80,
@@ -155790,8 +155790,8 @@ null
 }
 },
 "throw": {
-"R": "8a2dff6ebd6687c4d2a51155df601f520500a12f",
-"L": "3e9d0484ef0990d5b347fe2e3a40f8d2c78c07e4",
+"R": "ddf9640d065e5fdce19a14009490b73ccfa5faf2",
+"L": "c72c28268e59a8c09bff6d4265396c0d8b610bce",
 "frames": [
 [
 110,
@@ -155947,8 +155947,8 @@ null
 }
 },
 "dash_slash": {
-"R": "601411fb595809ed6ff36b450decb6d46a3f0760",
-"L": "9c3040f4ffce4056197d3ee60d7935d156a6bd5e",
+"R": "f2688f53bb522989f1646b41b387d36f407f1fdb",
+"L": "6e98c20555657a34e81085999d5d3192a963d667",
 "frames": [
 [
 130,
@@ -156141,7 +156141,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -156615,8 +156615,8 @@ null
 }
 },
 "spiked": {
-"R": "0fdf718b853060a04fd6146f6abd396a3a635bc4",
-"L": "bba292e90396ba13f29a5d3b9e9bd0436bc0dde6",
+"R": "bafa8087e81468c60b7b38529f290f94babda344",
+"L": "4c3816bc48a389aac7f74079f199a0b83087211b",
 "frames": [
 [
 50,
@@ -156776,8 +156776,8 @@ null
 }
 },
 "thrown": {
-"R": "5592c90cf4d138aac5fd8cf75b652eb656d9e3f3",
-"L": "bb86dba36b7a4ce4723b68e9818ae87c52934526",
+"R": "0fe6f3d46278c4edd5923358f32fbea9bcd5cbc9",
+"L": "7274ff8e3c88645260080a4669ba1e7ca8b4cd94",
 "frames": [
 [
 120,
@@ -156855,7 +156855,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 36,
+"reach": 57,
 "grip": [
 [
 33.9,
@@ -157443,8 +157443,8 @@ null
 }
 },
 "clash": {
-"R": "6db8a430f553b7320504d737ae358df6d2ee3ebf",
-"L": "eaba48bebc4c137e77221d7e7548976d43200c5a",
+"R": "d854053a2e3cd0d7f1cf39dbd63ddc896fcf60c3",
+"L": "5a2b96a3a56f1f71bcc8d31581d0135518916b52",
 "frames": [
 [
 60,
@@ -158113,8 +158113,8 @@ null
 }
 },
 "dash": {
-"R": "2101dc7769423e63d12aae0451a7759b0d3607e3",
-"L": "e397d3c94583092ad373a198e3926b4e7bdc9192",
+"R": "01f0553aa7e82a494fd0c9d0a10e0918deb44739",
+"L": "5e9406806fa8b517f817313b37c4419c24999755",
 "frames": [
 [
 60,
@@ -158208,8 +158208,8 @@ null
 }
 },
 "backdash": {
-"R": "5041d62a964542749d6d52fbf80abba2d774bba8",
-"L": "4d31259c32398f3aa1dfe1728e07aaf0f6693d7a",
+"R": "9c737bb258ac1d375eb1e6a3f670df3a0201ba48",
+"L": "a90ee4c5acfbb061f4a31109d7224b69222ac978",
 "frames": [
 [
 50,
@@ -158417,8 +158417,8 @@ null
 }
 },
 "jump": {
-"R": "64abdeea07b05a19a86d4c1099d7039485ae9bf2",
-"L": "0d4d478366a87a1ca77478c66123c76262609e6a",
+"R": "21b5e4b2f6793b35bfa61a82d40b75e91b2940b6",
+"L": "d903b311b3185f869a3b7d407a2cbb1ff61da61b",
 "frames": [
 [
 80,
@@ -158853,8 +158853,8 @@ null
 }
 },
 "uppercut": {
-"R": "27f1341da08d2f42154a1d32e7aa9a8023c774bf",
-"L": "637e6f7ace979d86cfa1259b84cfd4025e74b7fa",
+"R": "49699aaa6b1aa43b8b9007e813b2c8fc9db9741b",
+"L": "01a5f67161aff4621e0ccdbe97735d1146e78b01",
 "frames": [
 [
 120,
@@ -160074,8 +160074,8 @@ null
 }
 },
 "knockdown": {
-"R": "4aaefa7101a8ad080704dbdaca170fe4445a9666",
-"L": "06f42f1e8ea8a24d638415f0cc4835465f0e29dd",
+"R": "14743789e41eede4a023c50c79b2b42e28559a1f",
+"L": "1bcc147e97d073b5d27caaf9676b8c806840e527",
 "frames": [
 [
 50,
@@ -160205,8 +160205,8 @@ null
 }
 },
 "getup": {
-"R": "0e57796f5965240846e26429cca41c7f4f35488e",
-"L": "30d1e778d302d8e41e380487b1c6522d339369b7",
+"R": "87e1f5cbb75fddfe5afc0c99174569094393661c",
+"L": "d9620c8e872499921d83ba9c4e0cc5d72918871d",
 "frames": [
 [
 160,
@@ -161007,8 +161007,8 @@ null
 }
 },
 "highfive": {
-"R": "4006765862e8943c2a1d0bf9bd0f2ecdd176b7dd",
-"L": "7b2be69af8a74549bfebf58af941c37e11c53010",
+"R": "b490c49c3915c30301b317be7e2bf52ab870f1d6",
+"L": "9b3017be7f94808beee6da8bc82091b09d4cdd9e",
 "frames": [
 [
 100,
@@ -162211,8 +162211,8 @@ null
 }
 },
 "vanish": {
-"R": "5169a2aa26b12de2d819fe0d83e20834f9f8b097",
-"L": "25d5eb104fcc28de9c6d57ab58ddea6fa60d396b",
+"R": "35d6e9fd7e35973722e72df1f5578c6ca0928811",
+"L": "770e72a223b6fd79b61cf8736716f50a1d3bf671",
 "frames": [
 [
 160,
@@ -163381,8 +163381,8 @@ null
 }
 },
 "air_slash": {
-"R": "8ca1d9b775cf8a5b3d031ebc2f0a7088f48d03a7",
-"L": "a03429ee7035b2ee37231e4c6f6405329a512dbf",
+"R": "db8f9ab54d6ae4d2d7730cf6c431517aeda78dd8",
+"L": "3438c5665806462ff4552fbfe934bdbf4fd9e897",
 "frames": [
 [
 70,
@@ -163562,8 +163562,8 @@ null
 }
 },
 "spike": {
-"R": "1f8c16091575d848cec3df39a0cb7b3e550f5514",
-"L": "2f4836da2118b1775bdfd2b69ff36b8b3595e0af",
+"R": "33e997d72f4d913faea287b8623b941a7932e4f7",
+"L": "f4cd77dca84bdd43e1cd2b4520607c87ed807480",
 "frames": [
 [
 80,
@@ -163742,8 +163742,8 @@ null
 }
 },
 "throw": {
-"R": "777198e3399cfe735d8128cc7d3088068b09fd67",
-"L": "3f3834ad3bbad486b9e18e9c8909e8d30ad0bf5b",
+"R": "c9854944a7c6bad39386101c29872af683fc965b",
+"L": "f9942dca1f1b81ae649f153f325c6f6f6168b3ff",
 "frames": [
 [
 110,
@@ -163899,8 +163899,8 @@ null
 }
 },
 "dash_slash": {
-"R": "b46b4667e55a65694a56d6e76cac4d4344797c61",
-"L": "d84c603a06ecb7b798b32576a8b58ce7a8f1ff10",
+"R": "8a662fa00a5835dd7298db1d4c060f1ee327fe10",
+"L": "8adb1ca2415e57985837f796d3adbe3fa18afc09",
 "frames": [
 [
 130,
@@ -164093,7 +164093,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -164567,8 +164567,8 @@ null
 }
 },
 "spiked": {
-"R": "6057b66737f2fa1f82507cdac362861935405011",
-"L": "68216198602c63a6847953b6e632fd10da007d0f",
+"R": "3d2ab6134d3de033b71e31ef6f47af72934a4b7c",
+"L": "fe02de60ece007b38528e9d4ad43f4be393ee4b3",
 "frames": [
 [
 50,
@@ -164728,8 +164728,8 @@ null
 }
 },
 "thrown": {
-"R": "222b9e817cbeee7b1e44ea085b479856a0feabbd",
-"L": "567fd51649b72c80b678b68c29169969307632e9",
+"R": "a3deca63d7c3478f0913dce2590c42c87081af35",
+"L": "71725c333b048046871b0d5d7dce7ad33d0dae94",
 "frames": [
 [
 120,
@@ -164807,7 +164807,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 35,
+"reach": 56,
 "grip": [
 [
 32.8,
@@ -165395,8 +165395,8 @@ null
 }
 },
 "clash": {
-"R": "ae2aa7eb1e2105901cbe26304e9ad741aeb6790d",
-"L": "802fcf6f81a06ec4b05522ac22bc2a09ba970bd0",
+"R": "570115003bc7bccc3df1b5e8292d75067ddce8e1",
+"L": "7e45dc8a7b53af40bc646f854fe49fcc1647eced",
 "frames": [
 [
 60,
@@ -166065,8 +166065,8 @@ null
 }
 },
 "dash": {
-"R": "5a58bc583adc2ae8961df5d041053e5ed9f55bcd",
-"L": "dec7785c51d6a4c8d94829fde627cf3e830d7e29",
+"R": "9453c7ba0b0cfa908b53291f77b0538058f2f0c5",
+"L": "504a414047baf0f92d1a0fee47130a8dc70cd8f1",
 "frames": [
 [
 60,
@@ -166160,8 +166160,8 @@ null
 }
 },
 "backdash": {
-"R": "125ed61f3d99465d56ba12c51e18cabfd88bb256",
-"L": "e648a451a0c8cbac655506a28ca2c2a068a11c50",
+"R": "d3911aaf86cafbb2015ba9a346a4aea4539768ac",
+"L": "b07106deba242ad7bfd475d66cd4a69560bed81a",
 "frames": [
 [
 50,
@@ -166369,8 +166369,8 @@ null
 }
 },
 "jump": {
-"R": "100a0cc5df8b6cec83f9977405e77a2a2b4594bc",
-"L": "ed80d0694633e48886ba7ccb80c9be062cb49979",
+"R": "848c75144c725d2633be559d1bc52302322e9796",
+"L": "fb2338fe96677a039b1b26ed88a655c9b4fec137",
 "frames": [
 [
 80,
@@ -166775,8 +166775,8 @@ null,
 }
 },
 "uppercut": {
-"R": "0e1588990f7c7fd78869c83fbf39925c56b8f8b1",
-"L": "68cd2b737f66d5dbebb571002c7b163f9cbe4f81",
+"R": "0e96f5ca4824067d94a8a664265db65c2e6b0bb4",
+"L": "887e0f03b4fa4fcc13afbdb2644f86cd2320d417",
 "frames": [
 [
 120,
@@ -167220,8 +167220,8 @@ null,
 }
 },
 "crusher": {
-"R": "4869ac787e596f98850fdcd1f37bae57f648605b",
-"L": "40ea3c02f387d2944dc1d4c23d2ea6f458d8af6f",
+"R": "ea485a5c45ec11147a5cf800fe9b46843c891c8f",
+"L": "6cc39dbe3e12bc9a067613b64e03d96bd7c052e3",
 "frames": [
 [
 110,
@@ -168037,8 +168037,8 @@ null,
 }
 },
 "knockdown": {
-"R": "a19799970cd93756885d7fbb4021d24d53c149a4",
-"L": "de04e8bdfbd4c417c9e264dea2046afcb635ffa2",
+"R": "ac79467ba692b38632d94ae9c710e2be562c8dd0",
+"L": "20e5a4d697400422f215a96a9fff372f0d8ffac3",
 "frames": [
 [
 50,
@@ -168168,8 +168168,8 @@ null,
 }
 },
 "getup": {
-"R": "e6a076cd0413f69f8d876a28a5feff760bf98af6",
-"L": "2348dc0fa73154410d83df0593115aa47d75a3f1",
+"R": "59eaf0ff12576f1e786205700c589361e5891072",
+"L": "2bb66a172bb3da0c6a627009ca87f7c71fc724ee",
 "frames": [
 [
 160,
@@ -168954,8 +168954,8 @@ null
 }
 },
 "highfive": {
-"R": "c3c11f354bada708fe343e501f34a3fdd61feb5b",
-"L": "a3d1d3fc452a38c6ea7e6b9308ec601e39b9f699",
+"R": "e24f681f86e01f2ded88a4e5f45b4bd98e932429",
+"L": "b82c3eca1d8f6097d0564120a0db1d733e3a5ce0",
 "frames": [
 [
 100,
@@ -170783,8 +170783,8 @@ null
 }
 },
 "cleave": {
-"R": "44d96a6d98f0664301040686e948d4e44152f160",
-"L": "c44a411a24ec0ab497a0e52959c92f04b565fa8c",
+"R": "84e8e78602515518907e059ba44887bac4ea3d5e",
+"L": "78804a85f2d805a92c778655dfd23429676828f3",
 "frames": [
 [
 160,
@@ -170944,8 +170944,8 @@ null
 }
 },
 "ground_slam": {
-"R": "d759dc17b8c4780f80b0eed50b667554ba0d3028",
-"L": "085073472f3b823738fcea6e90185b8e03c2fb60",
+"R": "ea9f5de904247cc14dea5a51110d6d44cc69886c",
+"L": "0a821934ddceaa6ee0e135c6eebbe416515e25d6",
 "frames": [
 [
 200,
@@ -170983,7 +170983,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Smashes the ground; the shock wave runs along the floor into the opponent.",
+"desc": "Slams the ground; the shock wave runs along the floor into the opponent.",
 "hit_frame": 4,
 "power": 3,
 "hitstop_ms": 220,
@@ -171227,8 +171227,8 @@ null
 }
 },
 "air_slash": {
-"R": "74bf90ab7349c444c0ca8a6f924b151d46d91bd1",
-"L": "7f9271bb1a96c99b8d966571d093bb05036c7431",
+"R": "e17750cec732a56729830412dd466f0580259637",
+"L": "8deca57482e7e8e9d5195554bf58ccbd9522fb3c",
 "frames": [
 [
 80,
@@ -171408,8 +171408,8 @@ null
 }
 },
 "spike": {
-"R": "6100abb105999bda831be2052c9dc0f7d0af3f1f",
-"L": "844f1388d77e1d13714d6783654c20a878e74789",
+"R": "021de449301d3dfddc5fc65760608927fd152303",
+"L": "ab750ff9cd5806f5be95465614d17d75a5f51faf",
 "frames": [
 [
 90,
@@ -171588,8 +171588,8 @@ null
 }
 },
 "throw": {
-"R": "085b2b572112ecf69ddaa517d5c6d9145685161d",
-"L": "7ac812d61abaf4aa5690ad3a88d2aa9e57cacf68",
+"R": "0b278ab6850d3fdc93da289ac6edf8b0e4f750c7",
+"L": "796089bedf0c434142f58798276900491acb40a2",
 "frames": [
 [
 110,
@@ -171745,8 +171745,8 @@ null
 }
 },
 "dash_slash": {
-"R": "74f0e7376820e25a6ae6761492a8778a6ef483b0",
-"L": "796e5768860559255489625dfc6f30da44aba345",
+"R": "c39d699c549190e16710fa3908cf8c91fb8633c0",
+"L": "b9f75c7cfa9fc1742d1aa823545f42a2b6c10f47",
 "frames": [
 [
 160,
@@ -171939,7 +171939,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -172414,8 +172414,8 @@ null
 }
 },
 "spiked": {
-"R": "ac5cf341cb269dcb7d4a8b89affde14b0b57ac77",
-"L": "e9804d538d4fb2d33bb2acc2a635764bb35f681b",
+"R": "4d54834a899c736bdb0b8257dcfc1f9a5f4af8f6",
+"L": "695eb8f3850ebda035e27747eb58cef610285b56",
 "frames": [
 [
 50,
@@ -172575,8 +172575,8 @@ null
 }
 },
 "thrown": {
-"R": "fe8f88ebfb1bdbb9982c744ad9345c7ab648c9b9",
-"L": "217b187eeb00b0c020f97959c3b772f952f8d07b",
+"R": "e6f995588a1e2a102c328912d5b6ad7d317d4fe4",
+"L": "9c042a639217eb2ea70dcbc4bb02ac49ea4f3adc",
 "frames": [
 [
 120,
@@ -172654,7 +172654,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 36,
+"reach": 58,
 "grip": [
 [
 34.7,
@@ -173242,8 +173242,8 @@ null
 }
 },
 "clash": {
-"R": "5305100d74df5b4b7099e3997980427cbcc1d92e",
-"L": "e633789982790641ea76eb8fbc59c13779c70095",
+"R": "1ff065c97a08c45527a101b76616254d5f9c5635",
+"L": "05f01e18515b614079f71a845db8da5db38de8cb",
 "frames": [
 [
 60,
@@ -173783,8 +173783,8 @@ null
 }
 },
 "dash": {
-"R": "1f1ca947c942134f2278cbdb5b99c59a24c5adf4",
-"L": "1ba66cb37dc3c21339c92412140eb73d3d8352ea",
+"R": "a84c9c4acac4ee9a3c5733df8b51cfa9ad4c80e2",
+"L": "30b7a5b90f22f54a9fb655623f49e5ed6d0a94cf",
 "frames": [
 [
 60,
@@ -173853,8 +173853,8 @@ null
 }
 },
 "backdash": {
-"R": "c442ae3b6019372656b4ea6394445c70e2fab6c5",
-"L": "46b2f92770360f7a17b5b7b3408b4932852f8d41",
+"R": "083e3f24b04268ccf1b651d0bb719e75bfcd1110",
+"L": "48dcdb75dd0aec088ef60f1cd03bb378aa12f0e3",
 "frames": [
 [
 50,
@@ -174012,8 +174012,8 @@ null
 }
 },
 "jump": {
-"R": "7a3cc9bd9adffec460d012e2ae93e21c7aa407a4",
-"L": "4dbf6029a06319f1b7efb57e67616528d3ffe72e",
+"R": "419511daa342a9a90a04c5e11264557dc415e3fc",
+"L": "8e44c9586f94d85a996f5134ce4a99bf3c26609b",
 "frames": [
 [
 80,
@@ -174338,8 +174338,8 @@ null
 }
 },
 "uppercut": {
-"R": "bf51abba2f7c4ac35540357614d34bf18cbcf045",
-"L": "905ab9aeab662462a6699e39c1c456cedbfce7fe",
+"R": "52fea9ec34f5390ec50d0738be3d554630afd35f",
+"L": "1a01eb54a00b2b885db545dc48873136373122aa",
 "frames": [
 [
 120,
@@ -175276,8 +175276,8 @@ null
 }
 },
 "knockdown": {
-"R": "11e5bd08e1be34e65776a991ef1bad3fe0500bb8",
-"L": "9f9e9fe38e2e32b9124d8517ee45303d38f40a4e",
+"R": "7df6724cc12cf7414ba9e56597499ae246e8d0e9",
+"L": "e4bd86b90be2bbd286f7ece79f0cee3570192e76",
 "frames": [
 [
 50,
@@ -175372,8 +175372,8 @@ null
 }
 },
 "getup": {
-"R": "69dbd8a59b890224758ce8e6190fdd58f711e460",
-"L": "d86c245dba55ce2f2db0e83a58635a61411558b7",
+"R": "df6dc77c1ebc91e5884cdf407f15d680ab5624f7",
+"L": "7925d0e79350798dd1ab9c3704bc17a12f58ff90",
 "frames": [
 [
 160,
@@ -175608,8 +175608,8 @@ null
 }
 },
 "victory": {
-"R": "c81643795abbfb1b330e01153093460943ba2b25",
-"L": "2b1f01fc0115daea34e9aa78d0cf6cec92d3d5d6",
+"R": "645790c236f47c92bce3a5916efb265f6e9bcf3b",
+"L": "2174213929f1064a8997734f54b3e86f555a9fd5",
 "frames": [
 [
 110,
@@ -175985,8 +175985,8 @@ null
 }
 },
 "highfive": {
-"R": "28e0bcdd7664f473b02f40b7f2f366e9ace6ae3b",
-"L": "9187d38cbf61344252b13f86640053f38796d55b",
+"R": "01800c424832ba1ea7b687eb0052e7d375cd6530",
+"L": "56bff7c4727f00a2b5a9fe8dc4874eed637abd9b",
 "frames": [
 [
 100,
@@ -177227,8 +177227,8 @@ null
 }
 },
 "earthsplitter": {
-"R": "fb529cb48758182140b3205bf945799740e9ce1c",
-"L": "3751c39488328cd30f0b264b209fd008357212e1",
+"R": "bbf4412a6cda10bfc4f967ded3ec608ef773fa06",
+"L": "b8b6a4109a433ed06e1e698289d0c319c948ac13",
 "frames": [
 [
 200,
@@ -177358,8 +177358,8 @@ null
 }
 },
 "cleave": {
-"R": "3e8e133e579fe9ddd9ea8fcd24c05219c297fe51",
-"L": "7ce14af5d8acbce56912e4812185cf555d30c682",
+"R": "df3685f394a7c81c3ac6db50e51f9cc132703882",
+"L": "dd54a520dafb43b1c05f7f448b3242df2de30361",
 "frames": [
 [
 160,
@@ -177479,8 +177479,8 @@ null
 }
 },
 "ground_slam": {
-"R": "8a02ef5818da2d17aeb46c059488250521e36450",
-"L": "9467d227a8c4b854be80c072f6560e282185e783",
+"R": "cd4c43531b51f074e181e83f6a465335ce99498b",
+"L": "5b68d4097742b6fa2dd6f78bf3462e739e82580b",
 "frames": [
 [
 200,
@@ -177518,7 +177518,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Smashes the ground; the shock wave runs along the floor into the opponent.",
+"desc": "Slams the ground; the shock wave runs along the floor into the opponent.",
 "hit_frame": 4,
 "power": 3,
 "hitstop_ms": 220,
@@ -177692,8 +177692,8 @@ null
 }
 },
 "air_slash": {
-"R": "ca9f3f128ea7ba529f5f3c28b429372bd02433a1",
-"L": "117ff3f799ce69b6a03a156ecbd351c521d8aa1c",
+"R": "928fbe81905e107e38dae4f3ad7ab12c27a023fa",
+"L": "da7a5888968ff9554de401c466eeaad9a7cfdf5d",
 "frames": [
 [
 80,
@@ -177833,8 +177833,8 @@ null
 }
 },
 "spike": {
-"R": "647886fd3383c9db477bb6b33dcf563c082697d5",
-"L": "6c542222335f0eaf761a7250009e03a78b0f836d",
+"R": "4623b3a227e84b8c104be0f0221468bd431dd136",
+"L": "7b5e1b0f5044d5e4af6369b4039c28020b159a36",
 "frames": [
 [
 90,
@@ -177973,8 +177973,8 @@ null
 }
 },
 "throw": {
-"R": "008aa53b71af19503e924c2d12569beb5fc59aed",
-"L": "43aa325a30762e7c0ddc7cecc0bf2177afb57118",
+"R": "36fe80d6607a4490781e9680f678a160e7171d44",
+"L": "3dac79f0042ff942e7ea03796a7b7b90f653caa0",
 "frames": [
 [
 110,
@@ -178090,8 +178090,8 @@ null
 }
 },
 "dash_slash": {
-"R": "b28b905c4e6a664322203ee82955262aeeb99afd",
-"L": "5df88379e6982e50ae8b15c3a55d5dff8a296c5b",
+"R": "055fffdc63e287043bf9d35721fd3b447c8c7e6d",
+"L": "c406dce83151e1558df5c387159f01f19cee0747",
 "frames": [
 [
 160,
@@ -178244,7 +178244,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -178594,8 +178594,8 @@ null
 }
 },
 "spiked": {
-"R": "5846b85e59b68905beef2d6af9da288305e56935",
-"L": "a9c0dcf75b3f9701e5628d434d2248db0878ebe6",
+"R": "445fe37f5aed98cadb5e9ea0f82dcb6ecdb11e20",
+"L": "a3cab280e057dc388a1c1afe4adc2d4592493ab0",
 "frames": [
 [
 50,
@@ -178720,8 +178720,8 @@ null
 }
 },
 "thrown": {
-"R": "ea13077e553b834971a2ddac409f63e9a70e82c7",
-"L": "653aaa8753f5ca801a0bb34e82f5980125a26902",
+"R": "567ec660feb5f79a89c6a8f7c629ba1754884183",
+"L": "81ee454a351e737e46e3c0fc4b7abfd00eec11c6",
 "frames": [
 [
 120,
@@ -178799,7 +178799,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 35,
+"reach": 59,
 "grip": [
 [
 36.5,
@@ -179222,8 +179222,8 @@ null
 }
 },
 "clash": {
-"R": "1f2fc67338c93158627341ea63e7e71a7d1d820a",
-"L": "a1102bc62145e3a8f820f288f43f780be2961933",
+"R": "5c9b6b4df9cbe87dcd6345ae9f6845d53b7c5f8d",
+"L": "1d99d1c606c4a83f6b68d4ca0b32a8cf71e6331a",
 "frames": [
 [
 60,
@@ -179859,8 +179859,8 @@ null
 }
 },
 "dash": {
-"R": "1b6fe01b40a845b71b7988663b7e3f7f3cf72bcd",
-"L": "c872aa86ab64f1710550ea0e7f36b8657fdb687d",
+"R": "5829f47d215cb294f9f634bbdd95089f77543a56",
+"L": "fce09b10b2f7000263f7a0e359c695094ebc9ae0",
 "frames": [
 [
 60,
@@ -179954,8 +179954,8 @@ null
 }
 },
 "backdash": {
-"R": "25e1b3366b322e359f0ad470cd95e8071b4721f7",
-"L": "b2108939a8944fdc65e30a2f727398ee9819e6ed",
+"R": "9f0635756a1068280f5780271c75a965052884a7",
+"L": "54b225e3ec402bf6e216c47f074145b78338ac6a",
 "frames": [
 [
 50,
@@ -180163,8 +180163,8 @@ null
 }
 },
 "jump": {
-"R": "09ba5aee35678f40565022d6d676d26ea765d26f",
-"L": "2c297a18cae1aca5ba6d3f91b8978df960ab51df",
+"R": "543163147c9923204a577af098788150f1c8d2a9",
+"L": "9f8b566b74dd6a545c417e4e7985f31ab3086746",
 "frames": [
 [
 80,
@@ -180599,8 +180599,8 @@ null
 }
 },
 "uppercut": {
-"R": "a39d07d0174086a1784c7998ef933dab58c2b80f",
-"L": "ac66d5c8a2de0b336cdd4b498c2061c485f9fd84",
+"R": "53deee980236ef7e4447731a28dad0251f5161ed",
+"L": "a39f5cdb9feb88d9d3cb2ad20532c310a3acfb25",
 "frames": [
 [
 120,
@@ -181044,8 +181044,8 @@ null
 }
 },
 "palm_crash": {
-"R": "f565e73d7e8e24d81cf6a8d524b19931cabfdc95",
-"L": "2bc52a3c7aaa13ab5a97f06e61878a2db199f760",
+"R": "99b9c2347df77899ae06f2d0aa6de903c9dad3cf",
+"L": "75a468be4019205af5379d710d9b85a6585d0f29",
 "frames": [
 [
 110,
@@ -181877,8 +181877,8 @@ null
 }
 },
 "knockdown": {
-"R": "f865fdc93303ec63d741b8a92519fccea8722eb5",
-"L": "e5a32f6cdafbda62cdbb5505d4272b65c57c7561",
+"R": "79241550fcd4bc762b56b24c57d8bb76b1d5df10",
+"L": "9e455c967659fb86c741debf2bbfcf92b9e746e5",
 "frames": [
 [
 50,
@@ -182008,8 +182008,8 @@ null
 }
 },
 "getup": {
-"R": "da36aaa85fb0ef53c0c4627a56948da67fe35808",
-"L": "5457d244d7c31ef75ade08886cb3482b1b6ebb4b",
+"R": "78bbe5f85cc556f6c36c30c64c83353749244c3f",
+"L": "f42019770e381c087abdfe9f8866ea7570109ccf",
 "frames": [
 [
 160,
@@ -182810,8 +182810,8 @@ null
 }
 },
 "highfive": {
-"R": "f194466894d9d704f14b133399f97b9add6bc4af",
-"L": "229e0106e944d163398d2a0214b8c2fddb590733",
+"R": "88006dac59028f0bbc399470f537328787a17201",
+"L": "7c934920a7f85974373012070d0632d9f4921963",
 "frames": [
 [
 100,
@@ -185214,8 +185214,8 @@ null
 }
 },
 "air_slash": {
-"R": "c09573ee9e70badf6ca6799fdb7b383849881298",
-"L": "90ce6642e52def757dae28914fc54a7d09997ae9",
+"R": "64687ef77d8945196f18e0802ddda8ba7114f2c4",
+"L": "2f7ef2f5da82531e1f2c07c22095efec8e5f253e",
 "frames": [
 [
 70,
@@ -185395,8 +185395,8 @@ null
 }
 },
 "spike": {
-"R": "3b545d10bfc3ce1aa5aa79e9de0a880bee382637",
-"L": "356428e59a705298bcc413a0c1e4b59c16519d82",
+"R": "bbace6c6be56de28d0616835aa859c384c577793",
+"L": "fb4ebde4dc5914ff4a92c25da575369a41fe0e7d",
 "frames": [
 [
 80,
@@ -185575,8 +185575,8 @@ null
 }
 },
 "throw": {
-"R": "37a871c81a14ed9e9d7aa153f2850e7a730d4445",
-"L": "1f50a68f4611f67f50466b95630fa08ed12f113a",
+"R": "24a3f7f2fba11c5555b58ce18e49757151529027",
+"L": "667e4e8a80ab56ffbf82be5ace4720499239d6e8",
 "frames": [
 [
 110,
@@ -185732,8 +185732,8 @@ null
 }
 },
 "dash_slash": {
-"R": "f73320522ee16a1b29bd80f31364ff56ff3a4c78",
-"L": "e774569622da57a20ee29b6eb3afcdf53413687e",
+"R": "641f3a3196d95afd59574c6438c54ae12ff330fe",
+"L": "4c6a615be4e8148d32d652ce4c784c66a848e433",
 "frames": [
 [
 130,
@@ -185926,7 +185926,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -186400,8 +186400,8 @@ null
 }
 },
 "spiked": {
-"R": "287302322dabe8f8310d9b760f0f8ef30871f475",
-"L": "97887c35be48798fd2483a5c5295b333eea59ac2",
+"R": "7952ea4098a13f52cc9654ba4d022ba9689c2144",
+"L": "2600fac85fdb8282a85e5659e0197fd818cb6b4e",
 "frames": [
 [
 50,
@@ -186561,8 +186561,8 @@ null
 }
 },
 "thrown": {
-"R": "529c7d749b6902efebc601b00c2c04718ee5bb2d",
-"L": "2a01f955d457eb34fdffc03199261dd1caca471c",
+"R": "890c904e2df0930afc2265faac48f083faba978d",
+"L": "631bea27493bae3208d858aadb6a558cdc2e9923",
 "frames": [
 [
 120,
@@ -186640,7 +186640,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 35,
+"reach": 56,
 "grip": [
 [
 33.7,
@@ -187228,8 +187228,8 @@ null
 }
 },
 "clash": {
-"R": "40e127e842fd5607ef7df3911cfa4193f5b151da",
-"L": "d0b1b3d1f09971f1ff09b3a58220c7f81f9a7869",
+"R": "92ce3189e23410866e5b117d8f5c454c158120ce",
+"L": "c438cee7367cf337ef85f2bd2d17fbd86bd93ee3",
 "frames": [
 [
 60,
@@ -187903,8 +187903,8 @@ null
 }
 },
 "dash": {
-"R": "ee813ff86be1e3c86ac390afeed241a70c6bb48a",
-"L": "0999b598ca110bec2f54f2314b398fb4c74e6a40",
+"R": "88256d05c840d6002c04351a346420d9bc4c7ee8",
+"L": "6c9f97d7069bf3cbba8eb1e59c51a66466badcdb",
 "frames": [
 [
 60,
@@ -187998,8 +187998,8 @@ null
 }
 },
 "backdash": {
-"R": "405b20523e914c10eaacce2bb95dbbe8d9e0c731",
-"L": "3d68a5f201358d20822a041bbe22f16f93b71c4e",
+"R": "13923f63370cb6ff4d0ff93fd113d5fb17ed15de",
+"L": "d48ca4bebb0ac91eb1252b9546060852f57ddac0",
 "frames": [
 [
 50,
@@ -188207,8 +188207,8 @@ null
 }
 },
 "jump": {
-"R": "adff6e58ed703bdabe242158ea8f3574bdbee42f",
-"L": "854300467f1f5467b2e7f6f8738e07791850392a",
+"R": "c7398ee1e630b312b315e751bcff065325a93ac1",
+"L": "ae24b0f5fbacbd83a0e239e13e9d4712606a36ea",
 "frames": [
 [
 80,
@@ -188643,8 +188643,8 @@ null
 }
 },
 "uppercut": {
-"R": "878e7a791c2f0313c231b0f24782877f2b470b3c",
-"L": "337e10ecd1fd712303c73c3244fb3ce4fe21cf1c",
+"R": "bbb47e24bb929d38ae89f3ae44cd7b76685845cf",
+"L": "7d10d4134ecd14e9964432870655a1a2bf3102e1",
 "frames": [
 [
 120,
@@ -189864,8 +189864,8 @@ null
 }
 },
 "knockdown": {
-"R": "a884109c532811694e25dd721ac4b6a2aa535b27",
-"L": "43949e52e8ead6dbd217caf4f8acda6f7357b0d6",
+"R": "e0c5b5423a29883d71c52d7a45a364a36a219978",
+"L": "f2ff3248715c0b6b658018c2689a82321b1dcd7b",
 "frames": [
 [
 50,
@@ -189995,8 +189995,8 @@ null
 }
 },
 "getup": {
-"R": "c16ea1658befd79208d4d3f16894dc08fa817e1b",
-"L": "6196e978bafa5bd4182854bb438bb12dcf8be887",
+"R": "92ba7465b699652f2fc6c877cb44320aa073629f",
+"L": "d77513f9413f768490a24e942337b12ec8b1d448",
 "frames": [
 [
 160,
@@ -190800,8 +190800,8 @@ null
 }
 },
 "highfive": {
-"R": "5fdc25d59a62fe956850362cb52b396850cdae17",
-"L": "3e5ecb4c9f57a45ca4d85fdf4fae06d0781e55ac",
+"R": "99ff88760de5954f65020e42bb8806d6cbeb921f",
+"L": "487cc5ad8f4819a7191a8350e3d3df86ca24e492",
 "frames": [
 [
 100,
@@ -192036,8 +192036,8 @@ null
 }
 },
 "mirage": {
-"R": "19fc77758011fea29472162a5b53696d1146aa5a",
-"L": "e699bae0748e524c2fe894e1ce08e22abe64572d",
+"R": "15443ccdd16d0a1de3e0731f28b197bb51123d41",
+"L": "56cd4b94b55cabb54fd07cb04ad4f0d017a79e65",
 "frames": [
 [
 160,
@@ -192472,8 +192472,8 @@ null
 }
 },
 "ring_storm": {
-"R": "f4219aa358fcc6c59310c9860a21b2cf9473299e",
-"L": "bb0d70abc5dedfd6c7f7f915cff9d94ced3de0b9",
+"R": "c899ea87f3f27c0162d5c2fb54ebea1ba00fc3e5",
+"L": "82eacd61b019f68e3126b76159699c83325c1b08",
 "frames": [
 [
 180,
@@ -193236,8 +193236,8 @@ null,
 }
 },
 "air_slash": {
-"R": "664648df1de29f0fc5d6fc925c4aa6824894b966",
-"L": "67351ff1120fb925cbafaf1549772fe3ffc20f59",
+"R": "3b717ebf7f1641dcdb7646920b221d6d05f943d0",
+"L": "4d04e1480a38ef138544a6e2c9f24e031ab5ea8a",
 "frames": [
 [
 70,
@@ -193417,8 +193417,8 @@ null,
 }
 },
 "spike": {
-"R": "76a5f96fc621b4d65515fe9b134ba0f4bd267168",
-"L": "788094a95795ffdbd030f9ce0d07ad6b45664358",
+"R": "21caa344b8288d03dae37b889deef7ffd1b49294",
+"L": "3baad582f1c8120d301036a348601c4bfc8c67c5",
 "frames": [
 [
 80,
@@ -193597,8 +193597,8 @@ null,
 }
 },
 "throw": {
-"R": "96c8ecde698111a361340cfe135682d0c2426944",
-"L": "cdf7d48ba4ffefe98e972b010a8639c9a551d5bb",
+"R": "26a7f2d81e1da7d5b2253c4bfcccd8184b4e83c3",
+"L": "ab72d2c2591e021694ceee08e487e49e28716f17",
 "frames": [
 [
 110,
@@ -193754,8 +193754,8 @@ null,
 }
 },
 "dash_slash": {
-"R": "a5a15eeaa9f5e06ea04beb05eaa6e1267a6bb7fe",
-"L": "8f6c01ff2f4008cdff0475f1fde8c38a4e40197f",
+"R": "78e893f97b0461bf65dc6dedd4ccb819ee24bb23",
+"L": "147769f79fb28a65563d70e24c9d2c69e3ecffd3",
 "frames": [
 [
 130,
@@ -193948,7 +193948,7 @@ null,
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -194422,8 +194422,8 @@ null,
 }
 },
 "spiked": {
-"R": "7a0f2011c766cf048b379f6539cef0f6ff3e3c33",
-"L": "d69802aca50898407d72db83ca8e00d5adc24da5",
+"R": "8a0642b81052287512e9ea37854ae470641db0a8",
+"L": "308347154f91fd0b7a8e86877ec33d2f7233cee0",
 "frames": [
 [
 50,
@@ -194583,8 +194583,8 @@ null,
 }
 },
 "thrown": {
-"R": "da63a37010bf9d47bd8f38c03a070ae760b9464d",
-"L": "3825046d88e9392b4e37d42fa39fdd3deaf0a684",
+"R": "f8daad2ff84fad11624248e0c8c98f743f424d8c",
+"L": "e64f2739f5e99ed85a382ea5e535f1db6def491e",
 "frames": [
 [
 120,
@@ -194662,7 +194662,7 @@ null,
 "frames": 3,
 "amp": 2
 },
-"reach": 36,
+"reach": 57,
 "grip": [
 [
 33.3,
@@ -195250,8 +195250,8 @@ null,
 }
 },
 "clash": {
-"R": "8e603b013063218f3d5a92ca2f88938438c85c4b",
-"L": "00ef958bb146e63afa9ec9a711c230afd6d5a492",
+"R": "af42743328d70ed86f2ba2f55028987b2a365366",
+"L": "04b3e42e1c79296ade5965fb63f8f59eeb872205",
 "frames": [
 [
 60,
@@ -195926,8 +195926,8 @@ null,
 }
 },
 "dash": {
-"R": "04f1bafba543048a57dc2064c9a913ddbdb3c78c",
-"L": "e1c38ce5908030fbb7995abce2d92d6b7bb57e34",
+"R": "6f1331df0b78d46df055f5b83252c1f4d365d924",
+"L": "3c430478cefdfcce1a2ab8977810f3b4f5204167",
 "frames": [
 [
 60,
@@ -196021,8 +196021,8 @@ null,
 }
 },
 "backdash": {
-"R": "d2eb46b5b58ac1f30ff280530fb756289c09cb00",
-"L": "81727e1a9136bc975ea3da12690617f1232f2671",
+"R": "5a975452faf8adf5e507e00fa4ef8d6a0a4d16d3",
+"L": "71dc47c2e4eb6617398a42e869070d1dc77092a5",
 "frames": [
 [
 50,
@@ -196246,8 +196246,8 @@ null,
 }
 },
 "jump": {
-"R": "fffd538a08814dc3f040dc3ce9725bd65d59956c",
-"L": "11910377aae6cfd239cb82368dde17bbda7d78ce",
+"R": "4cd50de7638490ed79a9c1a83b08de10ea68f2db",
+"L": "52fd94d76bd53b4a6d0bdae55def8394cd8967f9",
 "frames": [
 [
 80,
@@ -196652,8 +196652,8 @@ null,
 }
 },
 "uppercut": {
-"R": "d99bb7117466825e4e618517e8f9b33f6f42e7b3",
-"L": "5233f9a96ca7ce4736ef5799e792bfbd45169de9",
+"R": "0eceba4c01e560cbea5b64db63796a834b5a3a6a",
+"L": "41cc0f5d13dc620ef6523d20cea1aea34cc88520",
 "frames": [
 [
 120,
@@ -197097,8 +197097,8 @@ null,
 }
 },
 "club_slam": {
-"R": "7ebb7fe49d66c4ad2283e3fbf2ad69d784edfcd2",
-"L": "520757a305dbac1158813a135b893bd2f503f80f",
+"R": "806946a8f6e69f1937d54fb13fccd3a21c0389d6",
+"L": "6afa6601e7494e7b728cbb0c482a9d507ef9ea5d",
 "frames": [
 [
 110,
@@ -197136,7 +197136,7 @@ null,
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Leaps and smashes the kanabo into the ground.",
+"desc": "Leaps and slams the kanabo into the ground.",
 "hit_frame": 5,
 "power": 3,
 "hitstop_ms": 220,
@@ -197946,8 +197946,8 @@ null,
 }
 },
 "knockdown": {
-"R": "93d30516d48ea5030f05ddd54280f385a267717e",
-"L": "312b53a62f8cd4c00415697ba1d39101b918a542",
+"R": "e8e6a1929a44a1ad2a681f3bfea0869e38368f51",
+"L": "0ee69bbc7498d3c2a3d924282c0ebb8404a61257",
 "frames": [
 [
 50,
@@ -198077,8 +198077,8 @@ null,
 }
 },
 "getup": {
-"R": "3763e5d5845ba3c9ed1119dffdd0b7161d2c933e",
-"L": "c310caa78035e1f0645b7c7f132d3b7b013035e1",
+"R": "c23dcf3cf506f6aa8c0d920cb8aa6c23e1510d96",
+"L": "4cac067e7ca3f54879d31e82c7fb082ddab19d2e",
 "frames": [
 [
 160,
@@ -198398,8 +198398,8 @@ null,
 }
 },
 "victory": {
-"R": "b4699e1f0c04a207a7df4fcf33e237ddd8539279",
-"L": "bc4f50c621b2964f945da7c5742fb6af71223937",
+"R": "e6d0c1f2489184c99a61c45ed358cd34044522ce",
+"L": "1cc84af889d27ee0252b1a4812d2430259fd1414",
 "frames": [
 [
 110,
@@ -198897,8 +198897,8 @@ null
 }
 },
 "highfive": {
-"R": "2b070680b218c8909187c348b0cac8f1a052d0d0",
-"L": "bf98b5ddba4bcf443ab0f5633c0b0f21ac6a1eed",
+"R": "af1645b9b096dc759729484a8ed964f100817d77",
+"L": "4bf0f5dba2f462cfd1a748468664c76a33dfb96a",
 "frames": [
 [
 100,
@@ -200742,8 +200742,8 @@ null
 }
 },
 "cleave": {
-"R": "5f1aa41904808b897dce3781d3b1794cedad296e",
-"L": "4a6cc53a62fd46cfd641201c648ee65e9bf17133",
+"R": "ad4f78ac038ae47ad0265372e96f766e894b3c68",
+"L": "24deb4f95d07febf18badcb448307e68487efdc6",
 "frames": [
 [
 160,
@@ -200903,8 +200903,8 @@ null
 }
 },
 "ground_slam": {
-"R": "907429a5b1fea3c534ccba986111b47cae94fb6e",
-"L": "9fd798fba814cddc0c30c9c806429971839150eb",
+"R": "d31bc6d587116fe358a5e7b39538f65690d82993",
+"L": "78c4094441441bb55f4085c5de0f4eae14e78bec",
 "frames": [
 [
 200,
@@ -200942,7 +200942,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "Smashes the ground; the shock wave runs along the floor into the opponent.",
+"desc": "Slams the ground; the shock wave runs along the floor into the opponent.",
 "hit_frame": 4,
 "power": 3,
 "hitstop_ms": 220,
@@ -201186,8 +201186,8 @@ null
 }
 },
 "air_slash": {
-"R": "1a10d9b62a065496ef3e48ea0cdc8cf1e75e86b0",
-"L": "ecf5c15a7d852fe75aac84b03520e21d213a3876",
+"R": "582982e57d8d9e536f70b7e7c67862f9f9f29a7a",
+"L": "dc3837cf0879c254bf1398b32e1cbf66584e93f8",
 "frames": [
 [
 80,
@@ -201367,8 +201367,8 @@ null
 }
 },
 "spike": {
-"R": "0fbac3fa5deb1be5e822246afd90a14289a6544c",
-"L": "4384ba2f75a4abab3031b9108a84d21be5895af9",
+"R": "883fbf54039c4db9e583779aedaad45761ee24c7",
+"L": "ab12d031e656014212f4e44be6dfc2960957b74d",
 "frames": [
 [
 90,
@@ -201547,8 +201547,8 @@ null
 }
 },
 "throw": {
-"R": "d09ce940cbe173f59aa504428d0239cfe3b1502d",
-"L": "143e745e213b484a8855c2684d9027bdf0525b04",
+"R": "a8661fe370e9c75b974d2a29fc03a99134788013",
+"L": "5649ade40ed5629b2251a07ee744eabb594687c5",
 "frames": [
 [
 110,
@@ -201704,8 +201704,8 @@ null
 }
 },
 "dash_slash": {
-"R": "e9c31eeb39143bd58785d1719352379fba2a9adb",
-"L": "9b3f0100b486472ad5216012ac8d5407f247df4d",
+"R": "bda2129e6237d9e8ce21581a26702bce902ec846",
+"L": "44c2ba0227104ab0d31cec53044920cb24d53b9a",
 "frames": [
 [
 160,
@@ -201898,7 +201898,7 @@ null
 "meta": {
 "loop": false,
 "cat": "strike",
-"desc": "A long heavy wind-up, then the pommel smashes the guard open.",
+"desc": "A long heavy wind-up, then the pommel breaks the guard open.",
 "hit_frame": 4,
 "power": 2,
 "hitstop_ms": 180,
@@ -202373,8 +202373,8 @@ null
 }
 },
 "spiked": {
-"R": "b4680d6780d015a8b21711f9f201db37e04d1cd9",
-"L": "0580809d122983752f6b4a9c8e7ea35b4e2ca3e1",
+"R": "965bfff220bfe1b6982237fedd0d9e5401216332",
+"L": "1e0971afabf4c7582fafcadc5a3bd9690549084c",
 "frames": [
 [
 50,
@@ -202534,8 +202534,8 @@ null
 }
 },
 "thrown": {
-"R": "9d9b6c440d4a8a8fd8178c614ea0ebdbcd72cf49",
-"L": "9aa623be703cc823cc456d493118b74be747fe48",
+"R": "e2a767e594d77c83dc4c75d83359533d1fb37027",
+"L": "b52d80b1a75845a71f1f16c4ba81481df61596b6",
 "frames": [
 [
 120,
@@ -202613,7 +202613,7 @@ null
 "frames": 3,
 "amp": 2
 },
-"reach": 35,
+"reach": 60,
 "grip": [
 [
 39.7,
@@ -203201,8 +203201,8 @@ null
 }
 },
 "clash": {
-"R": "259558703a1b24f881d2553838f50f2baedd8dfe",
-"L": "1df2a5b2b3da8375f5a2669d491e800decc2acec",
+"R": "96fe60b0503ed933d7e7bd391689f3a839afb4b2",
+"L": "fa1e43695e4eca39640cc871d7a8df905eeb892b",
 "frames": [
 [
 60,

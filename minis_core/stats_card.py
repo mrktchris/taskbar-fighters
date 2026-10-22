@@ -13,7 +13,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from . import achievements as ACH
-from .render import font
+from .render import os_font as font   # a 1200x675 share image: smooth OS text at every size (render.font returns the
+                                       # taskbar pixel font up to 12 px, which only render.text can draw)
 
 W, H = 1200, 675
 BG_TOP, BG_BOT = (20, 18, 38), (8, 8, 16)

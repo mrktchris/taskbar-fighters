@@ -26,7 +26,7 @@ import json, math, random
 from pathlib import Path
 from PIL import Image, ImageDraw
 
-from .render import font
+from .render import font, text as _text
 
 from . import paths as _paths
 ROOT = _paths.bundle_root()                         # the folder holding assets/ and assets_hd/ (paths.py)
@@ -244,11 +244,9 @@ def _explosion(size):
 def _glyphs(size):
     out = []
     for sz in (size, size // 2):
-        f = font(sz, True)
         for ch in LETTERS:
             im, d = _canvas(sz + 4, sz + 6)
-            d.fontmode = '1'
-            d.text((2, 0), ch, fill=(245, 245, 250, 255), font=f)
+            _text(d, (2, 0), ch, (245, 245, 250, 255), sz)
             out.append((im, 100))
     return out
 
@@ -266,14 +264,16 @@ def _beam(size):
 
 
 def text_image(txt, size=28, fill=(255, 236, 120, 255), outline=(40, 20, 10, 255)):
+    """Text with a dark outline (banners, the signal marks).  Through render.text: the shipped pixel font up to 12 px (a 1 px
+    outline suits its 1 px strokes), an OS face above."""
     f = font(size, True)
     im0, d0 = _canvas(4, 4)
     w = int(d0.textlength(txt, font=f)) + 8
     im, d = _canvas(w, size + 10)
-    d.fontmode = '1'
-    for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (1, -1), (-1, 1)):
-        d.text((4 + dx, 2 + dy), txt, fill=outline, font=f)
-    d.text((4, 2), txt, fill=fill, font=f)
+    o = 1 if size <= 12 else 2
+    for dx, dy in ((-o, 0), (o, 0), (0, -o), (0, o), (-1, -1), (1, 1), (1, -1), (-1, 1)):
+        _text(d, (4 + dx, 2 + dy), txt, outline, size)
+    _text(d, (4, 2), txt, fill, size)
     return im
 
 

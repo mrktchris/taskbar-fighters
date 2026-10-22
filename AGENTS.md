@@ -79,12 +79,15 @@ only; ESC ends it). Tell them the arena forges weapons from ONE picture of that 
 ## 5. Optional - only with the user's yes
 
 - **Start at logon:** `python minis.py print-startup` prints (never runs) a `schtasks` command and a shortcut target. Show the user
-  what it will add, run it only if they say yes, and tell them the matching `schtasks /Delete` line it prints.
+  what it will add, run it only if they say yes, and tell them the matching `schtasks /Delete` line it prints. Or, with their
+  yes, `python minis.py startup on` (one "Taskbar Fighters.lnk" in shell:startup, the same as the Settings checkbox;
+  `startup off` removes it).
 - **Start-menu shortcut:** `python minis.py shortcut` adds "Taskbar Fighters" to the Start menu (`--desktop` also adds one on the
   Desktop). Ask first. Then tell the user to right-click it in Start > **Pin to taskbar** themselves - Windows does not let a
   program pin itself, so do not try. `python minis.py shortcut remove` deletes only the shortcuts it made.
 - **Tray icon** (no action needed): while it runs, an icon sits in the notification area. Left-click opens fighter select;
-  right-click has Pause, Flash effects, Desktop weapons, Plates, Rival mode, arena, Bout now, Restart and Quit. `"tray_icon": false` in `minis.json`
+  right-click has Settings, Move book, What am I looking at?, Pause, Flash effects, Desktop weapons, Plates, Rival mode, arena,
+  Bout now, Replay last K.O., Save last fight as GIF, Restart and Quit. `"tray_icon": false` in `minis.json`
   turns it off.
 - **Streamer mode, stats card, skin packs** (only when the user asks): `python minis.py stream on` opens a window for OBS
   (docs/STREAMING.md); `python minis.py card` writes a PNG of their record; `python minis.py packs install <zip>` installs a

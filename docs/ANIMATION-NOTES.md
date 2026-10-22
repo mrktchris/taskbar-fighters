@@ -523,3 +523,20 @@ every contact checked, every stun equal to its formula, later hits of the same m
 **Frame rate.** A fight script now redraws at 60 fps (`fps_fight`); composing a 128 px frame costs 0.17 ms
 (`python tools/taskbar_bench.py`: ~1 % of a core at 60).  The arena starts at 60 and steps down to 30, then 20, while it
 measures more than `arena_cpu_budget_pct`.
+
+**Spacing (review, 2026-10-22).** A side-by-side showed a spear and its fighter sunk into the opponent mid-exchange.
+Two rules now, both read from the art (`rounds.core_front`, `rounds.body_room`): a strike stands at its own reach plus
+the DEFENDER's trunk (the narrowest front of the unarmed idle frame between chest and thighs; was a fixed 9 px, which
+let a wide fighter be struck from inside its own body), never closer than trunk to trunk; and two fighters that are not
+striking stand at least their two idle bodies apart (guard hands included, 2 px touch allowed) - the bout's start, the
+attacker's step back after an exchange, the winner's step back before its taunt.  Weapons and striking limbs may still
+reach into the opponent at the contact frame; that is the hit.  `tests/test_spacing_v9.py` checks seven pairings over
+whole matches every 1/30 s.
+
+**The white blob on the floor (review, 2026-10-22)** was never dust.  Three things held a white body on screen: the throw's
+slam frame was itself a 210 ms white flash frame (plus a white shock wave), held again through the hitlag; a reaction
+froze ON its 50 ms flash frame whenever the freeze outlasted it (it now freezes just inside the hit pose after it); and a
+final-KO fall's slow-motion window overlapped the freeze, which the clock subtracted twice, so the fall ran backwards onto
+its flash frame.  Impact frames are now built from the frame really shown (`render.impact_frame`), not one canned
+standing pose.  Dust is a small shaded puff in the fighter's own shoe tones (`dust`, then a thinner `dust2`), never flat
+white pixels.
