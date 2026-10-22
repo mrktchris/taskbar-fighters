@@ -260,7 +260,7 @@ winner poses and the loser bows (on the taskbar too). `minis.py results off` tur
 the K.O. in slow motion; **Save last fight as GIF** writes the whole match to `exports` in the data folder and opens that folder with the file
 selected (`minis.py replay --gif PATH` writes it where you say instead). Both are made by
 the planner from the match's seed and plan on a plain backdrop, never from the screen. Every match has a **fight code**
-(`minis.py replay code`); anyone with the app can paste it: `minis.py replay TF1-claude-codex-...` (or
+(`minis.py replay code`); anyone with the app can paste it: `minis.py replay TF2-claude-codex-...` (or
 `replay CODE --gif out.gif`). A code holds the seed, the two characters, positions and the odds, never a context number.
 
 ![A replay frame: names, HP bars, the REPLAY tag and the fight code](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/ux-replay.gif)

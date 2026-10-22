@@ -46,19 +46,28 @@ def read(p=None) -> dict:
     return {}
 
 
-def merge(mine, p=None) -> bool:
-    """Union `mine` ({character: {key: ts}}) into the file, keeping the earliest first-seen time."""
-    cur = read(p)
-    changed = False
-    for ch, keys in (mine or {}).items():
-        row = cur.setdefault(ch, {})
-        for k, ts in keys.items():
-            if k not in row or ts < row[k]:
-                row[k] = float(ts)
-                changed = True
-    if not changed and Path(p or path()).exists():
-        return True
-    return write_json_atomic(Path(p) if p else path(), {'seen': cur, 'ts': time.time()})
+def merge(mine, p=None, _after_read=None) -> bool:
+    """Union `mine` ({character: {key: ts}}) into the file, keeping the earliest first-seen time.  Both fighter processes
+    write this file: the read-union-write runs under a lock (filelock), so neither can overwrite the other's entries;
+    False when the lock could not be taken (the tracker stays dirty and tries again).  _after_read: a test hook."""
+    from .filelock import locked
+    target = Path(p) if p else path()
+    with locked(target) as ok:
+        if not ok:
+            return False
+        cur = read(target)
+        if _after_read is not None:
+            _after_read()
+        changed = False
+        for ch, keys in (mine or {}).items():
+            row = cur.setdefault(ch, {})
+            for k, ts in keys.items():
+                if k not in row or ts < row[k]:
+                    row[k] = float(ts)
+                    changed = True
+        if not changed and target.exists():
+            return True
+        return write_json_atomic(target, {'seen': cur, 'ts': time.time()})
 
 
 class Tracker:

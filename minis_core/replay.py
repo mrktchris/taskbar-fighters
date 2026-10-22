@@ -9,7 +9,7 @@ replay.json in the data folder (numbers and ids only - never names of files, tit
 The plan's `scores` (the health weights behind `decided` mode) are kept here so the replay is exact; a fight code carries
 only their ratio (the odds), never a context or state number.
 
-Fight code: TF1-<char a>-<char b>-<base32 payload>, e.g. TF1-claude-codex-0g7d2k9x4m...  The payload holds: format
+Fight code: TF2-<char a>-<char b>-<base32 payload>, e.g. TF2-claude-codex-0g7d2k9x4m... (a hyphen inside an id is written as a dot)  The payload holds: format
 version, which slot stood left, the seed, the odds as a reduced ratio, both positions (1/256 px), the span, the boost
 flags and the outcome (to say when a different engine version would play the code differently).  `minis.py replay CODE`
 plays it; anyone with the app can paste it.
@@ -26,7 +26,9 @@ from .bus import write_json_atomic
 
 KEEP = 12
 ENGINE = 1
-CODE_PREFIX = 'TF1'
+CODE_PREFIX = 'TF2'                      # TF1 wrote the ids as plain hyphen fields; TF2 escapes a '-' inside an id as '.'
+ID_RE = __import__('re').compile(r'^(?=.{1,40}$)[a-z0-9_]+(-[a-z0-9_]+)*$')   # a fighter / pack id (`pack-shadow-ronin`): hyphens
+                                                                             # only between words, so '.' / '..' never pass as ids
 B32 = '0123456789abcdefghjkmnpqrstvwxyz'                 # Crockford base32, lower case (no i, l, o, u)
 PLAN_KEYS = ('kind', 'left', 'right', 'pos', 't0', 'seed', 'chars', 'span', 'boost', 'mode', 'scores')
 
@@ -227,7 +229,7 @@ def _odds(plan):
 def encode(plan, summary=None) -> str:
     chars = plan['chars']
     for c in (chars['a'], chars['b']):
-        if not c.isalnum():
+        if not ID_RE.match(str(c)):
             raise ValueError('character id')
     odds = _odds(plan) if plan.get('mode', 'decided') == 'decided' else None
     flags = ((1 if plan['left'] == 'b' else 0) | (2 if plan.get('mode') == 'random' else 0) | (4 if odds else 0)
@@ -245,7 +247,20 @@ def encode(plan, summary=None) -> str:
         out = (0 if summary['winner'] == 'a' else 1) | (min(3, int(w.get('a', 0))) << 1) | (min(3, int(w.get('b', 0))) << 3)
     body.append(out)
     body.append(sum(body) & 0xFF)
-    return f"{CODE_PREFIX}-{chars['a']}-{chars['b']}-{_b32(bytes(body))}"
+    return f"{CODE_PREFIX}-{id_out(chars['a'])}-{id_out(chars['b'])}-{_b32(bytes(body))}"
+
+
+def id_out(cid):
+    return str(cid).replace('-', '.')
+
+
+def id_in(field):
+    """A code's id field -> the id, checked against ID_RE (a path separator, a dot that is not an escaped hyphen, an
+    upper-case letter or anything over 40 characters is refused: the id names a folder and a file)."""
+    cid = str(field).replace('.', '-')
+    if not ID_RE.match(cid):
+        raise CodeError(f'not a fighter id: {field!r}')
+    return cid
 
 
 class CodeError(ValueError):
@@ -255,9 +270,12 @@ class CodeError(ValueError):
 def decode(code) -> tuple:
     """-> (plan, expected outcome {'winner', 'wins'} | None, engine version).  Raises CodeError with a plain reason."""
     parts = str(code or '').strip().split('-')
+    if len(parts) == 4 and parts[0].upper() == 'TF1':
+        raise CodeError('a TF1 code is from an earlier build; this one reads TF2 codes')
     if len(parts) != 4 or parts[0].upper() != CODE_PREFIX:
-        raise CodeError('a fight code looks like TF1-<fighter>-<fighter>-<code>')
+        raise CodeError('a fight code looks like TF2-<fighter>-<fighter>-<code>')
     _, ca, cb, payload = parts
+    ca, cb = id_in(ca), id_in(cb)
     try:
         buf = _unb32(payload)
     except ValueError as e:
@@ -282,7 +300,7 @@ def decode(code) -> tuple:
     left = 'b' if flags & 1 else 'a'
     right = 'a' if left == 'b' else 'b'
     plan = dict(kind='match', left=left, right=right, pos={'a': pa / 256.0, 'b': pb / 256.0}, t0=0.0, seed=int(seed),
-                chars={'a': ca.lower(), 'b': cb.lower()}, span=span / 1000.0, mode='random' if flags & 2 else 'decided',
+                chars={'a': ca, 'b': cb}, span=span / 1000.0, mode='random' if flags & 2 else 'decided',
                 boost=[s for s, bit in (('a', 8), ('b', 16)) if flags & bit])
     plan['scores'] = {left: float(scores[0]), right: float(scores[1])} if scores else {left: 1.0, right: 1.0}
     expect = None if outb == 0xFF else dict(winner='b' if outb & 1 else 'a', wins={'a': (outb >> 1) & 3, 'b': (outb >> 3) & 3})
@@ -539,7 +557,22 @@ def gif_name(entry_or_plan, now=None) -> str:
     plan = entry_or_plan.get('plan', entry_or_plan)
     ch = plan.get('chars') or {}
     stamp = time.strftime('%Y%m%d-%H%M%S', time.localtime(time.time() if now is None else now))
-    return f"taskbar-fighters-{ch.get('a', 'a')}-vs-{ch.get('b', 'b')}-{stamp}.gif"
+    return f"taskbar-fighters-{safe_id(ch.get('a'))}-vs-{safe_id(ch.get('b'))}-{stamp}.gif"
+
+
+def safe_id(cid) -> str:
+    """An id reduced to [a-z0-9_-] (at most 40) for a file name; 'x' when nothing is left."""
+    import re
+    return re.sub(r'[^a-z0-9_-]', '', str(cid or '').lower())[:40] or 'x'
+
+
+def inside_exports(path) -> bool:
+    """The resolved path lies under the exports folder (the default output must, whatever an id or code contained)."""
+    try:
+        Path(path).resolve().relative_to(exports_dir().resolve())
+        return True
+    except (ValueError, OSError):
+        return False
 
 
 def save_gif(frame_iter, out, colors=96):
@@ -578,7 +611,7 @@ def resolve(code=None, p=None):
             _, summ = summarize(plan, lib)
             if summ.get('winner') != expect['winner'] or {k: int(v) for k, v in (summ.get('wins') or {}).items()} != expect['wins']:
                 warn = 'this code plays differently on this version of the engine'
-        return plan, {}, CODE_PREFIX + '-' + '-'.join(str(code).strip().split('-')[1:]), None, warn
+        return plan, {}, encode(plan, expect), None, warn
     e = last(p)
     if e is None:
         return None, None, None, None, 'no match has been recorded yet: start one with `minis.py demo match`'

@@ -36,7 +36,11 @@ Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.
   in a window above the taskbar; *Save last fight as GIF* writes the whole match to `<data folder>\exports` and opens that folder with the file
   selected (`replay --gif PATH` writes where you say); both are
   offline renders from the stored plan (`replay.json`, numbers and ids only). `minis.py replay code` prints a short code
-  (`TF1-claude-codex-...`: seed, characters, positions, odds as a ratio, outcome check) that `minis.py replay CODE` plays.
+  (`TF2-claude-codex-...`: seed, characters, positions, odds as a ratio, outcome check) that `minis.py replay CODE` plays.
+  Fighter ids in a code are checked against an allowlist (`pack-shadow-ronin` style ids round-trip, a hyphen written as a
+  dot), GIF file names are built from sanitized ids and the default output is refused unless it resolves under `exports`.
+- `ux.json`, `collection.json` and the data folder's `minis.json` are written under a small lock file (`filelock.py`): the
+  CLI, the director and both fighter processes share them, and two read-modify-writes no longer drop each other's change.
 - **Move book** (tray > *Move book...*, `minis.py book`): every move, set piece and finisher per fighter, seen ones animated,
   unseen as silhouettes; seen move ids in `collection.json`.
 - Tray menu gains Settings..., Move book..., What am I looking at?, Replay last K.O., Save last fight as GIF.

@@ -242,6 +242,9 @@ def cmd_replay(a, m):
     out = Path(a.gif) if a.gif else replay.exports_dir() / replay.gif_name(plan)     # a path you type, else the data folder
     if out.suffix.lower() != '.gif':
         out = out / replay.gif_name(plan) if out.is_dir() or not out.suffix else out.with_suffix('.gif')
+    if not a.gif and not replay.inside_exports(out):
+        print('refused: the default output would leave the exports folder')
+        return 1
     print('rendering offline (the planner on a plain backdrop, never a screen capture) ...')
     p, n = replay.save_gif(replay.frames(plan, 'final' if a.final else 'all', fps=12, names=names, code=fcode,
                                          flashes=control.flashes_on(), label='TASKBAR FIGHTERS'), out)

@@ -1,7 +1,7 @@
 """The UX layer: Settings + zone editor, first-run guide + legend, hover cards, event signals, the results moment, the rival
 countdown, instant replay + fight codes + GIF export, and the move book.  Pure models are driven directly; the window
 drivers and the director / fighter hooks run against fake shells (no real window, no screen capture, no PowerShell)."""
-import io, json, os, sys, tempfile, unittest
+import io, json, os, sys, tempfile, time, unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
@@ -100,7 +100,7 @@ class UxState(Isolated):
             ux.set_switch('paused', True)                                # control.json keys are not ours
 
     def test_requests_expire_and_carry_a_short_arg(self):
-        ux.request('replay', 'TF1-x' * 60, now=1000.0)
+        ux.request('replay', 'TF2-x' * 60, now=1000.0)
         r = ux.pending(now=1001.0)
         self.assertEqual(r['kind'], 'replay')
         self.assertLessEqual(len(r['arg']), 120)
@@ -148,7 +148,7 @@ class Replay(Isolated):
         self.assertNotIn('rival', e['plan'])                                # only what the planner reads
         self.assertNotIn('deadline', e['plan'])
         self.assertNotIn('id', e['plan'])
-        self.assertTrue(e['code'].startswith('TF1-claude-codex-'))
+        self.assertTrue(e['code'].startswith('TF2-claude-codex-'))
         w = 'claude' if s['winner'] == 'a' else 'codex'
         l = 'codex' if w == 'claude' else 'claude'
         self.assertEqual(replay.h2h(w, l), (1, 0))
@@ -187,7 +187,7 @@ class Replay(Isolated):
         old = bytearray(replay._unb32(code.split('-')[3]))
         old[0] = 99
         old[-1] = sum(old[:-1]) & 0xFF
-        plan, _, _, _, warn = replay.resolve('TF1-claude-codex-' + replay._b32(bytes(old)))
+        plan, _, _, _, warn = replay.resolve('TF2-claude-codex-' + replay._b32(bytes(old)))
         self.assertIn('different engine version', warn)
 
     def test_frames_are_offline_renders_on_the_plain_backdrop(self):
@@ -909,7 +909,7 @@ class Commands(Isolated):
             rc, out = self.run_cli('replay', e['code'], '--gif', str(dst), '--final')
         self.assertEqual(rc, 0)
         self.assertTrue(dst.exists())
-        rc, out = self.run_cli('replay', 'TF1-claude-codex-zzzz')
+        rc, out = self.run_cli('replay', 'TF2-claude-codex-zzzz')
         self.assertEqual(rc, 2)
 
     def test_book_list(self):
@@ -1053,6 +1053,103 @@ class NoTruncation(Isolated):
         g = G.Guide('guide', (40, 940), {'fighter': 520, 'plates': (40, 300), 'board': (746, 936)},
                     names={'a': 'A very long program name indeed'}, now=0.0)
         self.assertIn('A very long program name indeed.', ' '.join(g.body_lines()))
+
+
+class CodexReview(Isolated):
+    """The second Codex review of this branch: a crafted fight code must not escape the exports folder, two writers of one
+    JSON file must not lose each other's entries, and pack ids with hyphens round-trip through a fight code."""
+
+    def test_a_crafted_code_cannot_name_a_path_and_the_default_gif_stays_in_exports(self):
+        payload = replay.encode(replay.clean_plan(PLAN)).split('-')[3]
+        for bad in ('..', 'a/b', 'a\\b', '..\\..\\x', 'A', 'x' * 41, '', 'c.d.e!'):
+            with self.assertRaises(replay.CodeError, msg=bad):
+                replay.decode(f'TF2-{bad}-codex-{payload}')
+        with mock.patch.object(replay, 'ID_RE', mock.Mock(match=lambda s: True)):   # even if the allowlist were bypassed ...
+            plan, _, _ = replay.decode(f'TF2-..\\..\\evil-codex-{payload}')
+        name = replay.gif_name(plan)
+        self.assertNotIn('\\', name)
+        self.assertNotIn('/', name)
+        self.assertNotIn('..', name)
+        self.assertTrue(replay.inside_exports(replay.exports_dir() / name))        # ... the file name is sanitized ...
+        self.assertFalse(replay.inside_exports(replay.exports_dir() / '..' / 'x.gif'))
+        self.assertFalse(replay.inside_exports(Path(tempfile.gettempdir()) / 'x.gif'))
+        out = io.StringIO()
+        with mock.patch.object(replay, 'gif_name', lambda *a, **k: '..\\..\\escape.gif'), redirect_stdout(out), \
+                mock.patch.object(minis, 'running', lambda role: False):
+            _, s = replay.summarize(PLAN)
+            replay.store(PLAN, s, {'a': 'claude', 'b': 'codex'})
+            rc = minis.main(['replay', '--gif'])                                    # ... and the CLI checks containment
+        self.assertEqual(rc, 1)
+        self.assertIn('refused', out.getvalue())
+        self.assertFalse((self.data / 'escape.gif').exists())
+
+    def test_pack_ids_with_hyphens_round_trip(self):
+        plan = dict(PLAN, chars={'a': 'pack-shadow-ronin', 'b': 'codex'})
+        code = replay.encode(replay.clean_plan(plan))
+        self.assertTrue(code.startswith('TF2-pack.shadow.ronin-codex-'))
+        self.assertEqual(code.count('-'), 3)
+        p2, _, _ = replay.decode(code)
+        self.assertEqual(p2['chars'], {'a': 'pack-shadow-ronin', 'b': 'codex'})
+        with self.assertRaises(ValueError):
+            replay.encode(replay.clean_plan(dict(PLAN, chars={'a': 'Bad Id', 'b': 'codex'})))
+        with self.assertRaises(replay.CodeError):
+            replay.decode('TF1-claude-codex-' + code.split('-')[3])              # an earlier format says so, never guesses
+
+    def test_two_processes_merging_the_move_book_lose_nothing(self):
+        import threading
+        p = self.data / 'collection.json'
+        collection.merge({'claude': {'m:jab': 1.0}}, p)
+        started, go = threading.Event(), threading.Event()
+
+        def slow_writer():                                                       # reads the file, then waits inside the lock
+            collection.merge({'claude': {'m:cross': 2.0}}, p, _after_read=lambda: (started.set(), go.wait(5)))
+        t = threading.Thread(target=slow_writer)
+        t.start()
+        started.wait(5)
+        other = threading.Thread(target=lambda: collection.merge({'codex': {'m:spiral_orb': 3.0}}, p))
+        other.start()                                                            # the second writer must wait for the lock
+        other.join(0.3)
+        self.assertTrue(other.is_alive())
+        go.set()
+        t.join(5)
+        other.join(5)
+        seen = collection.read(p)
+        self.assertEqual(set(seen['claude']), {'m:jab', 'm:cross'})
+        self.assertEqual(set(seen['codex']), {'m:spiral_orb'})                     # nothing lost, no manual retry
+        self.assertFalse(p.with_name('collection.json.lock').exists())
+
+    def test_two_processes_updating_ux_json_keep_both_changes(self):
+        import threading
+        p = self.data / 'ux.json'
+        started, go = threading.Event(), threading.Event()
+        t = threading.Thread(target=lambda: ux.update(p, _after_read=lambda: (started.set(), go.wait(5)), first_run_done=True))
+        t.start()
+        started.wait(5)
+        other = threading.Thread(target=lambda: ux.set_switch('results', False, p))
+        other.start()
+        other.join(0.3)
+        self.assertTrue(other.is_alive())
+        go.set()
+        t.join(5)
+        other.join(5)
+        self.assertTrue(ux.first_run_done(p))
+        self.assertFalse(ux.switch('results', p))
+        self.assertFalse(p.with_name('ux.json.lock').exists())
+
+    def test_a_stale_lock_is_reclaimed_and_a_held_one_times_out(self):
+        from minis_core import filelock
+        p = self.data / 'x.json'
+        lock = p.with_name('x.json.lock')
+        lock.write_text('')
+        old = time.time() - filelock.STALE_S - 1
+        os.utime(lock, (old, old))
+        with filelock.locked(p, timeout=0.2) as ok:
+            self.assertTrue(ok)                                                   # a dead holder's lock is taken over
+        lock.write_text('')
+        with filelock.locked(p, timeout=0.2) as ok:
+            self.assertFalse(ok)                                                  # a live one is not
+        lock.unlink()
+        self.assertFalse(collection.Tracker().flush(0))                           # nothing to write: no lock is needed
 
 
 class Overlay(Isolated):

@@ -46,9 +46,18 @@ def read(p=None) -> dict:
     return data
 
 
-def update(p=None, **kw) -> bool:
-    data = dict(read(p), ts=time.time(), **kw)
-    return write_json_atomic(Path(p) if p else path(), data)
+def update(p=None, _after_read=None, **kw) -> bool:
+    """Change some keys, keeping the rest: the read-modify-write runs under a lock (filelock) - the CLI, the director and
+    both fighters write this file.  False when the lock could not be taken.  _after_read: a test hook."""
+    from .filelock import locked
+    target = Path(p) if p else path()
+    with locked(target) as ok:
+        if not ok:
+            return False
+        data = dict(read(target), ts=time.time(), **kw)
+        if _after_read is not None:
+            _after_read()
+        return write_json_atomic(target, data)
 
 
 def switch(name, p=None) -> bool:
@@ -146,23 +155,27 @@ def read_settings(p=None) -> dict:
 def write_setting(key, value, p=None) -> bool:
     """Set (value not None) or remove (None) one key in minis.json, keeping every other key and the file's indentation
     style simple (2 spaces).  A minis.json that does not parse is left alone (False): never overwrite someone's file."""
+    from .filelock import locked
     p = Path(p) if p else settings_path()
-    data = {}
-    if p.exists():
+    with locked(p) as ok:
+        if not ok:
+            return False
+        data = {}
+        if p.exists():
+            try:
+                data = json.loads(p.read_text(encoding='utf-8'))
+            except (OSError, ValueError):
+                return False
+            if not isinstance(data, dict):
+                return False
+        if value is None:
+            data.pop(key, None)
+        else:
+            data[key] = value
         try:
-            data = json.loads(p.read_text(encoding='utf-8'))
-        except (OSError, ValueError):
+            tmp = p.with_name(f'.{p.stem}.{os.getpid()}.tmp')
+            tmp.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+            os.replace(tmp, p)
+            return True
+        except OSError:
             return False
-        if not isinstance(data, dict):
-            return False
-    if value is None:
-        data.pop(key, None)
-    else:
-        data[key] = value
-    try:
-        tmp = p.with_name(f'.{p.stem}.{os.getpid()}.tmp')
-        tmp.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
-        os.replace(tmp, p)
-        return True
-    except OSError:
-        return False

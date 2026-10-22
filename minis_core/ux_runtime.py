@@ -283,6 +283,9 @@ class Host:
             return
         flashes = control.flashes_on(default=self.b.cfg.get('flashes', True))
         out = replay.exports_dir() / replay.gif_name(plan)
+        if not replay.inside_exports(out):                    # cannot happen with safe_id names; refused rather than trusted
+            self.say('GIF refused: the output would leave the exports folder')
+            return
         self.say('making the GIF ... (a few seconds)', 30.0)
 
         def work():
