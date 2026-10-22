@@ -13,28 +13,40 @@ MARGIN = 8
 BLUR_GRACE_S = 1.0
 
 
-def taskbar_top(shell):
-    """Screen y of the taskbar's top edge (macOS: the Dock strip's), or the screen bottom - 48."""
+def taskbar_top(shell, stage=None):
+    """Screen y of the fighters' band's top edge: the stage's band (config.stage: the taskbar, or the strip beside a top /
+    left / right taskbar) when the host passes one, else the taskbar rect (macOS: the Dock strip), else screen bottom - 48."""
+    if stage and stage.get('band'):
+        return int(stage['band'][0])
     l, t, r, b, edge = shell.taskbar_rect()
     if edge == 3:
         return t
     return shell.screen_size()[1] - 48
 
 
-def placement(shell, w, h, scale, centre_x=None):
-    """(x, y) screen px of a w x h (logical) popup just above the taskbar, centred on centre_x, kept on the screen."""
+def area_of(shell, stage=None):
+    """(x0, x1, top, monitor_top) the popups stay inside: the band's monitor (which may sit at negative x / y) when a stage is
+    known, else the primary screen."""
+    if stage and stage.get('monitor'):
+        ml, mt, mr, mb = stage['monitor']
+        return int(ml), int(mr), taskbar_top(shell, stage), int(mt)
     sw, sh = shell.screen_size()
-    top = taskbar_top(shell)
+    return 0, int(sw), taskbar_top(shell, stage), 0
+
+
+def placement(shell, w, h, scale, centre_x=None, stage=None):
+    """(x, y) screen px of a w x h (logical) popup just above the fighters' band, centred on centre_x, kept on its monitor."""
+    x0, x1, top, mtop = area_of(shell, stage)
     pw, ph = w * scale, h * scale
-    cx = sw // 2 if centre_x is None else int(centre_x)
-    return max(MARGIN, min(sw - pw - MARGIN, cx - pw // 2)), max(MARGIN, top - ph - MARGIN)
+    cx = (x0 + x1) // 2 if centre_x is None else int(centre_x)
+    return max(x0 + MARGIN, min(x1 - pw - MARGIN, cx - pw // 2)), max(mtop + MARGIN, top - ph - MARGIN)
 
 
-def fit_scale(shell, w, h, want):
-    """The largest whole-pixel scale <= want at which a w x h popup fits above the taskbar."""
+def fit_scale(shell, w, h, want, stage=None):
+    """The largest whole-pixel scale <= want at which a w x h popup fits above the band."""
     try:
-        sw, _ = shell.screen_size()
-        room = taskbar_top(shell) - 2 * MARGIN
+        x0, x1, top, mtop = area_of(shell, stage)
+        sw, room = x1 - x0, top - mtop - 2 * MARGIN
     except Exception:
         return max(1, int(want))
     s = max(1, int(want))
@@ -48,13 +60,13 @@ class ModelWindow:
     wheel(delta, now), key(vk, now), tick(now).  on_close(model) runs once when it closes."""
 
     def __init__(self, shell, model, mono, title, scale=2, centre_x=None, xy=None, activatable=True, close_on_blur=True,
-                 on_close=None, hittest=None):
+                 on_close=None, hittest=None, stage=None):
         self.shell, self.model, self.mono = shell, model, mono
         self.scale = max(1, int(scale))
         self.close_on_blur, self.on_close = close_on_blur, on_close
         self.closed = False
         self.opened = mono()
-        x, y = xy if xy is not None else placement(shell, model.W, model.H, self.scale, centre_x)
+        x, y = xy if xy is not None else placement(shell, model.W, model.H, self.scale, centre_x, stage=stage)
         self.ov = shell.Overlay(title, x, y, model.W, model.H, scale=self.scale, on_event=self.on_event,
                                 on_hittest=hittest or (lambda cx, cy: True), on_key=self.on_key if activatable else None,
                                 activatable=activatable, on_blur=self.on_blur if activatable else None)

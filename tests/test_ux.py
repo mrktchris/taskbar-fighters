@@ -1152,6 +1152,31 @@ class CodexReview(Isolated):
         self.assertFalse(collection.Tracker().flush(0))                           # nothing to write: no lock is needed
 
 
+class Stage(unittest.TestCase):
+    """The UX windows follow config.stage (win-robust): the band of a top / left / right taskbar, auto-hide, another monitor."""
+
+    def test_popups_sit_above_the_bands_top_on_its_own_monitor(self):
+        from minis_win import ux_window as UW
+        from minis_win.settings_window import zone_geometry
+        sh = Shell()
+        bottom = dict(band=(1392, 1440), floor=1440, span=(0, 2560), monitor=(0, 0, 2560, 1440), scale=1)
+        self.assertEqual(UW.taskbar_top(sh, bottom), 1392)
+        self.assertEqual(UW.taskbar_top(sh, None), 1392)                              # legacy: the taskbar rect
+        top_bar = dict(band=(1392, 1440), floor=1440, span=(0, 2560), monitor=(0, 0, 2560, 1440), scale=1, layout='strip')
+        x, y = UW.placement(sh, 100, 50, 2, centre_x=1280, stage=top_bar)
+        self.assertEqual((x, y), (1180, 1392 - 100 - UW.MARGIN))
+        left_mon = dict(band=(1032, 1080), floor=1080, span=(-1920, 0), monitor=(-1920, 0, 0, 1080), scale=1)
+        x, y = UW.placement(sh, 100, 50, 2, centre_x=-1900, stage=left_mon)         # clamped to THAT monitor, not the primary
+        self.assertEqual((x, y), (-1920 + UW.MARGIN, 1032 - 100 - UW.MARGIN))
+        self.assertEqual(UW.fit_scale(sh, 300, 500, 2, stage=left_mon), 2)
+        self.assertEqual(UW.fit_scale(sh, 300, 600, 2, stage=left_mon), 1)           # 1200 px would not fit above the band
+        sw, band, wx, wy = zone_geometry(sh, 1, left_mon)
+        self.assertEqual((sw, band, wx, wy), (1920, 48, -1920, 1032 - S.BAR_H))
+        z = S.ZoneEdit(sw, band, (-1880, -1000), origin=-1920)
+        self.assertEqual((z.z0, z.z1), (40, 920))                                     # window-local ...
+        self.assertEqual(z.result(), [-1880, -1000])                                  # ... screen-logical out
+
+
 class Overlay(Isolated):
     def test_the_data_folder_minis_json_overrides_the_zone(self):
         cfg = dict(CFG, zone=[10, 700])
@@ -1159,8 +1184,10 @@ class Overlay(Isolated):
         ux.write_setting('zone', [100, 1000])
         self.assertEqual(ux.settings_path(), self.data / 'minis.json')
         self.assertEqual(ux.apply_overlay(dict(cfg))['zone'], [100, 1000])
+        self.assertFalse(ux.apply_overlay(dict(cfg))['zone_auto'])            # a set zone is never replaced by a detected one
         ux.write_setting('zone', 'auto')
-        self.assertEqual(ux.apply_overlay(dict(cfg))['zone'], list(CFG['zone']))
+        got = ux.apply_overlay(dict(cfg, zone_auto=False))
+        self.assertEqual((got['zone'], got['zone_auto']), (list(CFG['zone']), True))   # auto = detect again (config.stage)
         ux.write_setting('zone', [5, 1])                                     # nonsense is ignored
         self.assertEqual(ux.apply_overlay(dict(cfg))['zone'], [10, 700])
 

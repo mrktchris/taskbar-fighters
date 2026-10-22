@@ -12,7 +12,7 @@ from .ux_window import placement
 
 
 class ReplayWindow:
-    def __init__(self, shell, frames_fn, mono, centre_x=None, scale=1, log=None, title='minis-replay'):
+    def __init__(self, shell, frames_fn, mono, centre_x=None, scale=1, log=None, title='minis-replay', stage=None):
         """frames_fn() -> an iterable of (RGBA image, ms) - minis_core.replay.frames(...) bound to a plan."""
         from minis_core import replay
         self.shell, self.mono, self.log = shell, mono, log
@@ -24,7 +24,7 @@ class ReplayWindow:
         self.shown = 0
         self.next_t = None
         self.end_t = None
-        x, y = placement(shell, replay.W, replay.H, self.scale, centre_x)
+        x, y = placement(shell, replay.W, replay.H, self.scale, centre_x, stage=stage)
         self.ov = shell.Overlay(title, x, y, replay.W, replay.H, scale=self.scale, on_event=self.on_event,
                                 on_hittest=lambda cx, cy: True)
         first = replay.backdrop()

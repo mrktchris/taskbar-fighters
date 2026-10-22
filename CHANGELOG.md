@@ -4,7 +4,7 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
 
 ## Unreleased
 
-### UX layer - getting around
+### UX layer - getting around (branch `ux`)
 
 Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.md](docs/RESEARCH-UX.md)), keeping to its
 "do not do" list: no popups that take focus, no network, no new capture, no guilt or streak pressure.
@@ -49,6 +49,19 @@ Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.
   `tools/ux_previews.py` renders every new window offline; `tests/test_ux.py`.
 - macOS: the same windows through the NSPanel overlay; PgUp/PgDn/Home keys mapped for the book; real-Mac checks are
   MAC-30 to MAC-37 in docs/MAC-HANDOFF.md.
+
+### Windows on strangers' PCs (branch `win-robust`)
+
+- **Any taskbar edge.** Bottom: on the taskbar as before. Top / left / right: a strip along the bottom of the work area
+  beside the taskbar. Auto-hide at the bottom: shown only while the taskbar is revealed (never over its 2 px reveal strip).
+- **The zone finds itself.** The empty stretch of the taskbar is detected from the RECTS of its elements (UI Automation
+  bounding rects, the shell's `Start` / `MSTaskListWClass` / `TrayNotifyWnd` windows as a fallback; no names or titles),
+  for centred and left-aligned icons, Windows 10 and 11, re-read every 5 s. A `zone` in `minis.json` still wins
+  (`zone_auto`); `monitor` picks another monitor's taskbar.
+- **DPI.** Per-monitor v2 awareness with fallbacks (reported by `doctor`); integer sprite / HUD scale from the band at every
+  DPI; the tray icon reloads at the new size on a DPI change; `monitors` and `doctor` show each monitor's scale.
+- **Live re-layout** on a display change, DPI change, work-area change and an Explorer restart (TaskbarCreated).
+- `doctor` prints the detected edge, DPI, layout and zone.
 
 ## v1.0.0 - 2026-10-16 (V6 -> V8)
 

@@ -12,9 +12,50 @@ gdi32 = ctypes.WinDLL('gdi32', use_last_error=True)
 shell32 = ctypes.WinDLL('shell32', use_last_error=True)
 kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 try:
-    user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))      # per-monitor v2
-except Exception:
-    pass
+    shcore = ctypes.WinDLL('shcore')
+except OSError:
+    shcore = None
+
+
+def _set_dpi_awareness():
+    """Make every coordinate this process sees a PHYSICAL pixel (no DPI virtualisation, no blurry bitmap stretching), so
+    sprites drawn at an integer scale stay crisp at 125-200%.  Tries, in order: per-monitor v2 (Windows 10 1703+), per-monitor
+    v1, shcore per-monitor (8.1), system aware (Vista).  A call refused because awareness is already set (a manifest, e.g. a
+    frozen exe) is fine: dpi_awareness() reports what the process really has.  -> the step that succeeded, or None."""
+    for ctx, label in ((-4, 'per-monitor v2'), (-3, 'per-monitor')):
+        try:
+            if user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(ctx)):
+                return label
+        except (AttributeError, OSError):
+            break                                                    # no such API (before Windows 10 1703)
+    try:
+        if shcore is not None and shcore.SetProcessDpiAwareness(2) == 0:    # PROCESS_PER_MONITOR_DPI_AWARE
+            return 'per-monitor (shcore)'
+    except (AttributeError, OSError):
+        pass
+    try:
+        if user32.SetProcessDPIAware():
+            return 'system'
+    except (AttributeError, OSError):
+        pass
+    return None
+
+
+DPI_SET = _set_dpi_awareness()
+
+
+def dpi_awareness():
+    """What the process really has: 'per-monitor v2', 'per-monitor', 'system' or 'unaware' (or 'unknown')."""
+    try:
+        user32.GetThreadDpiAwarenessContext.restype = ctypes.c_void_p
+        user32.AreDpiAwarenessContextsEqual.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        user32.GetAwarenessFromDpiAwarenessContext.argtypes = [ctypes.c_void_p]
+        ctx = user32.GetThreadDpiAwarenessContext()
+        if user32.AreDpiAwarenessContextsEqual(ctx, ctypes.c_void_p(-4)):
+            return 'per-monitor v2'
+        return {0: 'unaware', 1: 'system', 2: 'per-monitor'}.get(user32.GetAwarenessFromDpiAwarenessContext(ctx), 'unknown')
+    except (AttributeError, OSError):
+        return DPI_SET or 'unknown'
 
 LRESULT = ctypes.c_ssize_t
 WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM)
@@ -154,7 +195,46 @@ def make_tray(tip, flags, on_choice, on_left, log=None, icon_path=None):
     return t
 
 
+# ---------------------------------------------------------------- live re-layout: display, DPI, work area, Explorer restart
+WM_DISPLAYCHANGE, WM_SETTINGCHANGE, WM_DPICHANGED, SPI_SETWORKAREA = 0x7E, 0x1A, 0x2E0, 0x2F
+user32.RegisterWindowMessageW.argtypes = [wt.LPCWSTR]
+user32.RegisterWindowMessageW.restype = wt.UINT
+WM_TASKBARCREATED = user32.RegisterWindowMessageW('TaskbarCreated') or -1      # broadcast when Explorer (re)creates the taskbar
+_layout = {'epoch': 0, 'why': None}
+
+
+def layout_epoch():
+    """A counter that every display change, DPI change, work-area change (the taskbar moved or resized) and Explorer restart
+    bumps.  The fighter / scoreboard loops re-read the taskbar geometry at once when it moves (instead of within 2 s)."""
+    return _layout['epoch']
+
+
+def note_layout_change(why):
+    _layout['epoch'] += 1
+    _layout['why'] = why
+    _parts_cache.clear()                                   # the taskbar's elements moved: probe them again
+
+
+def _layout_message(msg, wparam):
+    """The layout cause of a window message, or None."""
+    if msg == WM_DISPLAYCHANGE:
+        return 'display'
+    if msg == WM_DPICHANGED:
+        return 'dpi'
+    if msg == WM_SETTINGCHANGE and wparam == SPI_SETWORKAREA:
+        return 'workarea'
+    if msg == WM_TASKBARCREATED:
+        return 'taskbar-created'
+    return None
+
+
 def _wndproc(hwnd, msg, wparam, lparam):
+    why = _layout_message(msg, wparam)
+    if why:
+        note_layout_change(why)
+        if msg == WM_DPICHANGED:
+            return 0                                       # we place our layered windows ourselves (no suggested-rect resize)
+        return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
     ov = _instances.get(hwnd)
     if msg == WM_MOUSEACTIVATE:
         return MA_ACTIVATE if (ov and ov.activatable) else MA_NOACTIVATE      # fighters never steal focus
@@ -417,6 +497,156 @@ def screen_size():
     return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 
+# ---------------------------------------------------------------- the taskbar's geometry for config.stage(): RECTS only
+user32.FindWindowExW.argtypes = [wt.HWND, wt.HWND, wt.LPCWSTR, wt.LPCWSTR]
+user32.FindWindowExW.restype = wt.HWND
+user32.MonitorFromRect.argtypes = [ctypes.POINTER(wt.RECT), wt.DWORD]
+user32.MonitorFromRect.restype = wt.HMONITOR
+user32.EnumChildWindows.argtypes = [wt.HWND, ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM), wt.LPARAM]
+user32.GetDpiForSystem.restype = wt.UINT
+if shcore is not None:
+    shcore.GetDpiForMonitor.argtypes = [wt.HMONITOR, ctypes.c_int, ctypes.POINTER(wt.UINT), ctypes.POINTER(wt.UINT)]
+
+# Taskbar element windows whose rects mark occupied space, Windows 10 and 11 (class names of the shell's own windows; no
+# window text is read).  MSTaskListWClass hugs the icon cluster on Windows 11 (build 22000+, where it is a hidden stand-in
+# the XAML taskbar keeps in place); on Windows 10 it spans the whole free stretch, so it only counts on 11.
+PART_CLASSES = ('Start', 'TrayButton', 'TrayNotifyWnd', 'TrayDummySearchControl')
+PARTS_TTL_S = 5.0                                          # the icon cluster is re-probed this often (it grows and shrinks)
+_parts_cache = {}
+
+
+def _rect_of(hwnd):
+    r = wt.RECT()
+    if not hwnd or not user32.GetWindowRect(hwnd, ctypes.byref(r)):
+        return None
+    return (r.left, r.top, r.right, r.bottom)
+
+
+def _windows_build():
+    try:
+        import sys
+        return int(sys.getwindowsversion().build)
+    except Exception:
+        return 0
+
+
+def monitor_dpi(rect):
+    """The effective DPI scale (1.0 = 100%) of the monitor holding `rect`; the system DPI when the per-monitor call is missing."""
+    try:
+        hmon = user32.MonitorFromRect(ctypes.byref(wt.RECT(*rect)), 2)            # MONITOR_DEFAULTTONEAREST
+        if shcore is not None and hmon:
+            x, y = wt.UINT(), wt.UINT()
+            if shcore.GetDpiForMonitor(hmon, 0, ctypes.byref(x), ctypes.byref(y)) == 0 and x.value:   # MDT_EFFECTIVE_DPI
+                return x.value / 96.0
+    except (AttributeError, OSError):
+        pass
+    try:
+        return (user32.GetDpiForSystem() or 96) / 96.0
+    except (AttributeError, OSError):
+        return 1.0
+
+
+def win32_part_rects(tray_hwnd, build=None):
+    """Rects of the taskbar's own child windows that mark occupied space (start, task view / search buttons, tray, and on
+    Windows 11 the icon cluster's stand-in).  The fallback when UI Automation is unavailable."""
+    build = _windows_build() if build is None else build
+    out = []
+
+    def cb(h, lp):
+        cls = _class_name(h)
+        if cls in PART_CLASSES or (cls == 'MSTaskListWClass' and build >= 22000):
+            r = _rect_of(h)
+            if r and r[2] > r[0] and r[3] > r[1]:
+                out.append(r)
+        return True
+    user32.EnumChildWindows(tray_hwnd, ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM)(cb), 0)
+    return out
+
+
+def uia_part_rects(tray_hwnd):
+    """BoundingRectangle of every on-screen UI Automation element inside the taskbar (start, search, task view, widgets, each
+    app button, tray icons, clock) - the only accurate source for the XAML taskbar of Windows 11, whose buttons have no
+    windows.  Raw COM through ctypes (no extra package); ONLY the rect and the offscreen flag are read, never a name, a value
+    or a class.  None when UI Automation cannot be used."""
+    from minis_win import uia
+    return uia.descendant_rects(tray_hwnd)
+
+
+def taskbar_parts(tray_hwnd, now=None):
+    """(rects, source) of the taskbar's elements, cached PARTS_TTL_S per taskbar window (and dropped on any layout change)."""
+    import time as _t
+    now = _t.monotonic() if now is None else now
+    key = int(tray_hwnd or 0)
+    got = _parts_cache.get(key)
+    if got and now - got[0] < PARTS_TTL_S:
+        return got[1], got[2]
+    rects, src = None, None
+    try:
+        rects = uia_part_rects(tray_hwnd)
+        src = 'uia' if rects else None
+    except Exception:
+        rects = None
+    if not rects:
+        try:
+            rects = win32_part_rects(tray_hwnd)
+            src = 'win32' if rects else None
+        except Exception:
+            rects = None
+    _parts_cache[key] = (now, rects or None, src)
+    return rects or None, src
+
+
+def _secondary_taskbars():
+    out, h = [], None
+    while True:
+        h = user32.FindWindowExW(None, h, 'Shell_SecondaryTrayWnd', None)
+        if not h:
+            return out
+        r = _rect_of(h)
+        if r:
+            out.append((h, r))
+
+
+def _contains(outer, rect):
+    cx, cy = (rect[0] + rect[2]) // 2, (rect[1] + rect[3]) // 2
+    return outer[0] <= cx < outer[2] and outer[1] <= cy < outer[3]
+
+
+def taskbar_info(monitor=None):
+    """Everything config.stage() needs about the taskbar the fighters use, rects only: the primary taskbar, or with
+    `monitor` (an index from monitors()) that monitor's secondary taskbar.  Auto-hide: where the bar sits when shown, and
+    whether it is shown right now."""
+    from minis_core import config as cfgmod
+    mons = monitors()
+    primary = next((m for m in mons if m['primary']), mons[0] if mons else None)
+    hwnd, note = None, None
+    rect = edge = None
+    target = next((m for m in mons if m['index'] == monitor), None) if monitor else None
+    if target is not None and not target['primary']:
+        for h, r in _secondary_taskbars():
+            if _contains(target['rect'], r):
+                hwnd, rect, edge = h, r, cfgmod.edge_of(r, target['rect'])
+                break
+        if hwnd is None:
+            note = f'monitor {monitor} has no taskbar: using the primary'
+    if hwnd is None:
+        hwnd = user32.FindWindowW('Shell_TrayWnd', None)
+        l, t, r, b, edge = taskbar_rect()
+        rect = (l, t, r, b)
+    mon = next((m for m in mons if _contains(m['rect'], rect)), primary)
+    mrect = mon['rect'] if mon else rect
+    autohide = taskbar_autohide()
+    revealed = True
+    if autohide:
+        cur = _rect_of(hwnd) or rect
+        th = (rect[3] - rect[1]) if edge in (1, 3) else (rect[2] - rect[0])
+        rect, revealed = cfgmod.autohide_shown(cur, mrect, edge, thickness=th)
+    parts, src = taskbar_parts(hwnd) if hwnd else (None, None)
+    return dict(rect=tuple(rect), edge=int(edge), autohide=autohide, revealed=revealed, monitor=tuple(mrect),
+                work=tuple(mon['work']) if mon else tuple(mrect), dpi=monitor_dpi(rect), parts=parts, parts_src=src,
+                monitor_index=mon['index'] if mon else None, note=note)
+
+
 def fullscreen_busy():
     """True while a fullscreen app / game / presentation is up (QUNS_BUSY, D3D fullscreen, presentation)."""
     st = ctypes.c_int()
@@ -477,7 +707,8 @@ GWL_EXSTYLE, DWMWA_CLOAKED = -20, 14
 
 
 def monitors():
-    """-> [{'index': 1-based, 'rect': (l, t, r, b), 'work': (l, t, r, b), 'primary': bool}] in enumeration order."""
+    """-> [{'index': 1-based, 'rect': (l, t, r, b), 'work': (l, t, r, b), 'primary': bool, 'scale': DPI scale}] in
+    enumeration order (physical px: the process is per-monitor DPI aware)."""
     out = []
 
     def cb(hmon, hdc, prc, lp):
@@ -485,8 +716,15 @@ def monitors():
         mi.cbSize = ctypes.sizeof(MONITORINFO)
         if user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
             r, w = mi.rcMonitor, mi.rcWork
+            scale = 1.0
+            try:
+                x, y = wt.UINT(), wt.UINT()
+                if shcore is not None and shcore.GetDpiForMonitor(hmon, 0, ctypes.byref(x), ctypes.byref(y)) == 0 and x.value:
+                    scale = x.value / 96.0
+            except (AttributeError, OSError):
+                pass
             out.append(dict(index=len(out) + 1, rect=(r.left, r.top, r.right, r.bottom), work=(w.left, w.top, w.right, w.bottom),
-                            primary=bool(mi.dwFlags & 1)))
+                            primary=bool(mi.dwFlags & 1), scale=scale))
         return True
     user32.EnumDisplayMonitors(None, None, MONITORENUMPROC(cb), 0)
     return out

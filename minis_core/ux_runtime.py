@@ -112,6 +112,12 @@ class Host:
         g = getattr(self.b, 'g', None) or {}
         return int(g.get('scale', 1) or 1)
 
+    def stage(self):
+        """config.stage's layout for the scoreboard's band (any taskbar edge, DPI, its monitor), or None on a legacy shell."""
+        g = getattr(self.b, 'g', None) or {}
+        st = g.get('stage')
+        return st if isinstance(st, dict) and st.get('band') else None
+
     def centre_x(self):
         cfg = self.b.cfg
         c = (cfg['zone'][0] + cfg['zone'][1]) // 2 * self.scale()
@@ -184,7 +190,8 @@ class Host:
         be = settings_ui.Backend(self.b.cfg, startup=startup, restart=self.actions.get('restart'),
                                  edit_zone=lambda: self._edit_zone_from_settings(), log=self.log)
         model = settings_ui.Model(be, now=self.b.mono())
-        self.win['settings'] = open_settings(self.b.shell, model, self.b.mono, scale=max(2, self.scale() * 2), centre_x=self.centre_x())
+        self.win['settings'] = open_settings(self.b.shell, model, self.b.mono, scale=max(2, self.scale() * 2), centre_x=self.centre_x(),
+                                           stage=self.stage())
 
     def _edit_zone_from_settings(self):
         w = self.win.get('settings')
@@ -198,17 +205,18 @@ class Host:
         from minis_win.settings_window import open_zone, zone_geometry
         self._close('zone')
         sc = self.scale()
-        sw, band, _, _ = zone_geometry(self.b.shell, sc)
+        sw, band, x0, _ = zone_geometry(self.b.shell, sc, self.stage())
         cfg = self.b.cfg
         model = settings_ui.ZoneEdit(sw, band, cfg['zone'], plate_w=2 * cfgmod.PLATE_W + cfgmod.PLATE_SPACING, board=(SB.W, 36),
-                                     auto=cfgmod.DEFAULTS['zone'], now=self.b.mono())
-        self.win['zone'] = open_zone(self.b.shell, model, self.b.mono, scale=sc, on_close=self._zone_done)
+                                     auto=cfgmod.DEFAULTS['zone'], now=self.b.mono(), origin=x0 // max(1, sc))
+        self.win['zone'] = open_zone(self.b.shell, model, self.b.mono, scale=sc, on_close=self._zone_done, stage=self.stage())
 
     def _zone_done(self, model):
         restart = self.actions.get('restart')
         if model.phase == 'save':
-            if ux.write_setting('zone', model.result()):
-                self.say(f'zone saved: x {model.z0} - {model.z1}' + (' · restarting ...' if restart else ''))
+            z = model.result()
+            if ux.write_setting('zone', z):
+                self.say(f'zone saved: x {z[0]} - {z[1]}' + (' · restarting ...' if restart else ''))
                 if restart:
                     restart()
             else:
@@ -231,7 +239,7 @@ class Host:
             sa = director.slot_assignment(director.read_assign() or {}, 'a')
             start = sa.get('character') if sa else None
         model = collection.Book(lineup.characters(), collection.read(), self.library(), start=start, now=self.b.mono())
-        self.win['book'] = open_book(self.b.shell, model, self.b.mono, scale=max(2, self.scale() * 2), centre_x=self.centre_x())
+        self.win['book'] = open_book(self.b.shell, model, self.b.mono, scale=max(2, self.scale() * 2), centre_x=self.centre_x(), stage=self.stage())
 
     def _open_guide(self, arg=None, kind='guide'):
         from . import guide
@@ -243,7 +251,7 @@ class Host:
         def done(m):
             if m.kind == 'guide':
                 ux.set_first_run_done(True)              # shown (or skipped) once: never again on its own
-        self.win['guide'] = open_guide(self.b.shell, model, self.b.mono, scale=self.scale(), on_close=done)
+        self.win['guide'] = open_guide(self.b.shell, model, self.b.mono, scale=self.scale(), on_close=done, stage=self.stage())
 
     def _open_legend(self, arg=None):
         self._open_guide(arg, kind='legend')
@@ -266,7 +274,7 @@ class Host:
         summary = None
         self.win['replay'] = ReplayWindow(self.b.shell, lambda: replay.frames(plan, 'final', fps=20, names=names, code=code, flashes=flashes,
                                                                                summary=summary),
-                                          self.b.mono, centre_x=self.centre_x(), scale=self.scale(), log=self.log)
+                                          self.b.mono, centre_x=self.centre_x(), scale=self.scale(), log=self.log, stage=self.stage())
 
     def _open_gif(self, arg=None):
         from . import control, replay

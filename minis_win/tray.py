@@ -22,6 +22,7 @@ TIP_MAX = 127                                         # NOTIFYICONDATAW.szTip is
 WM_TRAY = 0x8000 + 0x4D                               # WM_APP + 'M': the icon's callback message
 TRAY_UID = 1
 WM_LBUTTONUP, WM_RBUTTONUP, WM_CONTEXTMENU = 0x202, 0x205, 0x7B
+WM_DISPLAYCHANGE, WM_DPICHANGED = 0x7E, 0x2E0
 
 
 def tray_menu(flags):
@@ -105,6 +106,10 @@ class Tray:
             self.added = False
             self.add()
             return True
+        if msg in (WM_DPICHANGED, WM_DISPLAYCHANGE) and self.added:
+            self._load_icon()                         # the small-icon size follows the DPI: a crisp icon, not a stretched one
+            self.api.notify('modify', self.hwnd, TRAY_UID, WM_TRAY, self.hicon, self.tip)
+            return False                              # DefWindowProc still sees it
         if msg != WM_TRAY:
             return False
         ev = lparam & 0xFFFF

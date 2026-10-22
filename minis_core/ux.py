@@ -136,10 +136,12 @@ def apply_overlay(cfg, p=None) -> dict:
             continue
         v = over[k]
         if k == 'zone':
-            if v == 'auto':
+            if v == 'auto':                                 # back to the detected zone (config.stage), whatever a hand-written file says
                 cfg['zone'] = list(cfgmod.DEFAULTS['zone'])
+                cfg['zone_auto'] = True
             elif isinstance(v, list) and len(v) == 2 and all(isinstance(x, (int, float)) for x in v) and v[1] > v[0]:
                 cfg['zone'] = [int(v[0]), int(v[1])]
+                cfg['zone_auto'] = False                    # the one you set is never replaced by a detected one
     return cfg
 
 

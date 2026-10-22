@@ -130,6 +130,17 @@ class TrayLogic(unittest.TestCase):
         self.assertIn(('destroy_icon', 101), api.calls)                       # the old HICON is freed, a fresh one loaded
         self.assertEqual(api.notifies('add')[-1][2], 102)
 
+    def test_a_dpi_or_display_change_reloads_the_icon_at_the_new_size(self):
+        api = FakeApi()
+        t = make_tray(api)
+        t.create()
+        api.small_icon_size = lambda hwnd: 32                                     # the monitor went to 200%
+        for msg in (T.WM_DPICHANGED, T.WM_DISPLAYCHANGE):
+            self.assertFalse(api.handler(msg, 0, 0))                              # handled, but DefWindowProc still sees it
+        self.assertEqual([c for c in api.calls if c[0] == 'load'][-1][2], 32)
+        self.assertEqual(len(api.notifies('modify')), 2)
+        self.assertEqual(api.notifies('modify')[-1][2], 103)                      # the fresh HICON, not the 16/24 px one
+
     def test_a_refused_add_falls_back_to_modify(self):
         api = FakeApi()
         real = api.notify

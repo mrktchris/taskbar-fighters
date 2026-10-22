@@ -423,9 +423,10 @@ class ZoneEdit:
     board_w: the scoreboard's width inside the zone (it sits at z1 + 36 - SB.W).  Coordinates are window-local: the window
     spans x 0..sw and y 0..BAR_H + band (the band is the taskbar)."""
 
-    def __init__(self, sw, band, zone, plate_w=260, board=(190, 36), auto=(40, 900), now=0.0):
+    def __init__(self, sw, band, zone, plate_w=260, board=(190, 36), auto=(40, 900), now=0.0, origin=0):
         self.sw, self.band = int(sw), int(band)
-        self.z0, self.z1 = int(zone[0]), int(zone[1])
+        self.origin = int(origin)                           # logical x of the window's left edge (a monitor left of the primary)
+        self.z0, self.z1 = int(zone[0]) - self.origin, int(zone[1]) - self.origin
         self.orig = (self.z0, self.z1)
         self.auto = tuple(int(v) for v in auto)
         self.plate_w = int(plate_w)
@@ -518,7 +519,8 @@ class ZoneEdit:
             self.clamp()
 
     def result(self):
-        return [int(self.z0), int(self.z1)]
+        """The zone in screen-logical px (window-local + origin)."""
+        return [int(self.z0) + self.origin, int(self.z1) + self.origin]
 
     def frame_key(self, now):
         return (self.phase, self.z0, self.z1, self.hover, bool(self.drag), int(now * 2) % 2)

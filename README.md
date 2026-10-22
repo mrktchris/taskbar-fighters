@@ -345,7 +345,7 @@ Every option, effect and number: [docs/ARENA.md](https://github.com/mrktchris/ta
 
 ## Install and run
 
-**Requirements:** Windows 11 (tested; Windows 10 should work but is untested) with the taskbar at the bottom, Python 3.12 or
+**Requirements:** Windows 11 (tested; Windows 10 should work but is untested), the taskbar on any edge, Python 3.12 or
 newer (tested on 3.12 to 3.14), and Pillow. Nothing else: no services, no network, no startup entries unless you add one. The
 Windows zip needs no Python at all. On a Mac, see [macOS](#macos-experimental).
 
@@ -507,7 +507,6 @@ flash, rival, winners, lineup) live in `%LOCALAPPDATA%\minis\control.json` and a
 
 ```json
 {
-  "zone": [40, 900],
   "dormant_hours": 72,
   "sparring_bot": true,
   "ignore_sources": ["grok"],
@@ -521,7 +520,9 @@ flash, rival, winners, lineup) live in `%LOCALAPPDATA%\minis\control.json` and a
 
 | key | default | meaning |
 | --- | --- | --- |
-| `zone` | `[40, 900]` | screen x range of the empty taskbar stretch the fighters use (measured on a 2560x1440 display with centred icons) |
+| `zone` | detected | x range (logical px: screen px / sprite scale) of the stretch the fighters use. Windows finds the empty part of the taskbar itself; setting `zone` turns that off and always wins. `[40, 900]` is the fallback when detection fails |
+| `zone_auto` | `true` | Windows: detect the zone from the taskbar's element rects (`false` = always use `zone`) |
+| `monitor` | `null` | Windows: monitor index (`minis.py monitors`) whose taskbar the fighters use; default the primary. Other monitors' taskbars are ignored |
 | `dormant_hours` | `24` | a program that went quiet keeps its slot (asleep, dimmed) this long |
 | `sparring_bot` | `true` | one fighter alone: a generic sparring bot takes the other side |
 | `ignore_sources` | `[]` | program ids (see `detect`) that never get a fighter |
@@ -537,7 +538,25 @@ flash, rival, winners, lineup) live in `%LOCALAPPDATA%\minis\control.json` and a
 | `arena` | `{}` | arena options: `rounds`, `endless`, `intensity`, `seconds`, `intro`, `outro` ([docs/ARENA.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/ARENA.md)) |
 | `fps_active` / `fps_fight` / `fps_idle` | `10` / `30` / `4` | redraw rates |
 
-Fighters hide while a fullscreen app is up, while the taskbar is not at the bottom, and while it auto-hides.
+Where the fighters stand (Windows; `python minis.py doctor` prints the detected edge, DPI, layout and zone):
+
+- **Taskbar at the bottom:** on the taskbar, in its empty stretch. The stretch is found from the RECTANGLES of the taskbar's
+  buttons (UI Automation bounding rects of start, search, widgets, each app button, the tray; the shell's own child windows
+  `Start` / `MSTaskListWClass` / `TrayNotifyWnd` as a fallback) - never a name or title. Centred icons (Windows 11): left of
+  the icon cluster; left-aligned icons (Windows 10, or 11 set to left): between the icons and the tray. It is re-read every
+  5 s, so the zone shrinks as the icon cluster grows (in 48 px steps, so not every new icon moves the fighters).
+- **Taskbar at the top, left or right:** on a strip along the bottom of the work area next to the taskbar (48 px x the
+  monitor's scale high, up to 900 px of roam). The fight engine and art are horizontal, so a vertical lane is not offered.
+  The strip lies over the bottom of app windows; everything but the sprites, the names and the buttons is click-through.
+- **Auto-hide taskbar at the bottom:** shown only while the taskbar is revealed (followed every 0.25 s), so nothing ever sits
+  on the 2 px strip that brings it back. At the top or a side, the bottom strip is used and stays up.
+- **DPI:** the process is per-monitor DPI aware (v2, with fallbacks), so every position is a physical pixel. Sprites, plates
+  and the scoreboard are drawn at an integer scale that fits the taskbar band (1x at 100-175%, 2x at 200%): always crisp, never
+  stretched. The tray icon is reloaded at the new small-icon size when the DPI changes.
+- **Live changes:** a display change, a DPI change, the taskbar moving or resizing, and an Explorer restart (TaskbarCreated)
+  re-lay everything out at once.
+
+Fighters hide while a fullscreen app is up.
 
 ## Privacy and safety
 
@@ -595,10 +614,16 @@ minis_platform/   picks minis_win or minis_mac at run time (nothing imports a de
 
 ## Known limits and roadmap
 
-- **Windows tested; macOS experimental** (CI-tested, few real Macs so far: [docs/MAC-TESTING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/MAC-TESTING.md)). Windows:
-  bottom taskbar only. Only 100% DPI on the primary display has been seen; integer scaling is unit-tested, not observed at 150%
-  or 200%.
-- The default `zone` was measured on one 2560x1440 display with centred icons; other layouts need a `zone` in `minis.json`.
+- **Windows tested; macOS experimental** (CI-tested, few real Macs so far: [docs/MAC-TESTING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/MAC-TESTING.md)).
+- Windows layouts seen on a real PC: 100% DPI, bottom taskbar, centred icons, on the primary monitor and (with `monitor`) a
+  second monitor's taskbar. 125-200% DPI, top / left / right and auto-hide taskbars, left-aligned icons, Windows 10 and an
+  Explorer restart are unit-tested over synthetic rect sets, not yet seen on a real desktop (RESULT.md has the matrix).
+- At fractional scales (125%, 150%, 175%) sprites stay at 1x so they are crisp: they look smaller than at 100% (use `size 128`).
+- A taskbar too full to hold the plates, a bout and the scoreboard (a 1024 px screen, 1920x1080 at 200% with many icons) gets a
+  narrow zone in its gap: nobody walks on an icon, but the plates and the scoreboard overlap; `plates off`, `"scoreboard":
+  false` or `size 64` help, or set `zone`. With no free stretch at all the fighters hide, and `status` / `doctor` say "no free
+  taskbar space". The default zone `[40, 900]` is used only when the taskbar's buttons cannot be read at all.
+- Top, left and right taskbars use a strip at the bottom of the screen, over app windows (no vertical lane).
 - At the default 128 px a fighter stands well above the 48 px taskbar, over the bottom of the desktop (its window is
   click-through except the sprite); `size 64` keeps it to about 11 px above the taskbar's top edge. Long weapons tilt to fit
   the cell.
