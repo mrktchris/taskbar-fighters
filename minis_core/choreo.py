@@ -176,14 +176,17 @@ def weighted(rng, items):
 
 
 class Picker:
-    """One fighter's move picker.  `counts` is the per-match tally (tests, previews)."""
+    """One fighter's move picker.  `counts` is the per-match tally (tests, previews).  `learned` (learning.py kit,
+    {move: {'w', 'kind', 'vs'}}) adds the moves this program taught itself: strikes join the pool at their mastery weight,
+    a counter answers one hit kind (counter_for / parry_k)."""
 
-    def __init__(self, rng, atlas):
+    def __init__(self, rng, atlas, learned=None):
         self.rng, self.atlas = rng, atlas
         self.sig = atlas.signature()
         self.last = None
         self.used = Counter()
         self.counts = Counter()
+        self.learned = {m: dict(v) for m, v in (learned or {}).items() if m in atlas.anim and isinstance(v, dict)}
 
     def new_round(self):
         self.used = Counter()
@@ -194,7 +197,20 @@ class Picker:
         sig = self.sig['strike']
         v7 = [(m, TYPE_W[a['type']]) for m, a in self.atlas.anim.items() if a.get('type') in TYPE_W and a.get('cat') == 'strike']
         k = SHARED_K if v7 else 1.0
-        return [(m, STRIKE_W.get(m, 0.8) * k if m != sig else 0.8) for m in pool] + v7
+        learned = [(m, float(v.get('w', 0.6))) for m, v in self.learned.items() if v.get('kind', 'strike') == 'strike']
+        return [(m, STRIKE_W.get(m, 0.8) * k if m != sig else 0.8) for m in pool] + v7 + learned
+
+    def counter_for(self, meta):
+        """The learned counter that answers a move of this `hit` kind (anim.json meta of the incoming move), or None."""
+        hk = (meta or {}).get('hit')
+        for m, v in self.learned.items():
+            if v.get('kind') == 'counter' and v.get('vs') == hk and m != self.last:
+                return m
+        return None
+
+    def parry_k(self, meta):
+        """A learned counter widens the parry window against its kind (learning.PARRY_K); 1.0 otherwise."""
+        return 1.6 if self.counter_for(meta) else 1.0
 
     def pick(self, cands, prefer=None):
         """cands: [(move, weight)].  Never the last move again, never a third use in a round, while anything else is
@@ -313,7 +329,8 @@ def plan_exchange(rng, att, dfn, sit):
             move = bm
             att.note(move)
     dmg = damage_of(A, move, kind)
-    first = _resolve(rng, A, D, move, kind, dmg, friendly, edge=float(sit.get('edge') or 0.0), force_hit=boost or comeback)
+    first = _resolve(rng, A, D, move, kind, dmg, friendly, edge=float(sit.get('edge') or 0.0), force_hit=boost or comeback,
+                     parry_k=dfn.parry_k(A.anim.get(move)))
     if opener == 'lunge':
         first['lunge'] = True
     if boost:
@@ -328,7 +345,7 @@ def plan_exchange(rng, att, dfn, sit):
     beats.append(first)
     # ---- what follows the first attack
     if first['outcome'] == 'parry' and not air:
-        rip = first_of_type(D, 'riposte')
+        rip = dfn.counter_for(A.anim.get(move)) or first_of_type(D, 'riposte')     # a learned counter answers its own kind first
         if rip and dfn.last != rip and rng.random() < 0.7:
             counter = rip
             dfn.note(rip)
@@ -494,7 +511,8 @@ def _v7_variant(rng, att, dfn, sit, far, friendly):
         for i, m in enumerate(combo):
             att.note(m)
             if i == 0:
-                b = _resolve(rng, A, D, m, 'strike', damage_of(A, m, 'strike'), friendly, edge=float(sit.get('edge') or 0.0))
+                b = _resolve(rng, A, D, m, 'strike', damage_of(A, m, 'strike'), friendly, edge=float(sit.get('edge') or 0.0),
+                             parry_k=dfn.parry_k(A.anim.get(m)))
                 b['string'] = True
                 beats.append(b)
                 if b['outcome'] != 'hit' or b['down']:
@@ -515,10 +533,12 @@ def edge_for(hp_att, hp_dfn, wins_att=0, wins_dfn=0):
     return max(-EDGE_MAX, min(EDGE_MAX, e))
 
 
-def _resolve(rng, A, D, move, kind, dmg, friendly, edge=0.0, force_hit=False):
+def _resolve(rng, A, D, move, kind, dmg, friendly, edge=0.0, force_hit=False, parry_k=1.0):
     """The defender's answer to the first attack, as a strike beat.  `edge` tilts hit vs defence (edge_for); `force_hit`
-    (a comeback exchange, a boost super) skips the defender's choice."""
+    (a comeback exchange, a boost super) skips the defender's choice; `parry_k` scales the parry weight (a learned
+    counter, learning.py)."""
     has = lambda n: n in D.anim
+    pk = float(parry_k or 1.0)
     if force_hit:
         outcome = 'hit'
     elif kind == 'ultimate':
@@ -528,10 +548,10 @@ def _resolve(rng, A, D, move, kind, dmg, friendly, edge=0.0, force_hit=False):
     elif kind == 'special':
         outcome = weighted(rng, [('hit', 0.45), ('block', 0.55 if has('block') else 0.0)])
     elif dmg >= 3 * DMG_PER_POWER:
-        outcome = weighted(rng, [('hit', 0.6), ('whiff', 0.14 if has('backdash') else 0.0), ('parry', 0.12 if has('parry') else 0.0),
+        outcome = weighted(rng, [('hit', 0.6), ('whiff', 0.14 if has('backdash') else 0.0), ('parry', 0.12 * pk if has('parry') else 0.0),
                                  ('crouch_block', 0.14 if has('crouch_block') and move in HIGHS else 0.0)])
     else:
-        outcome = weighted(rng, [('hit', 0.46), ('block', 0.2 if has('block') else 0.0), ('parry', 0.11 if has('parry') else 0.0),
+        outcome = weighted(rng, [('hit', 0.46), ('block', 0.2 if has('block') else 0.0), ('parry', 0.11 * pk if has('parry') else 0.0),
                                  ('whiff', 0.09 if has('backdash') else 0.0), ('crouch_block', 0.14 if has('crouch_block') and move in HIGHS else 0.0)])
     if kind == 'strike' and outcome in ('block', 'parry') and can_clash(A, D, move) and rng.random() < P_CLASH:
         outcome = 'clash'                                    # V7: the two weapons meet and lock instead

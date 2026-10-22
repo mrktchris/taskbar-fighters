@@ -1577,7 +1577,8 @@ class Fighter:
         self.cell = self.size
         if self.size > 64 and self.hd is None:
             from minis_core.atlas import Library
-            self.hd = Library(hd=True)
+            from minis_core import learning
+            self.hd = learning.wrap_library(Library(hd=True))   # learned rows are drawn at 128 px too (docs/LEARNING.md)
 
     def logic_zone(self):
         """Where the brain may stand, in RES 1 px: the fight zone at this fighter size divided by k, so spacing, reach and
@@ -1613,6 +1614,7 @@ class Fighter:
         self._apply_assignment(self._read_assignment(), now, force=True)
         atlas = self.lib[self.assigned['character'] if self.assigned else 'claude']
         self.brain = Brain(self.slot, atlas, self.lib, self.cfg, self.rng, now, zone=self.logic_zone(), record=self._record)
+        self.brain.learner.on = not os.environ.get('MINIS_LEARN_OFF')   # fighters teach themselves (docs/LEARNING.md)
         if self.slot == 'a':                               # V9: one process plays the shared fight's sounds (off by default)
             from minis_core import sfx
             self.brain.sfx = sfx.Player(enabled=lambda: control.sound_on(self.control_path))
@@ -2663,6 +2665,9 @@ def main(argv=None):
     au = sub.add_parser('autostart', help='macOS: start at login with a LaunchAgent (on | off | status)')
     au.add_argument('state', choices=('on', 'off', 'status'))
     au.set_defaults(fn=cmd_autostart)
+    le = sub.add_parser('learned', help='the moves the fighters taught themselves, and how (docs/LEARNING.md)')
+    le.add_argument('program', nargs='?', default=None)
+    le.set_defaults(fn=lambda a: __import__('minis_core.learning', fromlist=['cmd']).cmd(a))
     a = ap.parse_args(argv)
     try:
         return a.fn(a)
