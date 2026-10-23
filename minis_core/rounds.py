@@ -273,7 +273,8 @@ class Bout:
         self.gap = max(self.apart, abs(self.pos[self.right] - self.pos[self.left])) or 24.0
         self.span = float(plan.get('span', SPAN_PX))
         self.facing = {self.left: 1, self.right: -1}
-        self.pick = {s: choreo.Picker(self.rng, self.A[s]) for s in (self.left, self.right)}
+        kits = (plan.get('learn') or {}).get('kit') or {}          # learning.py: each slot's learned moves and their weights
+        self.pick = {s: choreo.Picker(self.rng, self.A[s], kits.get(s)) for s in (self.left, self.right)}
         self.em = _Emitter((self.left, self.right), plan['t0'])
         self.hp = {self.left: HP_MAX, self.right: HP_MAX}
         self.meter = {self.left: 0.0, self.right: 0.0}

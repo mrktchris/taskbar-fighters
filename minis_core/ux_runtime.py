@@ -601,6 +601,11 @@ class SlotUx:
             if other and other.get('source'):
                 info['opponent'] = sources.short_label(other['source'], other.get('program'))
                 info['h2h'] = replay.h2h(src, other['source'])
+            try:
+                from . import learning
+                info['learned'] = learning.summary_line(src)          # 'learned 3 moves', or None
+            except Exception:
+                pass
         ri = self.rival_left(wall)
         if ri is not None:
             info['rival_in'], info['rival_kind'] = ri

@@ -23,7 +23,8 @@ SECTIONS = (('attacks', 'ATTACKS', ('strike', 'special', 'super', 'ultimate', 't
             ('defense', 'DEFENSE', ('defense', 'reaction')),
             ('everyday', 'EVERYDAY', ('locomotion', 'emote', 'state', 'pair', 'support')),
             ('pieces', 'SET PIECES', ()),
-            ('finishers', 'FINISHERS', ()))
+            ('finishers', 'FINISHERS', ()),
+            ('learned', 'LEARNED', ()))                  # learning.py: the moves this fighter taught itself (grows; not counted)
 CAT_ORDER = ('strike', 'throw', 'special', 'super', 'ultimate', 'defense', 'reaction', 'locomotion', 'state', 'emote', 'pair',
              'support')
 
@@ -123,7 +124,8 @@ def entries(atlas):
     cat_of = {n: (a.get('cat') or 'emote') for n, a in anims.items()}
     order = {c: i for i, c in enumerate(CAT_ORDER)}
     for sid, _, cats in SECTIONS[:3]:
-        names = sorted((n for n in anims if cat_of[n] in cats), key=lambda n: (order.get(cat_of[n], 99), n))
+        names = sorted((n for n in anims if cat_of[n] in cats and anims[n].get('type') != 'learned'),   # learned rows: own tab
+                       key=lambda n: (order.get(cat_of[n], 99), n))
         for n in names:
             a = anims[n]
             typ = a['type'].replace('_', ' ') if isinstance(a.get('type'), str) and a['type'] != cat_of[n] else cat_of[n]
@@ -149,13 +151,36 @@ def entries(atlas):
     win = 'victory2' if 'victory2' in anims else 'victory'
     out['finishers'].append(dict(key='f:ko', name='K.O. finisher', type='finisher', anim=win if win in anims else None,
                                  desc='Win a match by K.O.: the freeze, the slow-motion fall and the winner\'s pose.', absent=False))
+    out['learned'] = learned_entries(atlas)
+    return out
+
+
+def learned_entries(atlas):
+    """The LEARNED tab: every move a program taught itself while wearing this character (learning.book_entries), drawn
+    animated from its learned row.  A redrawn move whose cached frames were evicted shows its name and says so."""
+    try:
+        from . import learning
+        rows = learning.book_entries(getattr(atlas, 'character', None))
+    except Exception:
+        return []
+    out = []
+    for e in rows:
+        ok = False
+        try:
+            ok = isinstance(atlas, learning.LearnedAtlas) and learning.load_row(atlas, e['spec'])
+        except Exception:
+            ok = False
+        out.append(dict(key=e['key'], name=e['name'], type=e['type'], anim=e['anim'] if ok and e['anim'] in atlas.anim else None,
+                        desc=e['desc'] if ok else e['desc'] + ' (its frames are being rebuilt)', absent=False, learned=True))
     return out
 
 
 def counts(atlas, seen_keys):
     """-> (seen, total) over every section (absent set pieces left out)."""
     tot = got = 0
-    for lst in entries(atlas).values():
+    for sid, lst in entries(atlas).items():
+        if sid == 'learned':                                   # grows with use: never part of "N of M seen"
+            continue
         for e in lst:
             if e['absent']:
                 continue
@@ -187,6 +212,11 @@ class Book:
     def __init__(self, chars, seen, lib, start=None, now=0.0):
         self.chars = [c for c in chars if isinstance(c, dict) and c.get('id')]
         self.seen = {c: set(keys) for c, keys in (seen or {}).items()}
+        try:                                                   # learned rows draw through the same library (learning.py)
+            from . import learning
+            lib = learning.wrap_library(lib)
+        except Exception:
+            pass
         self.lib = lib
         self.ci = next((i for i, c in enumerate(self.chars) if c['id'] == start), 0)
         self.si = 0
@@ -231,6 +261,8 @@ class Book:
         return e[self.page * n:(self.page + 1) * n]
 
     def is_seen(self, entry, cid=None):
+        if entry.get('learned'):                               # a learned move is known the moment it is learned
+            return True
         return entry['key'] in self.seen.get(cid or self.char, ())
 
     def selected(self):

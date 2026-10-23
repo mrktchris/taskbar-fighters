@@ -316,7 +316,20 @@ def stats(rec, hist=None):
         pair_max=max([h['meetings'] for h in pp] or [0]),
         ko=total('ko'), flawless=total('flawless'), comebacks=total('comebacks'), perfects=total('perfects'), sweeps=total('sweeps'),
         ults=total('ults'), boosts=total('boosts'), arena_wins=sum(1 for e in log if e.get('where') == 'arena'),
-        forges=int(rec.get('forges', 0) or 0), pieces=sorted(((rec.get('seen') or {}).get('pieces') or [])) if isinstance(rec.get('seen'), dict) else [])
+        forges=int(rec.get('forges', 0) or 0), pieces=sorted(((rec.get('seen') or {}).get('pieces') or [])) if isinstance(rec.get('seen'), dict) else [],
+        learn=_learning_stats())
+
+
+def _learning_stats():
+    """learning.stats() (moves the fighters taught themselves: ids and counts from learning.json, nothing else), or empty
+    numbers when the module or the file cannot be read."""
+    try:
+        from . import learning
+        s = learning.stats()
+        s['first'] = {how: learning.first_by(how) for how in ('any', 'counter')}
+        return s
+    except Exception:
+        return dict(learned=0, by_how={}, programs={}, forgotten=0, first={})
 
 
 # ---------------------------------------------------------------- the badges
@@ -407,6 +420,12 @@ ACHIEVEMENTS = [
       _n('boosts', 1)),
     A('teamwork', 'Teamwork', 'Ten matches opened by a finished task', 2, 'check', 'Partnership', lambda S: S['boosts'] >= 10,
       lambda S: _top(S, 'boosts'), _n('boosts', 10)),
+    A('self_taught', 'Self-Taught', 'A fighter teaches itself a new move', 1, 'bolt', 'Discovery',
+      lambda S: S['learn']['learned'] >= 1, lambda S: S['learn']['first'].get('any'),
+      lambda S: (min(1, S['learn']['learned']), 1)),
+    A('student', 'Student of the Game', 'A fighter learns a counter to the attack that keeps hitting it', 2, 'shield', 'Discovery',
+      lambda S: S['learn']['by_how'].get('counter', 0) >= 1, lambda S: S['learn']['first'].get('counter'),
+      lambda S: (min(1, S['learn']['by_how'].get('counter', 0)), 1)),
     A('rivalry', 'Old Rivals', 'The same two programs meet 10 times', 2, 'swords', 'Partnership', lambda S: S['pair_max'] >= 10, None,
       _n('pair_max', 10)),
 ]
@@ -498,9 +517,15 @@ class Toaster:
         from . import rounds
         try:
             st = os.stat(self.rp or rounds.record_path())
-            return (st.st_mtime_ns, st.st_size)
+            sig = (st.st_mtime_ns, st.st_size)
         except OSError:
-            return None
+            sig = None
+        try:                                    # learning.json too: Self-Taught / Student of the Game unlock when it changes
+            from . import learning
+            lt = os.stat(learning.path())
+            return (sig, (lt.st_mtime_ns, lt.st_size))
+        except (OSError, ImportError):
+            return (sig, None) if sig is not None else None
 
     def check(self, now):
         sig = self._sig()

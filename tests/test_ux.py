@@ -811,7 +811,7 @@ class Slot(Isolated):
         self.assertEqual(info['opponent'], 'Codex')
         self.assertEqual(info['record'], (0, 0))
         allowed = {'name', 'accent', 'state', 'since_s', 'ctx', 'plan_pct', 'plan_label', 'resets_in', 'waiting_s', 'dormant', 'bot',
-                   'process', 'flag', 'record', 'opponent', 'h2h', 'rival_in', 'rival_kind'}
+                   'process', 'flag', 'record', 'opponent', 'h2h', 'rival_in', 'learned', 'rival_kind'}
         self.assertLessEqual(set(info), allowed)
 
     def test_rival_countdown_goes_on_the_bus_and_on_the_sleeping_plate(self):

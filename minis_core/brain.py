@@ -18,7 +18,7 @@ from __future__ import annotations
 import math, random
 from collections import deque
 
-from . import choreo, config as cfgmod, rounds
+from . import choreo, config as cfgmod, learning, rounds
 from .choreo import air_lift, air_window  # noqa: F401  (V7.1: the `air` curve; re-exported for art/qa tools)
 from .effects import EffectPlayer
 
@@ -358,7 +358,9 @@ def make_timeline(kind, plan, atlases, fx=None):
 class Brain:
     def __init__(self, slot, atlas, atlases, cfg, rng, now, zone=None, run=None, fx=None, record=None):
         self.slot = self.who = slot
-        self.atlas, self.atlases, self.cfg, self.rng = atlas, atlases, cfg, rng
+        self.atlases = learning.wrap_library(atlases)         # learning: every atlas served carries the learned rows
+        self.atlas, self.cfg, self.rng = self.atlases.wrap(atlas), cfg, rng
+        self.learner = learning.Learner(self)                 # learning hooks: plan, prepare, after_bout, practice, home, banner
         self.character = atlas.character
         self.sig = atlas.signature()
         if fx is None:
@@ -609,7 +611,8 @@ class Brain:
         return dict(state=self.state(), mode=self.mode, x=round(self.x, 1), facing=self.facing, anim=self.anim,
                     ctx=(self.snap.ctx_pct if self.snap else None), event=self.event, character=self.character,
                     run=self.run, paused=self.paused, bout=self.bout, hp=self.hp,
-                    round=(self.round or {}).get('n'), wins=(self.round or {}).get('wins'), boost=self.boost_marker())
+                    round=(self.round or {}).get('n'), wins=(self.round or {}).get('wins'), boost=self.boost_marker(),
+                    who=(self.snap.who if self.snap else None))          # the program id (learning keys its memory by it)
 
     def boost_marker(self, now=None):
         """V9: {'id', 'left'} while this slot's agent finished a task less than ARENA_BOOST_S ago, else None.  `left` is
@@ -636,7 +639,10 @@ class Brain:
         banner = None
         if self.banner:
             try:
-                im = self.fx.banner(self.banner['kind'], name=self.banner.get('name'))
+                if self.banner['kind'] == 'learned':          # learning: 'LEARNED: <MOVE>'
+                    im = self.learner.banner_image(self.fx, self.banner)
+                else:
+                    im = self.fx.banner(self.banner['kind'], name=self.banner.get('name'))
                 k = self.atlas.res / float(self.fx.res)
                 if k != 1.0:
                     from PIL import Image
@@ -731,6 +737,7 @@ class Brain:
         """The director gave this slot a different character: drop any bout and start fresh in the new skin."""
         self.abort(now)
         self.mode, self.walk_then = 'home', None
+        atlas = self.atlases.wrap(atlas)                      # learning: the new skin's learned rows come along
         self.atlas, self.character, self.sig = atlas, atlas.character, atlas.signature()
         self.anim, self.anim_t0, self.anim_loop = 'idle', now, True
         self.prev_state = None
@@ -910,12 +917,14 @@ class Brain:
         if kind == 'match':                                     # both sides derive HP, attackers and the winner from these
             plan['mode'] = self.winners if self.winners in rounds.MODES else 'decided'
             plan['scores'] = {me: round(rounds.score_of_snapshot(self.snap), 1), you: round(rounds.score_of_bus(self.partner), 1)}
+        if kind in ('spar', 'clash', 'match'):
+            self.learner.plan(plan)                             # learning: both sides' learned kits travel inside the plan
         return plan
 
     def _possible(self, kind, plan):
         try:
             by_slot = {s: self.atlases[c] for s, c in plan['chars'].items()}
-            return kind_possible(kind, by_slot, plan)
+            return kind_possible(kind, by_slot, plan) and self.learner.possible(plan)   # learning: every learned row loads here
         except Exception:
             return False
 
@@ -958,7 +967,8 @@ class Brain:
         for s in plan.get('boost') or ():
             self.finish_due.pop(s, None)                           # consumed by this bout (both sides drop it)
         tl, t_end, projs = make_timeline(kind, plan, self.atlases, self.fx)
-        self.script = dict(kind=kind, plan=plan, tl=tl.get(self.slot, []), t_end=t_end, projs=projs)
+        self.script = dict(kind=kind, plan=plan, tl=tl.get(self.slot, []), t_end=t_end, projs=projs,
+                           summary=getattr(make_timeline, 'last_summary', None) if kind in learning.BOUT_KINDS else None)
         you = other(self.slot)
         try:                                                       # V7.1: the opponent's row, replayed for the lock-on
             opp_atlas = self.atlases[(plan.get('chars') or {}).get(you) or (self.partner or {}).get('character') or self.character]
@@ -1035,6 +1045,7 @@ class Brain:
         if self.ghost is not None:
             self.ghost.advance(now, (lambda t_abs, name, opts: self._sound(t_abs, name, opts, now)) if self.sfx else None)
         if now >= sc['t_end']:
+            self.learner.after_bout(sc, now)                  # learning: this side's experience from the bout that just ended
             self.script, self.bout = None, None
             self._end_match_visuals()
             self._goto(self.home_x, now, then='home')
@@ -1226,8 +1237,10 @@ class Brain:
             if self.shadow_pick.used and sum(self.shadow_pick.used.values()) >= 2 * len(strike_pool(self.atlas)):
                 self.shadow_pick.new_round()
             mv = self.shadow_pick.pick(self.shadow_pick.strikes())   # shadowboxing: never the same strike twice in a row
+            mv = self.learner.practice(mv, now)                # learning: a rep counts as practice; it may try a new variant
             if mv:
                 self.play(mv, now, loop=False)
+        self.learner.home(now)                                # learning: the LEARNED moment (the new move once, under a banner)
         lo, hi = self.home                                        # (facing: lock_on at the end of tick, in every state)
         if not (lo - 2 <= self.x <= hi + 2) and not (st == 'limit' and self.anim in ('ko', 'getup')):
             # outside its own half (knocked out mid-bout, an old drag, a resize): walk back, so the two never overlap

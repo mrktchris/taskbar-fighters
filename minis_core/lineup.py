@@ -139,7 +139,7 @@ QUIT_ALL, HIDE_1H, PLATES, PAUSE, BOUT, MATCH, WIN_DECIDED, ARENA, RIVAL, HIDE, 
 HUD_DOCK, HUD_MENUBAR = 14, 15                     # macOS only: the Plates position submenu
 FORGE = 16                                         # V8: Desktop weapons (arena forging) on / off
 CARD = 17                                          # growth: Share my stats card...
-SOUND = 18                                         # V9: Sound effects on / off (default off)
+SOUND = 18                                         # V9: Sound effects on / off (default off; 17 was taken by growth's CARD)
 PICK_AUTO, PICK_BASE = 100, 101
 LOOK_DEFAULT, LOOK_BASE = 300, 301
 SIZE_BASE = 400                                    # SIZE_BASE + px: the Fighter size submenu (464 / 496 / 528)

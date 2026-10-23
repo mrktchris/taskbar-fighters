@@ -1,5 +1,5 @@
 """macOS playback for the optional sound effects (minis_core/sfx.py): one cached NSSound per file, played asynchronously
-(NSSound.play returns at once and mixes in Core Audio), at a low volume.  EXPERIMENTAL: see docs/MAC-HANDOFF.md MAC-23."""
+(NSSound.play returns at once and mixes in Core Audio), at a low volume.  EXPERIMENTAL: see docs/MAC-HANDOFF.md MAC-26."""
 from __future__ import annotations
 
 

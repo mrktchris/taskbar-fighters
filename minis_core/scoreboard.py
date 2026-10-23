@@ -161,12 +161,20 @@ def _render(state, k=1):
         rnd = f"{wins.get('a', 0)}-{wins.get('b', 0)}"
         text(d, (W // 2 - int(d.textlength(rnd, font=fb)) // 2, 11), rnd, MODE_COLOR['arena'], 10)
     elif state.get('toast'):                                   # growth: an achievement just unlocked (achievements.Toaster)
-        _star(d, 6, 11, GOLD + (255,))
-        lab = 'UNLOCKED'
+        t = state['toast']                                     # learning.ToastSlot: (kind, text); a bare string is a badge
+        kind, msg = t if isinstance(t, (tuple, list)) and len(t) == 2 else ('unlocked', t)
+        if kind == 'learned':                                  # learning.py: a fighter taught itself a move
+            col = (150, 236, 160)
+            d.rectangle([7, 13, 13, 19], fill=col + (255,))
+            lab = 'LEARNED'
+        else:
+            col = GOLD
+            _star(d, 6, 11, GOLD + (255,))
+            lab = 'UNLOCKED'
         text(d, (17, 12), lab, DIM, 9, False)
         x = 17 + int(d.textlength(lab, font=fr)) + 5
-        s = _fit(d, state['toast'], W - x - 5, 10, True)
-        text(d, (x, 11), s, GOLD, 10)
+        s = _fit(d, str(msg), W - x - 5, 10, True)
+        text(d, (x, 11), s, col, 10)
     elif state.get('result'):
         s = _fit(d, state['result'], W - 10, 10, True)
         text(d, (W // 2 - int(d.textlength(s, font=fb)) // 2, 11), s, GOLD, 10)
