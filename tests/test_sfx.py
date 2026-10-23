@@ -144,7 +144,8 @@ class PlayerRules(unittest.TestCase):
         import time
         t0 = time.perf_counter()
         self.assertTrue(p.play('clash'))
-        self.assertLess(time.perf_counter() - t0, 0.05)
+        self.assertEqual(done, [])                                    # returned while the backend is still held: async
+        self.assertLess(time.perf_counter() - t0, 1.0)                # far under the 2 s hold; a busy CI box took 83 ms to start the thread
         gate.set()
         for _ in range(200):
             if done:
