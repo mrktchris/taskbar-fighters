@@ -13,10 +13,10 @@ of them carry nearly all the weight: **timing, anticipation, squash & stretch**.
 
 - **Timing is per-frame milliseconds, never a fixed fps.** Even timing reads mechanical. Fast parts get 30-60 ms,
   holds get 120-300 ms. Ease-in = hold the first frames longer; ease-out = hold the last frames longer.
-- **Anticipation is contrast.** Mariel Cartwright (Lab Zero, Skullgirls) on a six-frame punch budget: "even a frame of
+- **Anticipation is contrast.** Mariel Cartwright (a hand-drawn 2D fighter studio) on a six-frame punch budget: "even a frame of
   anticipation will make your move much better in terms of readability"
   ([GDC Vault](https://gdcvault.com/play/1020575/Animation-Bootcamp-Fluid-and-Powerful),
-  [Siliconera](https://www.siliconera.com/fluid-powerful-animations-skullgirls-achieved/),
+  Siliconera,
   [80.lv summary](https://80.lv/articles/tips-on-making-fluid-and-powerful-animations)). Anticipation frames usually
   *outnumber* the motion frames, and the body moves the opposite way first.
 - **Squash & stretch keeps volume.** At 16-64 px it is 1-3 px: shorter + wider on the crouch and the landing, taller +
@@ -31,7 +31,7 @@ of them carry nearly all the weight: **timing, anticipation, squash & stretch**.
 ## 2. Fighting-game timing rules (what we adopted)
 
 - **Hitstop / impact freeze.** Both fighters freeze for about 9 / 11 / 13 frames at 60 fps for light / medium / heavy in
-  modern Street Fighter, 14 in SF2 ([Sonic Hurricane](https://sonichurricane.com/?p=1043); definition on
+  modern 2D fighters, 14 in a classic one (a frame-data article; definition on
   [Dustloop](https://dustloop.com/w/GGST/Esoterica)). That is 150 / 180 / 220 ms. Our moves carry it as `hitstop_ms`
   on the contact frame: 150 for power 1, 180 for power 2, 220 for power 3, 260-320 for an ultimate's landing frame.
 - **The six-frame punch.** Anticipation (1-2 frames, 60-100 ms) -> smear (1 frame, 30-50 ms) -> contact hold (the

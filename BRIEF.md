@@ -73,7 +73,7 @@ and must not be sent to a model. The shipped program reads the real files at run
 
 The author's three links. Distilled lessons are below. Do **not** trace, copy, redraw or recreate any of those pieces; our fighters are original (Pixel Joint's own
 fighting-character challenge requires original characters). The downloaded reference files stay outside this folder and are never committed, shipped or posted.
-Street Fighter / King of Fighters are style inspiration only.
+Classic 2D arcade fighters are style inspiration only.
 
 | Source | What it measured / said | Lesson we take |
 | --- | --- | --- |

@@ -57,15 +57,15 @@ Gaps a new user hits, in the order they hit them:
 
 | game | mechanic worth borrowing | source |
 | --- | --- | --- |
-| **Street Fighter 6** | Real-time **commentary**: 10 commentators, colour commentary optional, subtitles in 13 languages. **Frame meter**: a bar of pips for startup/active/recovery, with an in-game infographic, which reviewers said teaches beginners. Ranked ladder from 1,000 LP up to Master, where Master Rate resets every 3 months and nobody is demoted out of Master. Battle Hub avatars. | [Wikipedia](https://en.wikipedia.org/wiki/Street_Fighter_6), [esports.gg](https://esports.gg/news/street-fighter-v/state-of-play-showcases-street-fighter-6s-insane-new-features/), [EventHubs frame meter](https://www.eventhubs.com/news/2022/sep/16/sf6-training-visual-frame-data), [Infil](https://words.infil.net/w03-sf6beta-p6.html), [EventHubs Master League](https://www.eventhubs.com/news/2023/aug/01/sf6-launches-master-league), [Esports.net ranks](https://www.esports.net/wiki/guides/street-fighter-ranks/) |
+| **A current 2D fighter** | Real-time **commentary**: 10 commentators, colour commentary optional, subtitles in 13 languages. **Frame meter**: a bar of pips for startup/active/recovery, with an in-game infographic, which reviewers said teaches beginners. Ranked ladder from 1,000 LP up to Master, where Master Rate resets every 3 months and nobody is demoted out of Master. Battle Hub avatars. | a source article, esports.gg, EventHubs frame meter, Infil, EventHubs Master League, Esports.net ranks |
 | **A classic platform fighter (latest entry)** | Results screen: the winner does one of ~3 random poses while the losers stand back **applauding**. Each character has its own congratulations screen. Stage hazards can be **toggled off**, a first in 19 years, and tournaments run with hazards and spirits off. | community wiki articles "Victory pose", "Credits" and "Rulesets"; press coverage of the optional hazards |
-| **Tekken 8** | **Ghosts**: AI that copies your habits from online and offline play. Patch 2.02 added "NICE!" / "Don't do that!" feedback to steer it. My Replay & Tips: watch a replay, get told the mistake, take over and practise on the spot. | [esports.gg](https://esports.gg/guides/tekken-8/tekken-8-super-ghost-battle), [Bandai Namco 2.02](https://www.bandainamcoent.com/news/tekken-8-patch-notes-v2-02), [GamingBolt](https://gamingbolt.com/tekken-8-overhauls-my-replay-and-tips-allows-for-real-time-practice) |
-| **Brawlhalla** | Free battle-pass track that all players advance, gold pass $9.99, 12-week seasons, exclusive cosmetics that can come back through "Classic" passes. | [Brawlhalla wiki](https://brawlhalla.wiki.gg/wiki/Battle_Pass), [Battle Pass FAQ](https://www.brawlhalla.com/battle-pass-faq) |
-| **Rivals of Aether** | Steam Workshop for characters, stages, skins and buddies. **Four community characters were made official.** A creation contest drew 100+ entries for a major event. | [rivalsofaether.com](https://rivalsofaether.com/?p=84), [Steam Workshop](https://steamcommunity.com/workshop/filedetails/discussion/3514263181/524225948489413718) |
+| **A current 3D fighter** | **Ghosts**: AI that copies your habits from online and offline play. Patch 2.02 added "NICE!" / "Don't do that!" feedback to steer it. My Replay & Tips: watch a replay, get told the mistake, take over and practise on the spot. | esports.gg, patch notes 2.02, GamingBolt |
+| **A free-to-play platform fighter** | Free battle-pass track that all players advance, gold pass $9.99, 12-week seasons, exclusive cosmetics that can come back through "Classic" passes. | a source article, Battle Pass FAQ |
+| **An indie platform fighter** | Steam Workshop for characters, stages, skins and buddies. **Four community characters were made official.** A creation contest drew 100+ entries for a major event. | a source article, [Steam Workshop](https://steamcommunity.com/workshop/filedetails/discussion/3514263181/524225948489413718) |
 | **Salty Bet** | Round-the-clock AI-vs-AI fights on Twitch. Viewers bet **fake** "Salty Bucks" (start with $400) in a betting window before each fight, and odds set the payout. The bets run on looks, loyalty and reputation, since nobody is judging skill. | [PC Gamer](https://www.pcgamer.com/salty-bet-1/), [LSBU paper on AI spectatorship](https://openresearch.lsbu.ac.uk/download/4bdbce1fb68846551a45eca7a0b031c409a8fdbd0aebd96c654e53af989dbc9e/481395/AISB19%20AI%20Spectatorship%20v2.pdf), [MoMA](https://www.moma.org/interactives/exhibitions/2013/designandviolence/saltys-dream-cast-casino-salty-bet/) |
-| **Nidhogg** | Tug of war: the winner of an exchange earns the right to advance, momentum flips constantly, one hit kills, leads are fragile. Reviewers call it very easy to watch. | [Sprites & Dice](https://spritesanddice.com/reviews/nidhogg-review-refined-rawness/), [AV Club](https://www.avclub.com/nidhogg-review-pc) |
-| **Pocket Rumble** | Two buttons, simplified inputs, an on-screen frame bar, 31 short lessons. Easy to pick up, still has depth. | [Nintendo Life](https://www.nintendolife.com/reviews/switch-eshop/pocket_rumble), [Gameranx](https://gameranx.com/updates/id/25097/article/pocket-rumble-returns-to-kickstarter-to-make-fighting-game-masters-out-of-all-of-us/) |
-| **Mortal Kombat** | Fatalities grew out of the dizzy state: the free hit was moved to after the winner was decided. "Finish Him!" became a signature cue. Inputs were **kept secret** on purpose to create mystery. | [Wikipedia](https://en.wikipedia.org/wiki/Fatality_(Mortal_Kombat)), [Game Informer](https://www.gameinformer.com/b/features/archive/2015/07/21/the-brutal-history-of-mortal-kombat-fatalities.aspx), [Engadget](https://www.engadget.com/2011-02-15-mortal-kombat-dev-gives-how-to-lesson-on-fatality-design.html) |
+| **An indie fencing duel** | Tug of war: the winner of an exchange earns the right to advance, momentum flips constantly, one hit kills, leads are fragile. Reviewers call it very easy to watch. | Sprites & Dice, AV Club |
+| **A two-button indie fighter** | Two buttons, simplified inputs, an on-screen frame bar, 31 short lessons. Easy to pick up, still has depth. | Nintendo Life, Gameranx |
+| **A classic arcade fighter** | Finishing moves grew out of the dizzy state: the free hit was moved to after the winner was decided. Its announcer's finishing call became a signature cue. Inputs were **kept secret** on purpose to create mystery. | a source article, Game Informer, Engadget |
 
 ### Engagement and meta systems
 
@@ -74,7 +74,7 @@ Gaps a new user hits, in the order they hit them:
 | **Streaks** | Allowing 2 streak freezes instead of 1: **+0.38% DAU**. Streak wager (stake currency on 7 days): **Day-7 retention +14%**. Guilt-laden reminders drew criticism, especially for upsetting children. | [Duolingo blog](https://blog.duolingo.com/duolingo-streak-research/), [Duolingo engineering](https://making.duolingo.com/how-streaks-keep-duolingo-learners-committed-to-their-language-goals), [University XP / El País](https://www.universityxp.com/news/2025/7/25/we-havent-seen-you-in-a-while-duolingos-passive-aggressive-strategy-for-keeping-users-hooked) |
 | **Care loops** | Tamagotchi: 10M units in under a year. A pet that could not be paused and could die within hours led to classroom bans and press stories of children grieving. | [Mental Floss](https://www.mentalfloss.com/fun/toys/tamagotchi-history), [Georgia Tech archive](https://sites.cc.gatech.edu/fce/archives/future/0208.html) |
 | **Achievements** | Xbox: rarity tiers (under 10% counts as rare and gets its own sound and animation). Steam: global unlock percentages. GitHub Achievements (2022): visible by default, **criteria kept secret** ("we'll never tell"). A study of 300+ discussions found the reaction mixed, "no clear purpose", more users opting out. GitHub later disabled earning them in Community Discussions over spam farming. | [Kotaku](https://kotaku.com/two-ways-to-fix-achievements-on-the-xbox-one-1645752957), [GitHub blog](https://github.blog/news-insights/product-news/introducing-achievements-recognizing-the-many-stages-of-a-developers-coding-journey/), [arXiv study](https://arxiv.org/html/2303.14702v3) |
-| **Season passes** | Done badly: Halo Infinite, where 3-4 hours of play bought about one tier. 343 had to add first-games-of-the-day XP and easier challenges. Done better: Brawlhalla's free track. | [Windows Central](https://www.windowscentral.com/halo-infinite-fans-angry-about-battle-pass), [TechRadar](https://www.techradar.com/news/halo-infinites-controversial-battle-pass-progression-just-got-a-whole-lot-better) |
+| **Season passes** | Done badly: a big shooter, where 3-4 hours of play bought about one tier. Its studio had to add first-games-of-the-day XP and easier challenges. Done better: a free-to-play platform fighter's free track. | Windows Central, TechRadar |
 | **Shareable recaps** | Spotify Wrapped: vertical cards sized so a screenshot needs no crop, share as the obvious final step, identity framing ("top 1% listener"), once a year. | [ADPList](https://adplist.substack.com/p/spotifys-most-popular-design), [Substack analysis](https://ecommercewithdev.substack.com/p/spotify-wrapped-what-it-takes-to) |
 
 ### Developer-tool gamification
@@ -144,9 +144,9 @@ Items marked *(in progress)* overlap work already under way; for those the note 
   "**74%** of its context is used." > "They fight when an agent works and hand off when one finishes. Right-click for options." There is
   a Skip button, it shows **once**, and tray > "What am I looking at?" replays it. The legend card is the existing `plates.png` content
   drawn live.
-- *Borrowed from:* SF6's frame meter, which comes with an infographic and was praised for teaching beginners
-  ([Infil](https://words.infil.net/w03-sf6beta-p6.html)), and Pocket Rumble's 31 short lessons
-  ([Nintendo Life](https://www.nintendolife.com/reviews/switch-eshop/pocket_rumble)). The Clippy lesson sets the limit: explain once,
+- *Borrowed from:* a current 2D fighter's frame meter, which comes with an infographic and was praised for teaching beginners
+  (Infil), and a two-button indie fighter's 31 short lessons
+  (Nintendo Life). The Clippy lesson sets the limit: explain once,
   on request after that, never unprompted.
 - *Mapping:* drawn on the existing click-through layered windows next to the plates. A `first_run_done` flag goes in `control.json`.
 - *Win/mac:* same on both. On macOS, also point at the menu-bar icon, or at the notch badge when macOS hides the icon.
@@ -203,8 +203,8 @@ Items marked *(in progress)* overlap work already under way; for those the note 
   - **Context compaction** (ctx drops from 85% or more to under 40% in one session): a **second wind** comeback with an HP refill and
     an aura. This is the moment users care about, it is pure numbers, and it maps onto fighting games' comeback mechanic.
   - **Context limit**: a "finish" cue before the K.O. finisher, so a limit reads as a finisher and not a random loss.
-- *Borrowed from:* Mortal Kombat moved the dizzy free hit to the end of the match and gave it a cue
-  ([Wikipedia](https://en.wikipedia.org/wiki/Fatality_(Mortal_Kombat))). Codex Pets' "ready for review" and "needs input" notifications.
+- *Borrowed from:* A classic arcade fighter moved the dizzy free hit to the end of the match and gave it a cue
+  (a source article). Codex Pets' "ready for review" and "needs input" notifications.
 - *Mapping:* telemetry already emits `finished`, `waiting?` and `limit`, and ctx history is stored. Compaction is one new rule over
   numbers already read.
 - *Win/mac:* same.
@@ -220,8 +220,8 @@ Items marked *(in progress)* overlap work already under way; for those the note 
 **11. Text commentary ticker** (S-M; D, C; OK)
 - *What:* one rotating line in the scoreboard: "CODEX lands the spiral orb!", "CLAUDE is waiting on you", "Third straight win for
   CURSOR". Text only, no voice. Off, minimal (key events only) or full.
-- *Borrowed from:* SF6 real-time commentary: 10 commentators, colour commentary optional, subtitles in 13 languages
-  ([esports.gg](https://esports.gg/news/street-fighter-v/state-of-play-showcases-street-fighter-6s-insane-new-features/)). Commentary
+- *Borrowed from:* a current 2D fighter's real-time commentary: 10 commentators, colour commentary optional, subtitles in 13 languages
+  (esports.gg). Commentary
   explains *and* hypes, and it also answers "why are they fighting?" (clarity).
 - *Mapping:* timeline directives (`@banner`, `@record`) already mark the events. Lines are templated from program names and numbers
   only.
@@ -230,9 +230,9 @@ Items marked *(in progress)* overlap work already under way; for those the note 
 - *What:* each program's picker weights drift slowly with its own numbers. A high share of working time makes it more aggressive. Often
   waiting on the user makes it parry and counter more. Often running near the limit makes it spend supers sooner. Show the style on the
   hover card ("style: pressure"). Add a reset.
-- *Borrowed from:* Tekken 8's Ghosts, which learn your habits, plus the 2.02 feedback buttons
-  ([esports.gg](https://esports.gg/guides/tekken-8/tekken-8-super-ghost-battle),
-  [Bandai Namco](https://www.bandainamcoent.com/news/tekken-8-patch-notes-v2-02)).
+- *Borrowed from:* a current 3D fighter's Ghosts, which learn your habits, plus the 2.02 feedback buttons
+  (esports.gg,
+  patch notes).
 - *Mapping:* `choreo.Picker` is already weighted by category. Feed it a small per-program profile kept in `history.json`. Both slots
   still derive the same timeline because the profile travels in the plan.
 
@@ -258,8 +258,8 @@ Items marked *(in progress)* overlap work already under way; for those the note 
 - *What:* a Records tab (in Settings, or opened by clicking the scoreboard) with each program's lifetime W-L, K.O.s, longest win streak,
   ultimates landed, and **head-to-head** ("Claude vs Codex 34-29, last 10: 6-4"). Local ranks climb by wins and never demote past a
   floor (Bronze > Silver > Gold > Master > Legend). A small rank badge appears on the plate.
-- *Borrowed from:* SF6's ladder: league points, a Master tier where nobody is demoted, Master Rate resetting every 3 months
-  ([EventHubs](https://www.eventhubs.com/news/2023/aug/01/sf6-launches-master-league)).
+- *Borrowed from:* a current 2D fighter's ladder: league points, a Master tier where nobody is demoted, Master Rate resetting every 3 months
+  (EventHubs).
 - *Mapping:* `record.json` already keeps W-L per program (V6). Head-to-head needs one more key per pair.
 - *Why it matters:* "my Claude is 34-29 against Codex" is the tribal line people post (see 17).
 
@@ -280,9 +280,9 @@ Items marked *(in progress)* overlap work already under way; for those the note 
 **9. A collection book for moves, set pieces and finishers** (S-M; E; OK)
 - *What:* a grid of every fighter's 68 moves, the 8 taskbar set pieces, the arena set pieces and the finishers. Seen ones are coloured
   with the date first seen; unseen ones are silhouettes. Click one to preview it (`setpiece_preview.py` already renders them).
-- *Borrowed from:* collect-them-all in Bongo Cat, Tiny Pasture and Spirit City; a platform fighter's per-character congratulations screens. Mortal
-  Kombat's secrecy, where a silhouette you have not seen yet makes people watch
-  ([Game Informer](https://www.gameinformer.com/b/features/archive/2015/07/21/the-brutal-history-of-mortal-kombat-fatalities.aspx)).
+- *Borrowed from:* collect-them-all in Bongo Cat, Tiny Pasture and Spirit City; a platform fighter's per-character congratulations screens. A classic arcade
+  fighter's secrecy, where a silhouette you have not seen yet makes people watch
+  (Game Informer).
 - *Why here:* the move set is deep (56 shared moves plus weapon families), but nobody can tell. The book turns depth already built into
   progress you can see.
 
@@ -296,8 +296,8 @@ Items marked *(in progress)* overlap work already under way; for those the note 
 
 **Unlockable cosmetics** (folds into 8 and 9; not ranked separately): colourways and victory poses earned on a steady clock (one unlock
 per N hours the app has run, like Bongo Cat's 30-minute chest) plus achievement rewards. Never random paid pulls, never tradeable. The
-first unlock comes in the first session (Halo Infinite's slow-tier backlash:
-[Windows Central](https://www.windowscentral.com/halo-infinite-fans-angry-about-battle-pass)).
+first unlock comes in the first session (a big shooter's slow-tier backlash:
+Windows Central).
 
 ### Group D: social and virality
 
@@ -307,8 +307,8 @@ first unlock comes in the first session (Halo Infinite's slow-tier backlash:
   - "Save as GIF" renders that match **offline**, on the synthetic desktop the launch media already uses, into Pictures. No screen
     capture.
   - A **fight code** (e.g. `TF1-claude-codex-7F3A9C`) that anyone with the app can paste to watch the same fight.
-- *Borrowed from:* replay review in SF6 and Tekken 8's My Replay & Tips
-  ([GamingBolt](https://gamingbolt.com/tekken-8-overhauls-my-replay-and-tips-allows-for-real-time-practice)), and fighting-game replay
+- *Borrowed from:* replay review in a current 2D fighter and a current 3D fighter's My Replay & Tips
+  (GamingBolt), and fighting-game replay
   IDs in general.
 - *Why it is cheap here:* choreography is a pure function of the seed and the two move sets (README, How it works).
   `packaging/launch_media.py` and `tools/doc_images.py` already render matches offline. Store the last N plans (seeds plus characters,
@@ -344,8 +344,8 @@ first unlock comes in the first session (Halo Infinite's slow-tier backlash:
 - *What:* a documented folder format (pose data for the rig, or sheet PNGs plus `anim.json`), `minis.py pack check <dir>` to validate
   it (palette cap, baseline, frame counts: the art tests already exist), and a gallery page in the repo. Later, a community contest whose
   winners join the roster.
-- *Evidence:* Rivals of Aether made four Workshop characters official and drew 100+ contest entries
-  ([rivalsofaether.com](https://rivalsofaether.com/?p=84)). Shimeji lived 15 years on fan packs. Desktop Mate's "no Workshop" plus paid
+- *Evidence:* An indie platform fighter made four Workshop characters official and drew 100+ contest entries
+  (a source article). Shimeji lived 15 years on fan packs. Desktop Mate's "no Workshop" plus paid
   skins pulled it to Mixed. Codex Pets runs a pet contest.
 - *Privacy:* local files only. Pack import never executes code from a pack.
 
@@ -364,7 +364,7 @@ first unlock comes in the first session (Halo Infinite's slow-tier backlash:
 | **Guilt, decay, death, nagging** | Tamagotchi's un-pausable death led to classroom bans and stories of distressed children ([Mental Floss](https://www.mentalfloss.com/fun/toys/tamagotchi-history)). Duolingo's guilt reminders are criticised ([University XP](https://www.universityxp.com/news/2025/7/25/we-havent-seen-you-in-a-while-duolingos-passive-aggressive-strategy-for-keeping-users-hooked)). Fighters never get sad because the user took a day off. |
 | **Rewarding token burn, hours worked or late nights** | Rewards the most expensive behaviour, invites farming (GitHub disabled earning achievements in Discussions over spam, [arXiv](https://arxiv.org/html/2303.14702v3)), and gamifies overwork. |
 | **Hidden criteria, default-public badges** | GitHub's "we'll never tell" criteria and default-visible badges brought opt-outs ([GitHub blog](https://github.blog/news-insights/product-news/introducing-achievements-recognizing-the-many-stages-of-a-developers-coding-journey/)). |
-| **FOMO: expiring seasonal exclusives, slow passes** | Halo Infinite's slow tiers forced emergency XP changes ([Windows Central](https://www.windowscentral.com/halo-infinite-fans-angry-about-battle-pass)). Brawlhalla's ranked titles never return ([wiki](https://brawlhalla.wiki.gg/wiki/Battle_Pass)). A desktop toy has no reason for this. |
+| **FOMO: expiring seasonal exclusives, slow passes** | A big shooter's slow tiers forced emergency XP changes (Windows Central). A free-to-play platform fighter's ranked titles never return (a source article). A desktop toy has no reason for this. |
 | **Sound on by default, effects you cannot turn down** | Wallpaper Engine and Power Mode both had to add off-switches for effects ([Steam](https://steamcommunity.com/app/431960/discussions/2/1752358461530583995), [DEV](https://dev.to/pandiyancool/cool-vs-code-extension-set-your-code-on-fire-2oac)). Keep `flash off`, the intensity setting and the hazards toggle; add a single "calm everything" switch. |
 | **Writing hooks into agent config to get richer states** | It would close the gap with Clawd on Desk, but break the "your tools untouched" promise that sets this product apart (docs/COMPARISON.md). |
 | **Approve/deny buttons for agent permissions** | Sending input to agents moves the app from viewer to actor; the README promises it never touches agents. Point at the agent instead ("needs you"). |
@@ -421,21 +421,21 @@ Desktop companions and idlers
 - BonziBuddy: https://en.wikipedia.org/wiki/BonziBuddy
 
 Fighting games and spectating
-- Street Fighter 6: https://en.wikipedia.org/wiki/Street_Fighter_6 · https://esports.gg/news/street-fighter-v/state-of-play-showcases-street-fighter-6s-insane-new-features/ · https://www.eventhubs.com/news/2022/sep/16/sf6-training-visual-frame-data · https://words.infil.net/w03-sf6beta-p6.html · https://www.eventhubs.com/news/2023/aug/01/sf6-launches-master-league · https://www.esports.net/wiki/guides/street-fighter-ranks/
+- A current 2D fighter: encyclopedia entry, showcase and frame-meter coverage, ranked-ladder news (URLs left out: they name the game).
 - A classic platform fighter: its community wiki ("Victory pose", "Credits", "Rulesets") and press coverage of the optional stage hazards (URLs left out: the domains name the game).
-- Tekken 8: https://esports.gg/guides/tekken-8/tekken-8-super-ghost-battle · https://www.bandainamcoent.com/news/tekken-8-patch-notes-v2-02 · https://gamingbolt.com/tekken-8-overhauls-my-replay-and-tips-allows-for-real-time-practice
-- Brawlhalla: https://brawlhalla.wiki.gg/wiki/Battle_Pass · https://www.brawlhalla.com/battle-pass-faq
-- Rivals of Aether: https://rivalsofaether.com/?p=84 · https://steamcommunity.com/workshop/filedetails/discussion/3514263181/524225948489413718
+- A current 3D fighter: guide and patch-note coverage of its habit-copying AI and replay coach (URLs left out: they name the game).
+- A free-to-play platform fighter: its wiki and battle-pass FAQ (URLs left out: they name the game).
+- An indie platform fighter: developer post and Workshop discussion (URLs left out: they name the game).
 - Salty Bet: https://www.pcgamer.com/salty-bet-1/ · https://openresearch.lsbu.ac.uk/download/4bdbce1fb68846551a45eca7a0b031c409a8fdbd0aebd96c654e53af989dbc9e/481395/AISB19%20AI%20Spectatorship%20v2.pdf · https://www.moma.org/interactives/exhibitions/2013/designandviolence/saltys-dream-cast-casino-salty-bet/
-- Nidhogg: https://spritesanddice.com/reviews/nidhogg-review-refined-rawness/ · https://www.avclub.com/nidhogg-review-pc
-- Pocket Rumble: https://www.nintendolife.com/reviews/switch-eshop/pocket_rumble · https://gameranx.com/updates/id/25097/article/pocket-rumble-returns-to-kickstarter-to-make-fighting-game-masters-out-of-all-of-us/
-- Mortal Kombat: https://en.wikipedia.org/wiki/Fatality_(Mortal_Kombat) · https://www.gameinformer.com/b/features/archive/2015/07/21/the-brutal-history-of-mortal-kombat-fatalities.aspx · https://www.engadget.com/2011-02-15-mortal-kombat-dev-gives-how-to-lesson-on-fatality-design.html
+- An indie fencing duel: two reviews (URLs left out: they name the game).
+- A two-button indie fighter: two reviews (URLs left out: they name the game).
+- A classic arcade fighter: encyclopedia entry and two design-history articles (URLs left out: they name the game).
 
 Engagement, meta, privacy backlash
 - Duolingo: https://blog.duolingo.com/duolingo-streak-research/ · https://making.duolingo.com/how-streaks-keep-duolingo-learners-committed-to-their-language-goals · https://www.universityxp.com/news/2025/7/25/we-havent-seen-you-in-a-while-duolingos-passive-aggressive-strategy-for-keeping-users-hooked
 - Tamagotchi: https://www.mentalfloss.com/fun/toys/tamagotchi-history · https://sites.cc.gatech.edu/fce/archives/future/0208.html
 - Achievements: https://kotaku.com/two-ways-to-fix-achievements-on-the-xbox-one-1645752957 · https://github.blog/news-insights/product-news/introducing-achievements-recognizing-the-many-stages-of-a-developers-coding-journey/ · https://arxiv.org/html/2303.14702v3
-- Halo Infinite pass: https://www.windowscentral.com/halo-infinite-fans-angry-about-battle-pass · https://www.techradar.com/news/halo-infinites-controversial-battle-pass-progression-just-got-a-whole-lot-better
+- A big shooter's battle pass: Windows Central and TechRadar coverage of the slow-tier backlash (URLs left out: they name the game).
 - Spotify Wrapped: https://adplist.substack.com/p/spotifys-most-popular-design · https://ecommercewithdev.substack.com/p/spotify-wrapped-what-it-takes-to
 - Banana: https://en.wikipedia.org/wiki/Banana_(2024_video_game) · https://www.pcgamesn.com/steam/banana-scam-statement
 - Recall: https://scmagazine.com/news/microsofts-ai-recall-feature-postponed-to-address-security-concerns · https://www.techrepublic.com/article/news-microsoft-recall-expands-rollout/
