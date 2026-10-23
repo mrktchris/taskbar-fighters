@@ -222,6 +222,26 @@ taskbar and in the arena. They are data, written against weapon-family slots, so
 Preview one with `python tools/setpiece_preview.py <piece> --a claude --b codex`. The list is in
 [MOVELIST.md](https://github.com/mrktchris/taskbar-fighters/blob/master/MOVELIST.md#set-pieces).
 
+### Fighters learn
+
+Every program's fighter teaches itself new moves from the fights it really has on your taskbar. It **masters** a move it
+throws often and grows an evolved variant: a faster wind-up ("Iai Slash II"), a two-hit string ("Twin Cross"), a feint
+("Low Kick Feint"), a bigger arc ("Grand Cross") or a spin wound into the strike ("Spiral Iai Slash"). It learns a
+**counter** to the kind of attack that keeps hitting it, **borrows** a crude copy of an opponent's signature move in its
+own weapon family, and **invents** variations while it shadowboxes as its agent works. Each new move is a moment: the
+fighter plays it once under a `LEARNED: <MOVE>` banner, and from then on it appears in its fights, picked more often the
+more the fighter uses it. A kit holds six learned moves at most, gains one every 15 bouts at most, and unused moves fade
+and are forgotten.
+
+Every new move is generated from the existing pose keyframes by a deterministic operator and has to pass the same
+frame-by-frame QA as the shipped art (anchors, the weapon in the hand, a readable silhouette, measured reach, the colour
+caps, both facings, 64 and 128 px). Anything that fails is never learned. The memory, `learning.json` in the data folder,
+holds only move ids, counters and seeds. `python minis.py learned [program]` lists what each fighter learned and how.
+Details, numbers and the reviewed frames: [docs/LEARNING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/LEARNING.md).
+Every install learns: pip and the Windows zip through re-timed and re-sequenced moves; a source checkout also redraws
+moves (the bigger, spinning and borrowed ones). Learned moves get their own LEARNED tab in the move book, a line on the hover
+card, a toast on the scoreboard and two achievements (*Self-Taught*, *Student of the Game*).
+
 ### V5 -> V6
 
 ![Side by side, each program character in V5 and in V6: idle and the signature strike's contact frame](https://raw.githubusercontent.com/mrktchris/taskbar-fighters/master/docs/img/before-after.png)
@@ -571,6 +591,7 @@ Every command below was checked against `python minis.py --help` and each subcom
 | `python minis.py guide [--first\|--reset]` | the 10-second legend (`--first`: the three first-run cards; `--reset`: show them at the next start) |
 | `python minis.py replay [CODE] [--gif [PATH]] [--final]` / `replay code` | replay the last K.O. (or a fight code) above the taskbar, or render a GIF offline / print the last fight code |
 | `python minis.py book [list] [--fighter NAME]` | the move book / its seen counts |
+| `python minis.py learned [program]` | the moves the fighters taught themselves, and how ([docs/LEARNING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/LEARNING.md)) |
 | `python minis.py doctor [--headless]` | a report to paste to your AI agent or an issue; `--headless` skips the test window (CI) |
 | `python minis.py director` / `run a\|b` | run the director or one slot in the foreground (debugging) |
 | `python minis.py selftest-gui [--keep]` | real-desktop check: both windows draw over the taskbar and survive a taskbar raise (macOS: frames, no capture) |
@@ -665,7 +686,8 @@ Fighters hide while a fullscreen app is up.
   input; cracks and shatters are paint on its own overlay.
 - **Files written:** `%LOCALAPPDATA%\minis\` on Windows, `~/Library/Application Support/minis/` on macOS (bus files,
   `assign.json`, `control.json`, `record.json`, `history.json`, `seen.json`, `achievements.json`, `stream.json`, `ux.json`,
-  `replay.json` (the last 12 matches' plans: seeds, character ids, positions, numbers), `collection.json` (move ids seen),
+  `replay.json` (the last 12 matches' plans: seeds, character ids, positions, numbers), `collection.json` (move ids seen), `learning.json` (ids, counters and seeds
+  only), a `learned/` cache of learned-move frames (at most 24 MB),
   pid and lock files, small rotating logs, `packs/` for skin packs you install, and `exports/` for the stats card, stream
   snapshots and fight GIFs).
 - **It writes only under that data folder, or to a path you choose.** `card`, `stream snapshot` and `replay --gif` write

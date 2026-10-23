@@ -1515,9 +1515,9 @@ class Scoreboard:
         from minis_core import history
         buses = {s: bus.read(s, now=wall) for s in SLOTS}
         hidden = {s: v for s in SLOTS for v in [control.hidden_left(s, now=wall)] if v is not None}
-        if getattr(self, 'toaster', None) is None:                    # growth: achievement toasts (3 s, row 2)
-            from minis_core import achievements
-            self.toaster = achievements.Toaster(wall=self.wall)
+        if getattr(self, 'toaster', None) is None:                    # growth: achievement toasts (3 s, row 2), shared with
+            from minis_core import learning                            # learning's LEARNED toasts: one queue, never overlapping
+            self.toaster = learning.toast_slot(wall=self.wall)
         return self.SB.Model.state(assign, buses, records.read(), control.paused(), control.arena_active(now=wall), control.winners(),
                                    pressed=self.pressed, spark=history.last_days(7, wall), now=wall, hidden=hidden,
                                    toast=self.toaster.poll(wall))
@@ -1689,7 +1689,8 @@ class Fighter:
         self.cell = self.size
         if self.size > 64 and self.hd is None:
             from minis_core.atlas import Library
-            self.hd = Library(hd=True)
+            from minis_core import learning
+            self.hd = learning.wrap_library(Library(hd=True))   # learned rows are drawn at 128 px too (docs/LEARNING.md)
 
     def logic_zone(self):
         """Where the brain may stand, in RES 1 px: the fight zone at this fighter size divided by k, so spacing, reach and
@@ -2844,6 +2845,9 @@ def main(argv=None):
     add_growth_parsers(sub)
     from minis_core import ux_cli
     ux_cli.add_parsers(sub, sys.modules[__name__])        # settings, startup, zone, guide, replay, book, results/cards/signals
+    le = sub.add_parser('learned', help='the moves the fighters taught themselves, and how (docs/LEARNING.md)')
+    le.add_argument('program', nargs='?', default=None)
+    le.set_defaults(fn=lambda a: __import__('minis_core.learning', fromlist=['cmd']).cmd(a))
     a = ap.parse_args(argv)
     try:
         return a.fn(a)
