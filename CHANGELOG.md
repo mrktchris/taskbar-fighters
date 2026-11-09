@@ -2,7 +2,9 @@
 
 Taskbar Fighters (internal short name: minis). Summarised from the git history and the build logs in [RESULT.md](RESULT.md).
 
-## Unreleased (V9 - fight quality)
+## Unreleased (since v1.0.0; all merged to master, not yet tagged)
+
+### V9 - fight quality
 
 - **Hidden means out of the fight** (`minis_core/brain.py` `away`): a fighter you hide no longer gets pulled into a bout. Before,
   the visible one fought, and could be K.O.'d by, an invisible opponent. A bout already running stops on both sides.
@@ -45,7 +47,7 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
 - **Optional sound effects, off by default**: `python minis.py sound on|off`, a menu checkmark, eight original sounds generated
   by `art/build_sfx.py`; winsound on Windows, NSSound on macOS; one process plays, rate-limited, quiet when paused or hidden.
 
-## Unreleased - growth
+### Growth
 
 - **Streamer mode** (`python minis.py stream on|off|status|snapshot`, tray *Streamer mode (OBS window)*): a normal,
   resizable, non-topmost window "Taskbar Fighters — Stream" with the live fight strip (fighters, plates, scoreboard) on a
@@ -83,11 +85,9 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
   `--width`, `--height` are capped (8 / 4096) and a frame never exceeds 4096 x 2304; `packs.FIGHTER_ID_RE` is the
   fighter-id contract for fight codes (pack names may contain hyphens).
 
-## Unreleased - Windows on strangers' PCs (branch `win-robust`)
+### UX layer and Windows on strangers' PCs
 
-## Unreleased - UX layer (branch `ux`)
-
-### UX layer - getting around (branch `ux`)
+#### Getting around
 
 Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.md](docs/RESEARCH-UX.md)), keeping to its
 "do not do" list: no popups that take focus, no network, no new capture, no guilt or streak pressure.
@@ -133,7 +133,7 @@ Built from a survey of desktop companions and fighting games ([docs/RESEARCH-UX.
 - macOS: the same windows through the NSPanel overlay; PgUp/PgDn/Home keys mapped for the book; real-Mac checks are
   MAC-30 to MAC-37 in docs/MAC-HANDOFF.md.
 
-### Windows on strangers' PCs (branch `win-robust`)
+#### Windows on strangers' PCs
 
 - **Any taskbar edge.** Bottom: on the taskbar as before. Top / left / right: a strip along the bottom of the work area
   beside the taskbar. Auto-hide at the bottom: shown only while the taskbar is revealed (never over its 2 px reveal strip).

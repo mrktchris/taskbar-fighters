@@ -1,6 +1,6 @@
 # Taskbar Fighters: UX and engagement research against real games and desktop companions
 
-Date: 2026-10-21. Read-only research. Repo state read: `C:\Users\User\minis` at `06e3241` (README.md, RESULT.md, docs/COMPARISON.md,
+Date: 2026-10-21. Read-only research. Repo state read: the repo at `06e3241` (README.md, RESULT.md, docs/COMPARISON.md,
 docs/ARENA.md, MOVELIST.md). Nothing in the repo was edited, the app was not started or stopped, no screen was captured.
 
 Numbers about other products come from the sources listed at the end. Steam player and review counts come from third-party trackers;
@@ -51,7 +51,7 @@ Gaps a new user hits, in the order they hit them:
 | **Codex Pets** (May 2026, built in) | `/pet` overlay with states **working / waiting for input / ready for review**. Notifies on done or needs-input. 8 built-ins. `/hatch` makes a pet from an image. Contest prize for the best pets. | First party. | The headline signal is "your turn". Custom pets and a contest drive sharing. [Engadget](https://engadget.com/2162796/openai-introduces-ai-generated-pets-for-its-codex-app), [Hongkiat](https://www.hongkiat.com/blog/codex-pets-custom-hatch-guide/), [LetsDataScience](https://letsdatascience.com/news/openai-adds-codex-pets-floating-task-overlay-bfb48d20) |
 | **Pixel Agents** (VS Code) | Each Claude Code terminal gets a character in a pixel office. Animation follows the real action (writing, reading, running). Speech bubble when the agent waits for permission. **Sub-agents appear as linked characters.** Office editor. | Many forks (Codex port etc.). | Sub-agents as visible helpers, and "waiting" as a bubble. [GitHub](https://github.com/pablodelucca/pixel-agents), [mdskills](https://www.mdskills.ai/skills/pixel-agents) |
 | **Clawd on Desk** | Electron pet with 12 animations driven by agent hooks or log polling. One-click permission bubbles for Claude Code. | ~3-6k stars (sources disagree). | Most informative rival, but it writes hooks into agent config, which Taskbar Fighters deliberately does not. [BrightCoding](https://blog.brightcoding.dev/2026/09/29/rullerzhou-afkclawd-on-desk-desktop-pet-for-ai-coding-agents) |
-| **Clippy / Office Assistant** | Popped up on weak triggers (typing "Dear") and interrupted. | Off by default in Office XP-era builds, removed in 2007. Microsoft's own research found most users irritated. | Never interrupt. Context-poor help is worse than none. [Mental Floss](https://www.mentalfloss.com/technology/computers/tragic-life-clippy-worlds-most-hated-virtual-assistant), [Dice](https://insights.dice.com/2019/03/22/clippy-corpse-offers-valuable-lessons/?amp) |
+| **The Office paperclip assistant** | Popped up on weak triggers (typing "Dear") and interrupted. | Off by default in Office XP-era builds, removed in 2007. Microsoft's own research found most users irritated. | Never interrupt. Context-poor help is worse than none. Mental Floss, Dice |
 
 ### Fighting games and spectator fighting
 
@@ -64,7 +64,7 @@ Gaps a new user hits, in the order they hit them:
 | **An indie platform fighter** | Steam Workshop for characters, stages, skins and buddies. **Four community characters were made official.** A creation contest drew 100+ entries for a major event. | a source article, [Steam Workshop](https://steamcommunity.com/workshop/filedetails/discussion/3514263181/524225948489413718) |
 | **Salty Bet** | Round-the-clock AI-vs-AI fights on Twitch. Viewers bet **fake** "Salty Bucks" (start with $400) in a betting window before each fight, and odds set the payout. The bets run on looks, loyalty and reputation, since nobody is judging skill. | [PC Gamer](https://www.pcgamer.com/salty-bet-1/), [LSBU paper on AI spectatorship](https://openresearch.lsbu.ac.uk/download/4bdbce1fb68846551a45eca7a0b031c409a8fdbd0aebd96c654e53af989dbc9e/481395/AISB19%20AI%20Spectatorship%20v2.pdf), [MoMA](https://www.moma.org/interactives/exhibitions/2013/designandviolence/saltys-dream-cast-casino-salty-bet/) |
 | **An indie fencing duel** | Tug of war: the winner of an exchange earns the right to advance, momentum flips constantly, one hit kills, leads are fragile. Reviewers call it very easy to watch. | Sprites & Dice, AV Club |
-| **A two-button indie fighter** | Two buttons, simplified inputs, an on-screen frame bar, 31 short lessons. Easy to pick up, still has depth. | Nintendo Life, Gameranx |
+| **A two-button indie fighter** | Two buttons, simplified inputs, an on-screen frame bar, 31 short lessons. Easy to pick up, still has depth. | a console-gaming news site, Gameranx |
 | **A classic arcade fighter** | Finishing moves grew out of the dizzy state: the free hit was moved to after the winner was decided. Its announcer's finishing call became a signature cue. Inputs were **kept secret** on purpose to create mystery. | a source article, Game Informer, Engadget |
 
 ### Engagement and meta systems
@@ -146,7 +146,7 @@ Items marked *(in progress)* overlap work already under way; for those the note 
   drawn live.
 - *Borrowed from:* a current 2D fighter's frame meter, which comes with an infographic and was praised for teaching beginners
   (Infil), and a two-button indie fighter's 31 short lessons
-  (Nintendo Life). The Clippy lesson sets the limit: explain once,
+  (a console-gaming news site). The Office paperclip lesson sets the limit: explain once,
   on request after that, never unprompted.
 - *Mapping:* drawn on the existing click-through layered windows next to the plates. A `first_run_done` flag goes in `control.json`.
 - *Win/mac:* same on both. On macOS, also point at the menu-bar icon, or at the notch badge when macOS hides the icon.
@@ -355,7 +355,7 @@ Windows Central).
 
 | don't | why, with evidence |
 | --- | --- |
-| **Interrupt**: pop-ups, speech bubbles that start on their own, focus theft, "tips" | Clippy: weak triggers and interruptions; Microsoft's own research found most users irritated, and it was turned off then removed ([Mental Floss](https://www.mentalfloss.com/technology/computers/tragic-life-clippy-worlds-most-hated-virtual-assistant)). Explain once (item 2), then only on request. |
+| **Interrupt**: pop-ups, speech bubbles that start on their own, focus theft, "tips" | The Office paperclip: weak triggers and interruptions; Microsoft's own research found most users irritated, and it was turned off then removed (Mental Floss). Explain once (item 2), then only on request. |
 | **Touch the user's input or real windows** (cursor theft, dragging windows) | Desktop Goose does this for laughs as a prank on someone else ([Kotaku](https://kotaku.com/untitled-goose-fan-game-unleashes-havoc-on-your-desktop-1841351806)). The product's promise is "visual only"; keep the `VisualOnly7` test as the guard. |
 | **Capture the screen by default, or keep any capture** | Recall's capture-by-default plan caused a year of delays and a forced double opt-in ([SC Magazine](https://scmagazine.com/news/microsofts-ai-recall-feature-postponed-to-address-security-concerns)). Ask first (item 6). Never put a forged-weapon frame in a share card or GIF. |
 | **Network, telemetry, accounts, online leaderboards** | BonziBuddy went from "friendly assistant" to adware/spyware classification, lawsuits and shutdown ([Wikipedia](https://en.wikipedia.org/wiki/BonziBuddy)). "No network" is a feature here; ranks, achievements and cards stay local. |
@@ -417,7 +417,7 @@ Desktop companions and idlers
 - Codex Pets: https://engadget.com/2162796/openai-introduces-ai-generated-pets-for-its-codex-app · https://www.hongkiat.com/blog/codex-pets-custom-hatch-guide/ · https://letsdatascience.com/news/openai-adds-codex-pets-floating-task-overlay-bfb48d20
 - Pixel Agents: https://github.com/pablodelucca/pixel-agents · https://www.mdskills.ai/skills/pixel-agents
 - Clawd on Desk: https://blog.brightcoding.dev/2026/09/29/rullerzhou-afkclawd-on-desk-desktop-pet-for-ai-coding-agents · https://wingetly.io/apps/rullerzhou-afk/clawd-on-desk
-- Clippy: https://www.mentalfloss.com/technology/computers/tragic-life-clippy-worlds-most-hated-virtual-assistant · https://insights.dice.com/2019/03/22/clippy-corpse-offers-valuable-lessons/?amp
+- Office paperclip assistant: Mental Floss and Dice retrospectives (name-bearing URLs left out)
 - BonziBuddy: https://en.wikipedia.org/wiki/BonziBuddy
 
 Fighting games and spectating
@@ -444,4 +444,4 @@ Developer-tool gamification and streaming
 - WakaTime: https://wakatime.com/features
 - Power Mode: https://dev.to/pandiyancool/cool-vs-code-extension-set-your-code-on-fire-2oac · https://marketplace.visualstudio.com/vsgallery/936788cc-7213-4d48-93ae-045694781214
 - Chat brawlers: https://gamesplusjames.itch.io/streambuddies · https://el-tutsi.itch.io/twitch-chat-avatars/devlog/468807/chat-vs-streamer-mode
-- In-repo prior research: `C:\Users\User\minis\docs\COMPARISON.md` (2026-10-13)
+- In-repo prior research: `docs/COMPARISON.md` (2026-10-13)

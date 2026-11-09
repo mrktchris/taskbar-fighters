@@ -178,7 +178,7 @@ class Cli(Isolated):
         rc, out = run(['pick', 'a', 'notepad'])
         self.assertEqual(rc, 2)
         self.assertIn('known:', out)
-        rc, out = run(['skin', 'grok', 'batman'])
+        rc, out = run(['skin', 'grok', 'nosuchskin'])
         self.assertEqual(rc, 2)
         self.assertIn('have:', out)
         rc, out = run(['fighters', 'set', 'a', 'agent'])                                # nothing on a to dress up
