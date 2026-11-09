@@ -274,6 +274,13 @@ stop`, then `python minis.py guide --reset` so the first-run cards show, then `p
     Dock - the spawn may then need `LSUIElement` / a different interpreter flag); the LEARNED banner reads at Retina scale;
     the move book's LEARNED tab animates its moves and the scoreboard shows `LEARNED <program>: <move>` after any badge toast.
 
+- [ ] **MAC-38 (2026-11-09) A hidden fighter no longer fights (or gets K.O.'d by) an invisible opponent.**
+  - PC change (shared engine): `minis_core/brain.py` has `away` (published on the bus); `minis.py` sets it from the hide state.
+    A hidden fighter neither starts nor accepts a bout, a demo skips it, and a bout already running stops on both sides.
+  - Test: `python minis.py start`, hide one fighter (right-click it > Hide), then `python minis.py demo match`;
+    then `python minis.py show` and `python minis.py demo match` again.
+  - Expected: while one is hidden, no bout and no damage % on the visible fighter's plate; after `show`, the demo plays with both.
+
 ## DONE
 
 - [x] **MAC-14 (2026-10-15) DONE fdd0803 2026-10-16 Arena CPU (FOUND-2): measure the V8 macOS window.**

@@ -2006,6 +2006,7 @@ class Fighter:
             if (hl is None) != (self.ctl_hidden is None):
                 self.last['tb'] = -1e9                              # hide / come back on this iteration
             self.ctl_hidden = hl
+            b.away = hl is not None                        # a hidden fighter neither starts nor joins a bout (brain.away)
             b.rival = control.rival_on(self.control_path, default=self.cfg.get('rival', True))
             ar = control.arena_active(now=wall)
             if ar != self.arena:

@@ -647,6 +647,55 @@ class Liveliness(unittest.TestCase):
         self.assertIsNone(a.script)
 
 
+class Away(unittest.TestCase):
+    """A fighter the user hid (`minis.py hide`, the scoreboard) is away: no bout starts with it, demo or timed, and a bout
+    already running stops.  Seen live 2026-10-22: the visible fighter fought, and was K.O.'d by, an invisible opponent."""
+
+    def run_pair(self, a, b, t0, secs):
+        bouts = set()
+        for i in range(int(secs * 10)):
+            t = t0 + i / 10
+            a.tick(t, snap('idle', 30.0), b.publish())
+            b.tick(t, snap('idle', 30.0), a.publish())
+            for br in (a, b):
+                if br.script:
+                    bouts.add(br.slot)
+        return bouts
+
+    def test_no_demo_bout_against_a_hidden_fighter(self):
+        a, b = pair()
+        b.away = True
+        a.request_demo('match', 1000.0)
+        self.assertEqual(self.run_pair(a, b, 1000.0, 20), set())
+        self.assertIsNone(a.demo)                                       # the request expired; nothing queued for later
+
+    def test_no_timed_bout_while_away_and_bouts_resume_after_show(self):
+        a, b = pair(2, bout_min_s=1, bout_max_s=2)
+        b.away = True
+        self.assertEqual(self.run_pair(a, b, 1000.0, 60), set())
+        b.away = False
+        self.assertTrue(self.run_pair(a, b, 1060.0, 90))
+
+    def test_hiding_mid_bout_stops_it_on_both_sides(self):
+        a, b = pair()
+        a.request_demo('spar', 1000.0)
+        t = 1000.0
+        for i in range(1, 200):
+            t = 1000 + i / 10
+            a.tick(t, snap(), b.publish())
+            b.tick(t, snap(), a.publish())
+            if a.script and b.script:
+                break
+        self.assertTrue(a.script and b.script, 'the demo bout never started')
+        b.away = True
+        for i in range(1, 30):
+            a.tick(t + i / 10, snap(), b.publish())
+            b.tick(t + i / 10, snap(), a.publish())
+        self.assertIsNone(a.script)
+        self.assertIsNone(b.script)
+        self.assertFalse(a.bout or b.bout)
+
+
 class Pause(unittest.TestCase):
     def test_paused_fighter_is_one_static_frame_and_never_moves(self):
         a, b = pair(2, bout_min_s=1, bout_max_s=2)

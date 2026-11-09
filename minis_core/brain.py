@@ -403,6 +403,7 @@ class Brain:
         self.script_i = -1
         self.bout = None            # id of the bout being walked to / played / negotiated
         self.paused = False
+        self.away = False           # hidden by the user (hide / the scoreboard): no bout starts with it, one running stops
         self.next_bout = now + rng.uniform(cfg['bout_min_s'], cfg['bout_max_s'])
         self.next_clash = now + rng.uniform(cfg.get('clash_min_s', 20), cfg.get('clash_max_s', 40))
         self.next_flourish = now + rng.uniform(6, 10)
@@ -552,6 +553,8 @@ class Brain:
         self._partner_events(now)
         if self.bout and self.partner is None:                    # partner vanished mid-bout: abort, do not wait
             self.abort(now, emit=False)
+        if self.away or (self.partner or {}).get('away'):          # either side hidden: each stops on its own, no cancel needed
+            self.abort(now, emit=False)
         if self.state() == 'limit' and self.mode == 'walk' and self.walk_then != 'home' and not self._demo_bout():
             self.abort(now)                                       # knocked out on the way to a bout: stop where it stands
             self.mode, self.walk_then = 'home', None              # (walking home is fine; _tick_home sends it there)
@@ -610,7 +613,7 @@ class Brain:
     def publish(self):
         return dict(state=self.state(), mode=self.mode, x=round(self.x, 1), facing=self.facing, anim=self.anim,
                     ctx=(self.snap.ctx_pct if self.snap else None), event=self.event, character=self.character,
-                    run=self.run, paused=self.paused, bout=self.bout, hp=self.hp,
+                    run=self.run, paused=self.paused, away=self.away, bout=self.bout, hp=self.hp,
                     round=(self.round or {}).get('n'), wins=(self.round or {}).get('wins'), boost=self.boost_marker(),
                     who=(self.snap.who if self.snap else None))          # the program id (learning keys its memory by it)
 
@@ -779,7 +782,7 @@ class Brain:
         return bool(plan.get('demo'))
 
     def _free_any(self):
-        return not (self.paused or self.mode != 'home' or self.script or self.pending or self.bout)
+        return not (self.paused or self.away or self.mode != 'home' or self.script or self.pending or self.bout)
 
     def _try_demo(self, now):
         if now > self.demo['until']:
@@ -819,11 +822,11 @@ class Brain:
 
     def _partner_home(self):
         p = self.partner
-        return bool(p) and p.get('mode') == 'home' and not p.get('paused')
+        return bool(p) and p.get('mode') == 'home' and not p.get('paused') and not p.get('away')
 
     def free_for(self, kind):
         """Actually free: at home, not in or negotiating a bout, awake, not at its limit, and in a state the bout allows."""
-        if self.paused or self.mode != 'home' or self.script or self.pending or self.bout:
+        if self.paused or self.away or self.mode != 'home' or self.script or self.pending or self.bout:
             return False
         st = self.state()
         if st in ('sleeping', 'limit'):

@@ -4,6 +4,8 @@ Taskbar Fighters (internal short name: minis). Summarised from the git history a
 
 ## Unreleased (V9 - fight quality)
 
+- **Hidden means out of the fight** (`minis_core/brain.py` `away`): a fighter you hide no longer gets pulled into a bout. Before,
+  the visible one fought, and could be K.O.'d by, an invisible opponent. A bout already running stops on both sides.
 - **Fighters learn** (`minis_core/learning.py`, `art/evolve.py`, [docs/LEARNING.md](docs/LEARNING.md)): each program's fighter
   teaches itself new moves - mastery (an evolved variant of a move it throws often), counters (against the hit kind that
   keeps landing on it), mimicry (a crude borrowed copy of an opponent's move in its own weapon family) and inventions
