@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "taskbar-fighters"
-version = "1.0.0"
+version = "1.1.0"
 description = "Pixel-art fighters for your AI coding agents (Claude Code, Codex, Gemini, Cursor, Ollama...), living in your taskbar and battling from real usage."
 readme = "README.md"
 requires-python = ">=3.12"

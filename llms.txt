@@ -9,7 +9,7 @@ Quick install: `pip install taskbar-fighters` (macOS: `pip install "taskbar-figh
 - [README.md](https://github.com/mrktchris/taskbar-fighters/blob/master/README.md): what it does, features, every command, right-click menu, configuration, privacy and safety, how it works, known limits
 - [AGENTS.md](https://github.com/mrktchris/taskbar-fighters/blob/master/AGENTS.md): agent install runbook, rules, troubleshooting, how to add a program or a character
 - [MOVELIST.md](https://github.com/mrktchris/taskbar-fighters/blob/master/MOVELIST.md): every move, trigger and timing (generated)
-- [CHANGELOG.md](https://github.com/mrktchris/taskbar-fighters/blob/master/CHANGELOG.md): V1 to v1.0.0 (2026-10-16, the first tagged release)
+- [CHANGELOG.md](https://github.com/mrktchris/taskbar-fighters/blob/master/CHANGELOG.md): V1 to v1.1.0 (2026-11-09; v1.0.0 on 2026-10-16 was the first tagged release)
 - [docs/ARENA.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/ARENA.md): arena mode options (`--rounds`, `--intensity`, `--seconds`, `--no-intro`, `--no-outro`), effects, desktop weapons and their privacy rules, the visual-only guarantee
 - [docs/MAC-TESTING.md](https://github.com/mrktchris/taskbar-fighters/blob/master/docs/MAC-TESTING.md): macOS install, the checklist to verify it on a real Mac, known risks
 - [RESULT.md](https://github.com/mrktchris/taskbar-fighters/blob/master/RESULT.md): build logs with what was verified and how

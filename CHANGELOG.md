@@ -2,7 +2,7 @@
 
 Taskbar Fighters (internal short name: minis). Summarised from the git history and the build logs in [RESULT.md](RESULT.md).
 
-## Unreleased (since v1.0.0; all merged to master, not yet tagged)
+## v1.1.0 - 2026-11-09 (V9, growth, UX, Windows robustness)
 
 ### V9 - fight quality
 
